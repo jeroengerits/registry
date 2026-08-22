@@ -1,6 +1,6 @@
-import type { CommandResult } from '../types.js';
-import { readState } from '../state.js';
-import { parseGitReference } from '../git.js';
+import type { CommandResult } from '../../types.js';
+import { readState } from '../../state.js';
+import { parseGitReference } from '../../git.js';
 import { applyPlans, aggregateDependencies, errorResult, planFiles, resolveReferences } from './shared.js';
 
 export async function addComponents(cwd: string, references: string[], options: { dryRun: boolean; yes: boolean; json: boolean }): Promise<CommandResult> {

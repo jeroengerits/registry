@@ -1,5 +1,5 @@
-import type { CommandResult } from '../types.js';
-import { readState } from '../state.js';
+import type { CommandResult } from '../../types.js';
+import { readState } from '../../state.js';
 import { errorResult } from './shared.js';
 
 export async function infoComponent(cwd: string, name?: string, json = false): Promise<CommandResult> {

@@ -2,11 +2,11 @@ import { access, copyFile, mkdir, mkdtemp, rm, stat, unlink } from 'node:fs/prom
 import path from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import type { ComponentManifest, UiState } from '../types.js';
-import { writeState } from '../state.js';
-import { checkoutGit, parseGitReference, satisfies, type GitReference } from '../git.js';
-import { readComponentManifest } from '../registry.js';
-import { safeJoin, safeRelativePath } from '../paths.js';
+import type { ComponentManifest, UiState } from '../../types.js';
+import { writeState } from '../../state.js';
+import { checkoutGit, parseGitReference, satisfies, type GitReference } from '../../git.js';
+import { readComponentManifest } from '../../registry.js';
+import { safeJoin, safeRelativePath } from '../../paths.js';
 
 const exec = promisify(execFile);
 export const errorResult = (message: string) => ({ output: `${message}\n`, exitCode: 1 });

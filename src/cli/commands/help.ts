@@ -1,4 +1,4 @@
-import type { CommandResult } from '../types.js';
+import type { CommandResult } from '../../types.js';
 
 export function help(): CommandResult {
   return {

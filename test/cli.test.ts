@@ -4,7 +4,7 @@ import { promisify } from 'node:util';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { run } from '../src/cli.js';
+import { run } from '../src/cli/index.js';
 import { validateState } from '../src/state.js';
 import { parseGitReference } from '../src/git.js';
 

@@ -1,5 +1,5 @@
-import type { CommandResult } from '../types.js';
-import { readState } from '../state.js';
+import type { CommandResult } from '../../types.js';
+import { readState } from '../../state.js';
 
 export async function listComponents(cwd: string, json: boolean): Promise<CommandResult> {
   const state = await readState(cwd);
