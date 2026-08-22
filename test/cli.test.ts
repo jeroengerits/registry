@@ -55,6 +55,8 @@ describe('help', () => {
     expect(result.code).toBe(0);
     expect(result.stdout).toContain('ui component add <github-url> [--version <x.y.z>] [--dry-run] [--force] [--json]');
     expect(result.stdout).toContain('ui self-update');
+    expect(result.stdout).toContain('ui components');
+    expect(result.stdout).toContain('ui hooks');
     expect(result.stdout).toContain('ui component remove [name] [--json]');
     expect(result.stdout).toContain('ui component update [name] [--json]');
     expect(result.stdout).toContain('component.json must be in the repository root');
@@ -65,6 +67,10 @@ describe('help', () => {
     const result = await capture(() => run([]));
     expect(result.code).toBe(0);
     expect(result.stdout).toContain('UI Registry');
+  });
+  it('shows the hooks namespace status', async () => {
+    const result = await capture(() => run(['hooks']));
+    expect(result).toEqual({ code: 0, stdout: expect.stringContaining('No hooks configured yet.'), stderr: '' });
   });
   it('shows component namespace commands without a TTY', async () => {
     const result = await capture(() => run(['component']));

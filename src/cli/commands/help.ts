@@ -9,11 +9,20 @@ export function help(): CommandResult {
 Install and manage components from GitHub repositories.
 
 Commands:
+  ui
+    Choose between components and hooks in an interactive terminal.
+
   ui help
     Show this help.
 
   ui self-update
     Update the installed UI Registry CLI.
+
+  ui components
+    Open the component dashboard.
+
+  ui hooks
+    Manage project hooks.
 
   ui component list [--json] [--available-versions]
     List components installed in the current directory.

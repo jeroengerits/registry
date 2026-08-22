@@ -60,6 +60,19 @@ export function outcome(message: string, kind: 'success' | 'warning' | 'error' =
   return color(`${symbol} ${message}`);
 }
 
+/** Presents the top-level namespaces available from the interactive CLI. */
+export async function chooseNamespace(): Promise<'components' | 'hooks'> {
+  const choice = await select({
+    message: 'What would you like to manage?',
+    options: [
+      { value: 'components', label: 'components', hint: 'Install and manage UI components' },
+      { value: 'hooks', label: 'hooks', hint: 'Manage project hooks' },
+    ],
+  });
+  if (isCancel(choice)) throw new Error('Operation cancelled.');
+  return choice as 'components' | 'hooks';
+}
+
 /** Lets an interactive user select a stable component version. */
 export async function chooseVersion(component: string, versions: string[]): Promise<string> {
   const choice = await select({

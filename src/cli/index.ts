@@ -2,7 +2,7 @@ import process from 'node:process';
 import { Command, CommanderError } from 'commander';
 import { addComponent, componentDashboard, componentHelp, help, infoComponent, listComponent, removeComponent, selfUpdate, toggleComponent, updateComponent } from './commands.js';
 import type { CommandResult } from '../types.js';
-import { interactive } from './ui.js';
+import { chooseNamespace, frame, interactive } from './ui.js';
 
 /** Converts Commander unknown-command failures into the CLI's stable message. */
 function unknownCommand(): CommandResult {
@@ -11,7 +11,13 @@ function unknownCommand(): CommandResult {
 
 /** Parses CLI arguments and dispatches the selected command. */
 export async function run(args: string[], cwd = process.cwd()): Promise<number> {
-  const commandArgs = args.length ? args : interactive() ? ['component'] : ['help'];
+  if (!args.length && interactive()) {
+    const namespace = await chooseNamespace();
+    const output = namespace === 'components' ? await componentDashboard(cwd) : { output: frame('hooks', 'No hooks configured yet.', 'Next: ui components'), exitCode: 0 };
+    process.stdout.write(output.output);
+    return output.exitCode;
+  }
+  const commandArgs = args.length ? args : ['help'];
   let result: CommandResult | undefined;
   const program = new Command()
     .name('ui')
@@ -22,6 +28,8 @@ export async function run(args: string[], cwd = process.cwd()): Promise<number> 
 
   program.command('help').description('Show command help.').action(() => { result = help(); });
   program.command('self-update').description('Update the installed UI Registry CLI.').action(async () => { result = await selfUpdate(); });
+  program.command('components').description('Open the component dashboard.').action(async () => { result = await componentDashboard(cwd); });
+  program.command('hooks').description('Manage project hooks.').action(() => { result = { output: frame('hooks', 'No hooks configured yet.', 'Next: ui components'), exitCode: 0 }; });
 
   const component = program.command('component').description('Manage installed components.');
   component.action(async () => {

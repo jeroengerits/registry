@@ -16,6 +16,9 @@ configuration and troubleshooting.
 ## Commands
 
 ```sh
+./ui
+./ui components
+./ui hooks
 ./ui component list [--json] [--available-versions]
 ./ui component add <github-url> [--version <x.y.z>] [--dry-run] [--force] [--json]
 ./ui component remove [name] [--json]
