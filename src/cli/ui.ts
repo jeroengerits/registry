@@ -1,6 +1,6 @@
 import ora from 'ora';
 import pc from 'picocolors';
-import { isCancel, select } from '@clack/prompts';
+import { confirm, isCancel, select } from '@clack/prompts';
 
 export function interactive(): boolean {
   return Boolean(process.stdout.isTTY && process.stderr.isTTY && !process.env.CI);
@@ -9,13 +9,16 @@ export function interactive(): boolean {
 export async function withSpinner<T>(message: string, action: () => Promise<T>, success: (value: T) => string, enabled = true): Promise<T> {
   if (!enabled || !interactive()) return action();
   const progress = ora(message);
-  progress.start(message);
+  let started = false;
+  const timer = setTimeout(() => { progress.start(message); started = true; }, 150);
   try {
     const value = await action();
-    progress.succeed(success(value));
+    clearTimeout(timer);
+    if (started) progress.succeed(success(value));
     return value;
   } catch (error) {
-    progress.fail('Failed');
+    clearTimeout(timer);
+    if (started) progress.fail('Failed');
     throw error;
   }
 }
@@ -26,6 +29,22 @@ export const colors = {
   success: pc.green,
   error: pc.red,
 };
+
+export function frame(command: string, body: string, footer?: string): string {
+  const lines = [colors.info(`◆ UI REGISTRY  ·  ${command}`), colors.muted('────────────────────────────────────────'), body.trimEnd()];
+  if (footer) lines.push('', colors.muted(footer));
+  return `${lines.join('\n')}\n`;
+}
+
+export function status(enabled: boolean): string {
+  return enabled ? colors.success('● enabled') : colors.muted('○ disabled');
+}
+
+export function outcome(message: string, kind: 'success' | 'warning' | 'error' = 'success'): string {
+  const symbol = kind === 'success' ? '✓' : kind === 'warning' ? '!' : '×';
+  const color = kind === 'success' ? colors.success : kind === 'warning' ? pc.yellow : colors.error;
+  return color(`${symbol} ${message}`);
+}
 
 export async function chooseVersion(component: string, versions: string[]): Promise<string> {
   const choice = await select({
@@ -42,6 +61,12 @@ export async function chooseComponent(names: string[], message: string): Promise
     message,
     options: names.map((name) => ({ value: name, label: name })),
   });
+  if (isCancel(choice)) throw new Error('Operation cancelled.');
+  return choice;
+}
+
+export async function confirmAction(message: string): Promise<boolean> {
+  const choice = await confirm({ message, initialValue: false });
   if (isCancel(choice)) throw new Error('Operation cancelled.');
   return choice;
 }

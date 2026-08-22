@@ -8,7 +8,7 @@
     "version": { "type": "string" },
     "components": {
       "type": "object",
-        "additionalProperties": { "type": "object", "required": ["version", "path"], "properties": { "version": { "type": "string" }, "constraint": { "type": "string" }, "path": { "type": "string" }, "repository": { "type": "string" }, "files": { "type": "array" }, "dependencies": { "type": "array", "items": { "type": "object", "required": ["repository"], "properties": { "repository": { "type": "string" }, "version": { "type": "string" } } } } }, "additionalProperties": false }
+        "additionalProperties": { "type": "object", "required": ["version", "path"], "properties": { "enabled": { "type": "boolean", "default": true }, "version": { "type": "string" }, "constraint": { "type": "string" }, "path": { "type": "string" }, "repository": { "type": "string" }, "files": { "type": "array" }, "dependencies": { "type": "array", "items": { "type": "object", "required": ["repository"], "properties": { "repository": { "type": "string" }, "version": { "type": "string" } } } } }, "additionalProperties": false }
     }
   },
   "additionalProperties": false

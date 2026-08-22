@@ -1,6 +1,6 @@
 import process from 'node:process';
 import { Command, CommanderError } from 'commander';
-import { addComponent, help, infoComponent, listComponent, removeComponent, selfUpdate, updateComponent } from './commands.js';
+import { addComponent, help, infoComponent, listComponent, removeComponent, selfUpdate, toggleComponent, updateComponent } from './commands.js';
 import type { CommandResult } from '../types.js';
 
 function unknownCommand(): CommandResult {
@@ -43,6 +43,10 @@ export async function run(args: string[], cwd = process.cwd()): Promise<number> 
     .description('Remove an installed component and its files.')
     .option('--json', 'Print machine-readable JSON.')
     .action(async (name: string | undefined, options: { json?: boolean }) => { result = await removeComponent(cwd, name, Boolean(options.json)); });
+  component.command('toggle [name]')
+    .description('Toggle whether an installed component is enabled.')
+    .option('--json', 'Print machine-readable JSON.')
+    .action(async (name: string | undefined, options: { json?: boolean }) => { result = await toggleComponent(cwd, name, Boolean(options.json)); });
   component.command('update [name]')
     .description('Update to the newest compatible Git tag.')
     .option('--json', 'Print machine-readable JSON.')

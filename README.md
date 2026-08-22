@@ -17,10 +17,11 @@ configuration and troubleshooting.
 
 ```sh
 ./ui component list [--json] [--available-versions]
-./ui component info <name> [--json]
+./ui component info [name] [--json]
 ./ui component add <github-url> [--version <x.y.z>] [--dry-run] [--force] [--json]
-./ui component remove <name> [--json]
-./ui component update <name> [--json]
+./ui component remove [name] [--json]
+./ui component toggle [name] [--json]
+./ui component update [name] [--json]
 ./ui self-update
 ```
 
@@ -31,14 +32,26 @@ preselected. Non-interactive runs select the latest automatically and show the
 available versions.
 `--available-versions` shows all stable tags for each installed component.
 
+`component list` shows enabled and disabled status for every installed component.
+Toggle one component without changing its files or version:
+
+```sh
+./ui component toggle button
+```
+
+Disabled components remain installed and can still be inspected, updated, or
+removed. Existing `ui.json` files treat components without an `enabled` field
+as enabled.
+
 Interactive terminals show colored status and progress feedback; JSON and CI
 output remain plain and script-friendly.
 
-In an interactive terminal, omitting the name from `component info` or
-`component remove` opens a component picker.
+In an interactive terminal, omitting the name from `component info`,
+`component remove`, or `component toggle` opens a component picker.
 
-The CLI uses Commander.js for parsing, Zod for manifest validation, Execa for
-Git and package-manager processes, and Ora/Picocolors/Clack for terminal UX.
+The CLI uses Commander.js for parsing, Zod for manifest and state validation,
+Execa for Git and package-manager processes, Clack for interactive prompts,
+Ora for slow-operation spinners, and Picocolors for semantic terminal output.
 
 ## Component Manifest
 

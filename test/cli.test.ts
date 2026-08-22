@@ -17,19 +17,31 @@ describe('component list', () => {
   it('handles missing state', async () => {
     const directory = await tempDirectory();
     const result = await capture(() => run(['component', 'list'], directory));
-    expect(result).toEqual({ code: 0, stdout: 'No installed components.\n', stderr: '' });
+    expect(result).toEqual({ code: 0, stdout: '! No installed components.\n', stderr: '' });
   });
   it('lists sorted state', async () => {
     const directory = await tempDirectory();
     await writeFile(path.join(directory, 'ui.json'), JSON.stringify({ components: { zeta: { version: '1.0.0', path: 'zeta', repository: 'https://github.com/example/zeta.git' }, alpha: { version: '2.0.0', path: 'alpha' } } }));
     const result = await capture(() => run(['component', 'list'], directory));
-    expect(result.stdout).toBe('Installed components (2)\n\nalpha @2.0.0\n  Path: alpha\n\nzeta @1.0.0\n  Path: zeta\n  Repository: https://github.com/example/zeta.git\n');
+    expect(result.stdout).toContain('◆ UI REGISTRY  ·  component list');
+    expect(result.stdout).toContain('2 installed  ·  2 enabled  ·  0 disabled');
+    expect(result.stdout).toContain('alpha        2.0.0');
+    expect(result.stdout).toContain('zeta         1.0.0');
+    expect(result.stdout).toContain('Toggle: ui component toggle <name>');
   });
   it('supports JSON output', async () => {
     const directory = await tempDirectory();
     await writeFile(path.join(directory, 'ui.json'), JSON.stringify({ components: { button: { version: '1.0.0', path: 'components/button' } } }));
     const result = await capture(() => run(['component', 'list', '--json'], directory));
-    expect(JSON.parse(result.stdout)).toEqual([{ name: 'button', version: '1.0.0', path: 'components/button' }]);
+    expect(JSON.parse(result.stdout)).toEqual([{ name: 'button', enabled: true, version: '1.0.0', path: 'components/button' }]);
+  });
+  it('shows component status in info output', async () => {
+    const directory = await tempDirectory();
+    await writeFile(path.join(directory, 'ui.json'), JSON.stringify({ components: { button: { enabled: false, version: '1.0.0', path: 'components/button', files: [{ path: 'components/button', sha256: '' }] } } }));
+    const result = await capture(() => run(['component', 'info', 'button'], directory));
+    expect(result.code).toBe(0);
+    expect(result.stdout).toContain('button  ○ disabled');
+    expect(result.stdout).toContain('Toggle: ui component toggle button');
   });
 });
 
@@ -39,8 +51,9 @@ describe('help', () => {
     expect(result.code).toBe(0);
     expect(result.stdout).toContain('ui component add <github-url> [--version <x.y.z>] [--dry-run] [--force] [--json]');
     expect(result.stdout).toContain('ui self-update');
-    expect(result.stdout).toContain('ui component remove <name> [--json]');
-    expect(result.stdout).toContain('ui component update <name> [--json]');
+    expect(result.stdout).toContain('ui component remove [name] [--json]');
+    expect(result.stdout).toContain('ui component toggle [name] [--json]');
+    expect(result.stdout).toContain('ui component update [name] [--json]');
     expect(result.stdout).toContain('component.json must be in the repository root');
     expect(result.stdout).toContain('stable semver Git tag');
   });
@@ -59,10 +72,12 @@ describe('help', () => {
     const add = await capture(() => run(['component', 'add']));
     const remove = await capture(() => run(['component', 'remove']));
     const update = await capture(() => run(['component', 'update']));
+    const toggle = await capture(() => run(['component', 'toggle']));
     expect(info).toEqual({ code: 1, stdout: 'Usage: ui component info <name> [--json]\n', stderr: '' });
     expect(add).toEqual({ code: 1, stdout: 'Usage: ui component add <github-url> [--version <x.y.z>] [--dry-run] [--force] [--json]\n', stderr: '' });
     expect(remove).toEqual({ code: 1, stdout: 'Usage: ui component remove <name> [--json]\n', stderr: '' });
     expect(update).toEqual({ code: 1, stdout: 'Usage: ui component update <name> [--json]\n', stderr: '' });
+    expect(toggle).toEqual({ code: 1, stdout: 'Usage: ui component toggle <name> [--json]\n', stderr: '' });
   });
   it('rejects self-update outside an installed launcher', async () => {
     const installDirectory = process.env.UI_INSTALL_DIR;
@@ -104,16 +119,24 @@ describe('local Git installation', () => {
     expect(dryRun.code, dryRun.stderr).toBe(0);
     expect(JSON.parse(dryRun.stdout).components[0].name).toBe('button');
     const added = await capture(() => run(['component', 'add', repository, '--version=1.2.3'], project));
-    expect(added).toEqual({ code: 0, stdout: 'Added button@1.2.3\n', stderr: '' });
+    expect(added.code).toBe(0);
+    expect(added.stdout).toContain('Added button@1.2.3');
     expect(await readFile(path.join(project, 'components/button.tsx'), 'utf8')).toContain('Button');
     const available = await capture(() => run(['component', 'list', '--available-versions'], project));
-    expect(available.stdout).toContain('Available: 1.2.3');
+    expect(available.stdout).toContain('available 1.2.3');
+    const toggled = await capture(() => run(['component', 'toggle', 'button'], project));
+    expect(toggled.code).toBe(0);
+    expect(toggled.stdout).toContain('● enabled  →  ○ disabled');
+    expect(JSON.parse(await readFile(path.join(project, 'ui.json'), 'utf8')).components.button.enabled).toBe(false);
+    const toggledJson = await capture(() => run(['component', 'toggle', 'button', '--json'], project));
+    expect(JSON.parse(toggledJson.stdout)).toMatchObject({ name: 'button', previousStatus: 'disabled', status: 'enabled', component: { enabled: true } });
     const duplicate = await capture(() => run(['component', 'add', repository], project));
     expect(duplicate).toEqual({ code: 1, stdout: '', stderr: 'Component "button" is already installed. Use --force to overwrite it.\n' });
     const forced = await capture(() => run(['component', 'add', repository, '--force'], project));
     expect(forced.code).toBe(0);
     const removed = await capture(() => run(['component', 'remove', 'button'], project));
-    expect(removed).toEqual({ code: 0, stdout: 'Removed component "button".\n', stderr: '' });
+    expect(removed.code).toBe(0);
+    expect(removed.stdout).toContain('Removed component "button".');
     await expect(access(path.join(project, 'components/button.tsx'))).rejects.toThrow();
     const missing = await capture(() => run(['component', 'remove', 'button'], project));
     expect(missing).toEqual({ code: 1, stdout: 'Component "button" is not installed.\n', stderr: '' });
@@ -154,8 +177,10 @@ describe('local Git installation', () => {
     await exec('git', ['-C', repository, 'commit', '-qm', 'v1.1.0']);
     await exec('git', ['-C', repository, 'tag', '1.1.0']);
     const updated = await capture(() => run(['component', 'update', 'button'], project));
-    expect(updated).toEqual({ code: 0, stdout: 'Updated button@1.1.0\n', stderr: '' });
+    expect(updated.code).toBe(0);
+    expect(updated.stdout).toContain('Updated button@1.1.0');
     expect(await readFile(path.join(project, 'components/button.tsx'), 'utf8')).toContain('Button = 2');
+    expect(JSON.parse(await readFile(path.join(project, 'ui.json'), 'utf8')).components.button.enabled).toBe(true);
   });
   it('rejects invalid component.json before writing files', async () => {
     const repository = await tempDirectory();

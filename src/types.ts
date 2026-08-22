@@ -23,6 +23,7 @@ export interface InstalledFile {
 }
 
 export interface ComponentState {
+  enabled: boolean;
   version: string;
   constraint?: string;
   path: string;

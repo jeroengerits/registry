@@ -88,10 +88,11 @@ The complete command set is:
 ```text
 ui self-update
 ui component list [--json] [--available-versions]
-ui component info <name> [--json]
+ui component info [name] [--json]
 ui component add <github-url> [--version <x.y.z>] [--dry-run] [--force] [--json]
-ui component remove <name> [--json]
-ui component update <name> [--json]
+ui component remove [name] [--json]
+ui component toggle [name] [--json]
+ui component update [name] [--json]
 ```
 
 Add an exact component version with `--version`:
@@ -106,6 +107,8 @@ the latest tag is preselected.
 
 When `component info` or `component remove` is run without a name in an
 interactive terminal, the CLI opens a picker containing installed components.
+The same picker is available for `component toggle`. Toggle changes only the
+enabled status persisted in `ui.json`; it never removes or restores files.
 
 Show all available stable versions for installed components:
 

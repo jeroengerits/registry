@@ -4,7 +4,7 @@ import path from 'node:path';
 import { execa } from 'execa';
 import type { CommandResult } from '../../types.js';
 import { errorResult } from './shared.js';
-import { withSpinner } from '../ui.js';
+import { frame, outcome, withSpinner } from '../ui.js';
 
 export async function selfUpdate(): Promise<CommandResult> {
   const installDirectory = process.env.UI_INSTALL_DIR;
@@ -19,7 +19,7 @@ export async function selfUpdate(): Promise<CommandResult> {
   try {
     await copyFile(installer, temporaryInstaller);
     const result = await withSpinner('Updating UI Registry...', () => execa('sh', [temporaryInstaller], { cwd: installDirectory, env: process.env }), () => 'UI Registry updated');
-    return { output: result.stdout, exitCode: 0 };
+    return { output: frame('self-update', `${result.stdout.trim()}\n\n${outcome('UI Registry updated.')}`), exitCode: 0 };
   } catch (error) {
     const details = error as { stderr?: string; stdout?: string; message?: string };
     throw new Error(details.stderr?.trim() || details.stdout?.trim() || details.message || String(error));
