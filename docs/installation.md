@@ -35,7 +35,7 @@ and the first registry operation can happen in one command:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/jeroengerits/registry/main/install.sh \
-  | sh -s -- component add https://github.com/example/button.git --yes
+  | sh -s -- component add https://github.com/example/button.git
 ```
 
 ## Update

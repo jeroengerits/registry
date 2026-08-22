@@ -60,7 +60,7 @@ export async function resolveReferences(references: GitReference[]): Promise<Res
 
 export interface FilePlan { component: Resolved; source: string; target: string; }
 
-export async function planFiles(cwd: string, resolved: Resolved[]): Promise<FilePlan[]> {
+export async function planFiles(cwd: string, resolved: Resolved[], overwrite = new Set<string>()): Promise<FilePlan[]> {
   const plans: FilePlan[] = [];
   const targets = new Set<string>();
   for (const component of resolved) for (const file of component.manifest.files) {
@@ -69,7 +69,7 @@ export async function planFiles(cwd: string, resolved: Resolved[]): Promise<File
     await stat(source);
     if (targets.has(target)) throw new Error(`Duplicate target path ${target}.`);
     targets.add(target);
-    try { await access(safeJoin(cwd, target, 'target')); throw new Error(`Target already exists: ${target}.`); }
+    try { await access(safeJoin(cwd, target, 'target')); if (!overwrite.has(target)) throw new Error(`Target already exists: ${target}.`); }
     catch (error) { if (error instanceof Error && error.message.startsWith('Target already exists')) throw error; }
     plans.push({ component, source, target });
   }
@@ -98,9 +98,19 @@ export function aggregateDependencies(resolved: Resolved[]): Record<string, stri
 export async function applyPlans(cwd: string, state: UiState, plans: FilePlan[], dependencies: Record<string, string>): Promise<void> {
   const stage = await stageFiles(cwd, plans);
   const created: string[] = [];
+  const overwritten: { destination: string; backup: string }[] = [];
   try {
     for (const plan of plans) {
       const destination = safeJoin(cwd, plan.target, 'target');
+      try {
+        await access(destination);
+        const backup = safeJoin(stage.directory, `.backup/${plan.target}`, 'backup');
+        await mkdir(path.dirname(backup), { recursive: true });
+        await copyFile(destination, backup);
+        overwritten.push({ destination, backup });
+      } catch (error) {
+        if (!(error instanceof Error && error.message.includes('ENOENT'))) throw error;
+      }
       await mkdir(path.dirname(destination), { recursive: true });
       await copyFile(safeJoin(stage.directory, plan.target, 'staged target'), destination);
       created.push(destination);
@@ -109,6 +119,7 @@ export async function applyPlans(cwd: string, state: UiState, plans: FilePlan[],
     await installDependencies(cwd, dependencies);
   } catch (error) {
     for (const file of created) await unlink(file).catch(() => undefined);
+    for (const { destination, backup } of overwritten) await copyFile(backup, destination).catch(() => undefined);
     throw error;
   } finally {
     await rm(stage.directory, { recursive: true, force: true });

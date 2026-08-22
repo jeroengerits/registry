@@ -16,7 +16,7 @@ as `./ui`, or add the current directory to `PATH`. To install and run a command
 in one step:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/jeroengerits/registry/main/install.sh | sh -s -- component add https://github.com/example/button.git --yes
+curl -fsSL https://raw.githubusercontent.com/jeroengerits/registry/main/install.sh | sh -s -- component add https://github.com/example/button.git
 ```
 
 To refresh the installed CLI, run the installer again. The repository and
@@ -35,7 +35,7 @@ Use the installed CLI to inspect and manage the current project:
 ./ui component list
 ./ui component list --json
 ./ui component info button
-./ui component add https://github.com/example/button.git --yes
+./ui component add https://github.com/example/button.git
 ./ui self-update
 ./ui help
 ```
@@ -45,7 +45,7 @@ The same commands can be run directly from a local checkout during development:
 ```sh
 node bin/ui.js component list [--json]
 node bin/ui.js component info <name> [--json]
-node bin/ui.js component add <github-url> --yes
+node bin/ui.js component add <github-url>
 node bin/ui.js help
 ```
 

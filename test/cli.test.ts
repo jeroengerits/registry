@@ -37,7 +37,7 @@ describe('help', () => {
   it('shows the supported commands and requirements', async () => {
     const result = await capture(() => run(['help']));
     expect(result.code).toBe(0);
-    expect(result.stdout).toContain('ui component add <github-url> --yes');
+    expect(result.stdout).toContain('ui component add <github-url> [--dry-run] [--force] [--json]');
     expect(result.stdout).toContain('ui self-update');
     expect(result.stdout).toContain('component.json must be in the repository root');
     expect(result.stdout).toContain('stable semver Git tag');
@@ -56,12 +56,7 @@ describe('help', () => {
     const info = await capture(() => run(['component', 'info']));
     const add = await capture(() => run(['component', 'add']));
     expect(info).toEqual({ code: 1, stdout: 'Usage: ui component info <name> [--json]\n', stderr: '' });
-    expect(add).toEqual({ code: 1, stdout: 'Usage: ui component add <github-url> [--dry-run] [--yes] [--json]\n', stderr: '' });
-  });
-  it('requires --yes before an add can modify the project', async () => {
-    const directory = await tempDirectory();
-    const result = await capture(() => run(['component', 'add', 'https://github.com/example/button.git'], directory));
-    expect(result).toEqual({ code: 1, stdout: 'Refusing to modify files without --yes (or use --dry-run).\n', stderr: '' });
+    expect(add).toEqual({ code: 1, stdout: 'Usage: ui component add <github-url> [--dry-run] [--force] [--json]\n', stderr: '' });
   });
   it('rejects self-update outside an installed launcher', async () => {
     const installDirectory = process.env.UI_INSTALL_DIR;
@@ -102,9 +97,13 @@ describe('local Git installation', () => {
     const dryRun = await capture(() => run(['component', 'add', repository, '--dry-run', '--json'], project));
     expect(dryRun.code, dryRun.stderr).toBe(0);
     expect(JSON.parse(dryRun.stdout).components[0].name).toBe('button');
-    const added = await capture(() => run(['component', 'add', `${repository}#1.2.3`, '--yes'], project));
+    const added = await capture(() => run(['component', 'add', `${repository}#1.2.3`], project));
     expect(added.code).toBe(0);
     expect(await readFile(path.join(project, 'components/button.tsx'), 'utf8')).toContain('Button');
+    const duplicate = await capture(() => run(['component', 'add', `${repository}#1.2.3`], project));
+    expect(duplicate).toEqual({ code: 1, stdout: '', stderr: 'Component "button" is already installed. Use --force to overwrite it.\n' });
+    const forced = await capture(() => run(['component', 'add', `${repository}#1.2.3`, '--force'], project));
+    expect(forced.code).toBe(0);
   });
   it('rejects repositories without a root component.json', async () => {
     const repository = await tempDirectory();
@@ -116,7 +115,7 @@ describe('local Git installation', () => {
     await exec('git', ['-C', repository, 'commit', '-qm', 'invalid component']);
     await exec('git', ['-C', repository, 'tag', '1.0.0']);
     const project = await tempDirectory();
-    const result = await capture(() => run(['component', 'add', repository, '--yes'], project));
+    const result = await capture(() => run(['component', 'add', repository], project));
     expect(result.code).toBe(1);
     expect(result).toEqual({ code: 1, stdout: '', stderr: 'Provided source is not a component: missing component.json.\n' });
     await expect(access(path.join(project, 'ui.json'))).rejects.toThrow();
@@ -131,7 +130,7 @@ describe('local Git installation', () => {
     await exec('git', ['-C', repository, 'commit', '-qm', 'invalid manifest']);
     await exec('git', ['-C', repository, 'tag', '1.0.0']);
     const project = await tempDirectory();
-    const result = await capture(() => run(['component', 'add', repository, '--yes'], project));
+    const result = await capture(() => run(['component', 'add', repository], project));
     expect(result).toEqual({ code: 1, stdout: '', stderr: 'component.json requires schemaVersion 1, a lowercase kebab-case name, files, dependencies, and components.\n' });
     await expect(access(path.join(project, 'ui.json'))).rejects.toThrow();
   });
@@ -148,13 +147,13 @@ describe('manifest generation and recursive dependencies', () => {
   it('installs recursive dependencies and preserves npm dependency objects', async () => {
     const child = await gitRepository('child', { schemaVersion: 1, name: 'child', files: [{ source: 'src/child.ts', target: 'components/child.ts' }], dependencies: { zod: '^3.0.0' }, components: [] }, { 'src/child.ts': 'export const child = 1;\n' });
     const parent = await gitRepository('parent', { schemaVersion: 1, name: 'parent', files: [{ source: 'src/parent.ts', target: 'components/parent.ts' }], dependencies: { react: '^19.0.0' }, components: [{ repository: child, version: '^1' }] }, { 'src/parent.ts': 'export const parent = 1;\n' });
-    const project = await tempDirectory(); const result = await capture(() => run(['component', 'add', parent, '--yes'], project));
+    const project = await tempDirectory(); const result = await capture(() => run(['component', 'add', parent], project));
     expect(result.code).toBe(0); expect(await readFile(path.join(project, 'components/child.ts'), 'utf8')).toContain('child'); expect(await readFile(path.join(project, 'ui.json'), 'utf8')).toContain('"repository"');
   });
   it('detects recursive dependency cycles before writing files', async () => {
     const a = await tempDirectory(); const b = await tempDirectory();
     const make = async (directory: string, name: string, dependency: string) => { await mkdir(path.join(directory, 'src')); await writeFile(path.join(directory, 'src', `${name}.ts`), name); await writeFile(path.join(directory, 'component.json'), JSON.stringify({ schemaVersion: 1, name, files: [{ source: `src/${name}.ts`, target: `components/${name}.ts` }], dependencies: {}, components: [{ repository: dependency }] })); await exec('git', ['init', '-q', directory]); await exec('git', ['-C', directory, 'config', 'user.email', 'test@example.invalid']); await exec('git', ['-C', directory, 'config', 'user.name', 'Test']); await exec('git', ['-C', directory, 'add', '.']); await exec('git', ['-C', directory, 'commit', '-qm', name]); await exec('git', ['-C', directory, 'tag', '1.0.0']); };
-    await make(a, 'a', b); await make(b, 'b', a); const project = await tempDirectory(); const result = await capture(() => run(['component', 'add', a, '--yes'], project)); expect(result.code).toBe(1); await expect(access(path.join(project, 'components/a.ts'))).rejects.toThrow();
+    await make(a, 'a', b); await make(b, 'b', a); const project = await tempDirectory(); const result = await capture(() => run(['component', 'add', a], project)); expect(result.code).toBe(1); await expect(access(path.join(project, 'components/a.ts'))).rejects.toThrow();
   });
 });
 

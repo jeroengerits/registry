@@ -3,15 +3,20 @@ import { readState } from '../../state.js';
 import { parseGitReference } from '../../git.js';
 import { applyPlans, aggregateDependencies, errorResult, planFiles, resolveReferences } from './shared.js';
 
-export async function addComponent(cwd: string, references: string[], options: { dryRun: boolean; yes: boolean; json: boolean }): Promise<CommandResult> {
-  if (!references.length) return errorResult('Usage: ui component add <github-url> [--dry-run] [--yes] [--json]');
-  if (!options.yes && !options.dryRun) return errorResult('Refusing to modify files without --yes (or use --dry-run).');
+export async function addComponent(cwd: string, references: string[], options: { dryRun: boolean; force: boolean; json: boolean }): Promise<CommandResult> {
+  if (!references.length) return errorResult('Usage: ui component add <github-url> [--dry-run] [--force] [--json]');
   const resolved = await resolveReferences(references.map(parseGitReference));
   try {
     const names = new Set<string>();
     for (const item of resolved) { if (names.has(item.manifest.name)) throw new Error(`Duplicate component ${item.manifest.name}.`); names.add(item.manifest.name); }
     const state = (await readState(cwd)) ?? { components: {} };
-    const plans = await planFiles(cwd, resolved);
+    const alreadyInstalled = resolved.filter((item) => state.components[item.manifest.name]);
+    if (alreadyInstalled.length && !options.force) {
+      const names = alreadyInstalled.map((item) => `"${item.manifest.name}"`).join(', ');
+      throw new Error(`${alreadyInstalled.length === 1 ? 'Component' : 'Components'} ${names} ${alreadyInstalled.length === 1 ? 'is' : 'are'} already installed. Use --force to overwrite${alreadyInstalled.length === 1 ? ' it' : ' them'}.`);
+    }
+    const overwrite = new Set(alreadyInstalled.flatMap((item) => [item.manifest.files[0]?.target, ...(state.components[item.manifest.name]?.files ?? []).map((file) => file.path)].filter((target): target is string => Boolean(target))));
+    const plans = await planFiles(cwd, resolved, overwrite);
     const dependencies = aggregateDependencies(resolved);
     const result = { components: resolved.map((item) => ({ name: item.manifest.name, version: item.version, commit: item.commit, files: item.manifest.files.map((file) => file.target), dependencies })) };
     if (options.dryRun) return { output: options.json ? `${JSON.stringify(result, null, 2)}\n` : `${resolved.map((item) => `Would add ${item.manifest.name}@${item.version}`).join('\n')}\n`, exitCode: 0 };
