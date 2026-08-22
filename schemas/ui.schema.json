@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/ui.schema.json",
+  "type": "object",
+  "required": ["components"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "components": {
+      "type": "object",
+      "additionalProperties": { "$ref": "components.schema.json" }
+    }
+  },
+  "additionalProperties": false
+}

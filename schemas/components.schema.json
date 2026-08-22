@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/components.schema.json",
+  "title": "Installed component",
+  "type": "object",
+  "required": ["version", "path"],
+  "properties": {
+    "version": { "type": "string", "minLength": 1 },
+    "path": { "type": "string", "minLength": 1 }
+  },
+  "additionalProperties": false
+}
