@@ -36,6 +36,7 @@ Use the installed CLI to inspect and manage the current project:
 ./ui component list --json
 ./ui component info button
 ./ui component add https://github.com/example/button.git --yes
+./ui update
 ./ui help
 ```
 

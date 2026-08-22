@@ -40,14 +40,19 @@ curl -fsSL https://raw.githubusercontent.com/jeroengerits/registry/main/install.
 
 ## Update
 
-Run the installer again to download and build the latest CLI:
+Run the installed CLI to download and build the latest version:
+
+```sh
+./ui update
+```
+
+This preserves the launcher and replaces the cached build only after the
+download and build complete successfully. The installer can still be run
+directly when the launcher is unavailable:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/jeroengerits/registry/main/install.sh | sh
 ```
-
-The installer replaces the cached build only after the download and build
-complete successfully.
 
 ## Configuration
 

@@ -38,6 +38,7 @@ describe('help', () => {
     const result = await capture(() => run(['help']));
     expect(result.code).toBe(0);
     expect(result.stdout).toContain('ui component add <github-url> --yes');
+    expect(result.stdout).toContain('ui update');
     expect(result.stdout).toContain('component.json must be in the repository root');
     expect(result.stdout).toContain('stable semver Git tag');
   });
@@ -61,6 +62,19 @@ describe('help', () => {
     const directory = await tempDirectory();
     const result = await capture(() => run(['component', 'add', 'https://github.com/example/button.git'], directory));
     expect(result).toEqual({ code: 1, stdout: 'Refusing to modify files without --yes (or use --dry-run).\n', stderr: '' });
+  });
+  it('rejects self-update outside an installed launcher', async () => {
+    const installDirectory = process.env.UI_INSTALL_DIR;
+    const cacheDirectory = process.env.UI_CACHE_DIR;
+    delete process.env.UI_INSTALL_DIR;
+    delete process.env.UI_CACHE_DIR;
+    try {
+      const result = await capture(() => run(['update']));
+      expect(result).toEqual({ code: 1, stdout: 'Self-update is only available through an installed ui launcher.\n', stderr: '' });
+    } finally {
+      if (installDirectory === undefined) delete process.env.UI_INSTALL_DIR; else process.env.UI_INSTALL_DIR = installDirectory;
+      if (cacheDirectory === undefined) delete process.env.UI_CACHE_DIR; else process.env.UI_CACHE_DIR = cacheDirectory;
+    }
   });
 });
 

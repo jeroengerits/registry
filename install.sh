@@ -48,6 +48,8 @@ mkdir -p "$install_dir"
 launcher="$install_dir/ui"
 cat > "$launcher" <<EOF
 #!/bin/sh
+export UI_INSTALL_DIR="$install_dir"
+export UI_CACHE_DIR="$cache_dir"
 exec node "$cache_dir/bin/ui.js" "\$@"
 EOF
 chmod 755 "$launcher"
