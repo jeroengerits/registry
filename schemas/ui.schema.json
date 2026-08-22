@@ -7,7 +7,7 @@
     "$schema": { "type": "string" },
     "components": {
       "type": "object",
-      "additionalProperties": { "$ref": "components.schema.json" }
+       "additionalProperties": { "type": "object", "required": ["version", "path"], "properties": { "version": { "type": "string" }, "path": { "type": "string" }, "repository": { "type": "string" }, "files": { "type": "array" }, "dependencies": { "type": "array", "items": { "type": "object", "required": ["repository"], "properties": { "repository": { "type": "string" }, "version": { "type": "string" } } } } }, "additionalProperties": false }
     }
   },
   "additionalProperties": false
