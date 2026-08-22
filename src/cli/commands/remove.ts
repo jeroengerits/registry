@@ -4,6 +4,7 @@ import { readState, writeState } from '../../state.js';
 import { safeJoin } from '../../paths.js';
 import { errorResult } from './shared.js';
 import { withSpinner } from '../ui.js';
+import { colors } from '../ui.js';
 
 export async function removeComponent(cwd: string, name?: string, json = false): Promise<CommandResult> {
   if (!name) return errorResult('Usage: ui component remove <name> [--json]');
@@ -19,5 +20,5 @@ export async function removeComponent(cwd: string, name?: string, json = false):
     delete state.components[name];
     await writeState(cwd, state);
   }, () => `Removed ${name}`, !json);
-  return { output: json ? `${JSON.stringify({ name })}\n` : `Removed component "${name}".\n`, exitCode: 0 };
+  return { output: json ? `${JSON.stringify({ name })}\n` : `${colors.success(`Removed component "${name}".`)}\n`, exitCode: 0 };
 }

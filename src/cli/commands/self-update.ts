@@ -1,13 +1,10 @@
 import { access, copyFile, mkdtemp, rm } from 'node:fs/promises';
-import { execFile } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
-import { promisify } from 'node:util';
+import { execa } from 'execa';
 import type { CommandResult } from '../../types.js';
 import { errorResult } from './shared.js';
 import { withSpinner } from '../ui.js';
-
-const exec = promisify(execFile);
 
 export async function selfUpdate(): Promise<CommandResult> {
   const installDirectory = process.env.UI_INSTALL_DIR;
@@ -21,7 +18,7 @@ export async function selfUpdate(): Promise<CommandResult> {
   const temporaryInstaller = path.join(temporaryDirectory, 'install.sh');
   try {
     await copyFile(installer, temporaryInstaller);
-    const result = await withSpinner('Updating UI Registry...', () => exec('sh', [temporaryInstaller], { cwd: installDirectory, env: process.env }), () => 'UI Registry updated');
+    const result = await withSpinner('Updating UI Registry...', () => execa('sh', [temporaryInstaller], { cwd: installDirectory, env: process.env }), () => 'UI Registry updated');
     return { output: result.stdout, exitCode: 0 };
   } catch (error) {
     const details = error as { stderr?: string; stdout?: string; message?: string };

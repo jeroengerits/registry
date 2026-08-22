@@ -1,10 +1,9 @@
-import { execFile } from 'node:child_process';
 import { mkdtemp, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { promisify } from 'node:util';
+import { execa } from 'execa';
 
-const runGit = promisify(execFile);
+const runGit = execa;
 export interface GitReference { repository: string; version?: string; }
 export interface GitCheckout { directory: string; version: string; versions: string[]; commit: string; cleanup: () => Promise<void>; }
 

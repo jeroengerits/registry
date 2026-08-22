@@ -27,6 +27,9 @@ an already installed component. Add a specific tag with `--version`; without
 it, the latest stable tag is selected and available versions are shown.
 `--available-versions` shows all stable tags for each installed component.
 
+Interactive terminals show colored status and progress feedback; JSON and CI
+output remain plain and script-friendly.
+
 ## Component Manifest
 
 Every component repository needs a root `component.json`:

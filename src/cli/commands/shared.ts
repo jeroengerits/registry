@@ -1,15 +1,14 @@
 import { access, copyFile, mkdir, mkdtemp, rm, stat, unlink } from 'node:fs/promises';
 import path from 'node:path';
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
+import { execa } from 'execa';
 import type { ComponentManifest, UiState } from '../../types.js';
 import { writeState } from '../../state.js';
 import { checkoutGit, parseGitReference, satisfies, type GitReference } from '../../git.js';
 import { readComponentManifest } from '../../registry.js';
 import { safeJoin, safeRelativePath } from '../../paths.js';
+import { colors } from '../ui.js';
 
-const exec = promisify(execFile);
-export const errorResult = (message: string) => ({ output: `${message}\n`, exitCode: 1 });
+export const errorResult = (message: string) => ({ output: `${colors.error(message)}\n`, exitCode: 1 });
 async function packageManager(cwd: string): Promise<'npm' | 'pnpm' | 'yarn' | 'bun'> {
   for (const [file, manager] of [['pnpm-lock.yaml', 'pnpm'], ['yarn.lock', 'yarn'], ['bun.lockb', 'bun'], ['package-lock.json', 'npm']] as const) {
     try { await access(path.join(cwd, file)); return manager; } catch { /* continue */ }
@@ -21,7 +20,7 @@ export async function installDependencies(cwd: string, dependencies: Record<stri
   const names = Object.keys(dependencies).sort().map((name) => `${name}@${dependencies[name]}`);
   if (!names.length) return;
   const manager = await packageManager(cwd);
-  await exec(manager === 'npm' ? 'npm' : manager, manager === 'npm' ? ['install', '--save', ...names] : ['add', ...names], { cwd });
+  await execa(manager === 'npm' ? 'npm' : manager, manager === 'npm' ? ['install', '--save', ...names] : ['add', ...names], { cwd });
 }
 
 export interface Resolved { manifest: ComponentManifest; reference: GitReference; directory: string; version: string; availableVersions: string[]; commit: string; cleanup: () => Promise<void>; }

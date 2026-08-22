@@ -1,18 +1,66 @@
 import process from 'node:process';
+import { Command, CommanderError } from 'commander';
 import { addComponent, help, infoComponent, listComponent, removeComponent, selfUpdate, updateComponent } from './commands.js';
+import type { CommandResult } from '../types.js';
+
+function unknownCommand(): CommandResult {
+  return { output: 'Unknown command. Run "ui help" for available commands.\n', exitCode: 1 };
+}
 
 export async function run(args: string[], cwd = process.cwd()): Promise<number> {
-  const json = args.includes('--json'); const versionIndex = args.findIndex((arg) => arg === '--version' || arg.startsWith('--version=')); const inlineVersion = versionIndex > -1 && args[versionIndex].startsWith('--version=') ? args[versionIndex].slice('--version='.length) : undefined; const version = versionIndex > -1 ? inlineVersion ?? args[versionIndex + 1] : undefined; const versionValueIndex = inlineVersion !== undefined ? -1 : versionIndex + 1; const positional = args.filter((arg, index) => !arg.startsWith('--') && !(versionIndex > -1 && index === versionValueIndex)); let result;
+  if (!args.length) { process.stdout.write(help().output); return 0; }
+  let result: CommandResult | undefined;
+  const program = new Command()
+    .name('ui')
+    .description('Install and manage components from Git repositories.')
+    .showSuggestionAfterError()
+    .exitOverride()
+    .configureOutput({ writeOut: () => undefined, writeErr: () => undefined });
+
+  program.command('help').description('Show command help.').action(() => { result = help(); });
+  program.command('self-update').description('Update the installed UI Registry CLI.').action(async () => { result = await selfUpdate(); });
+
+  const component = program.command('component').description('Manage installed components.');
+  component.command('list')
+    .description('List installed components.')
+    .option('--json', 'Print machine-readable JSON.')
+    .option('--available-versions', 'Show all stable Git tags.')
+    .action(async (options: { json?: boolean; availableVersions?: boolean }) => { result = await listComponent(cwd, Boolean(options.json), Boolean(options.availableVersions)); });
+  component.command('info [name]')
+    .description('Show an installed component.')
+    .option('--json', 'Print machine-readable JSON.')
+    .action(async (name: string | undefined, options: { json?: boolean }) => { result = await infoComponent(cwd, name, Boolean(options.json)); });
+  component.command('add [repositories...]')
+    .description('Install one or more components.')
+    .option('--version <version>', 'Install an exact stable Git tag.')
+    .option('--dry-run', 'Preview changes without writing files.')
+    .option('--force', 'Overwrite an installed component.')
+    .option('--json', 'Print machine-readable JSON.')
+    .action(async (repositories: string[], options: { version?: string; dryRun?: boolean; force?: boolean; json?: boolean }) => {
+      result = await addComponent(cwd, repositories ?? [], { dryRun: Boolean(options.dryRun), force: Boolean(options.force), update: false, version: options.version, json: Boolean(options.json) });
+    });
+  component.command('remove [name]')
+    .description('Remove an installed component and its files.')
+    .option('--json', 'Print machine-readable JSON.')
+    .action(async (name: string | undefined, options: { json?: boolean }) => { result = await removeComponent(cwd, name, Boolean(options.json)); });
+  component.command('update [name]')
+    .description('Update to the newest compatible Git tag.')
+    .option('--json', 'Print machine-readable JSON.')
+    .action(async (name: string | undefined, options: { json?: boolean }) => { result = await updateComponent(cwd, name, Boolean(options.json)); });
+
   try {
-    if (positional[0] === 'help' || positional.length === 0) result = help();
-    else if (positional[0] === 'self-update') result = await selfUpdate();
-    else if (positional[0] === 'component' && positional[1] === 'list') result = await listComponent(cwd, json, args.includes('--available-versions'));
-    else if (positional[0] === 'component' && positional[1] === 'info') result = await infoComponent(cwd, positional[2], json);
-    else if (positional[0] === 'component' && positional[1] === 'add') result = versionIndex > -1 && !version ? { output: 'The --version option requires a value.\n', exitCode: 1 } : await addComponent(cwd, positional.slice(2), { dryRun: args.includes('--dry-run'), force: args.includes('--force'), update: false, version, json });
-    else if (positional[0] === 'component' && positional[1] === 'remove') result = await removeComponent(cwd, positional[2], json);
-    else if (positional[0] === 'component' && positional[1] === 'update') result = await updateComponent(cwd, positional[2], json);
-    else result = { output: 'Unknown command. Run "ui help" for available commands.\n', exitCode: 1 };
-    process.stdout.write(result.output); return result.exitCode;
-  } catch (error) { process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`); return 1; }
+    await program.parseAsync(args, { from: 'user' });
+  } catch (error) {
+    if (error instanceof CommanderError) {
+      result = error.code === 'commander.unknownCommand' ? unknownCommand() : { output: `${error.message}\n`, exitCode: error.exitCode || 1 };
+    } else {
+      process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
+      return 1;
+    }
+  }
+  const output = result ?? unknownCommand();
+  process.stdout.write(output.output);
+  return output.exitCode;
 }
+
 if (import.meta.url === `file://${process.argv[1]}`) run(process.argv.slice(2)).then((code) => { process.exitCode = code; });
