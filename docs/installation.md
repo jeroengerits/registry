@@ -15,7 +15,7 @@ The installer requires:
 - `curl` or `wget`;
 - `tar`.
 
-The current release is `v0.0.2`. The installer builds the CLI locally from the
+The current release is `v0.0.3`. The installer builds the CLI locally from the
 selected repository branch, so Node.js is also required for self-updates.
 
 It writes the launcher to `./ui` and the built CLI to `./.ui-registry`, relative
@@ -88,17 +88,15 @@ The complete command set is:
 ```text
 ui self-update
 ui component list [--json] [--available-versions]
-ui component info [name] [--json]
 ui component add <github-url> [--version <x.y.z>] [--dry-run] [--force] [--json]
 ui component remove [name] [--json]
-ui component toggle [name] [--json]
 ui component update [name] [--json]
 ```
 
-Running `./ui component` without a subcommand opens a Clack command picker in
-an interactive terminal. Selecting `add` asks for the repository URL and then
-continues through the normal version picker and install flow. Non-interactive
-output prints the component command reference instead of prompting.
+Running `./ui` or `./ui component` in an interactive terminal opens the Clack
+component dashboard. Select a component to inspect it, enable or disable it,
+update it, or remove it. Non-interactive output prints the component command
+reference instead of prompting.
 
 Add an exact component version with `--version`:
 
@@ -110,10 +108,8 @@ If `--version` is omitted, the latest stable tag is selected and the available
 versions are shown. In an interactive terminal, you can choose another tag;
 the latest tag is preselected.
 
-When `component info` or `component remove` is run without a name in an
-interactive terminal, the CLI opens a picker containing installed components.
-The same picker is available for `component toggle`. Toggle changes only the
-enabled status persisted in `ui.json`; it never removes or restores files.
+The dashboard's enable/disable action changes only the enabled status persisted
+in `ui.json`; it never removes or restores files.
 
 Show all available stable versions for installed components:
 

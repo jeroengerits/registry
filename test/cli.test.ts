@@ -53,7 +53,6 @@ describe('help', () => {
     expect(result.stdout).toContain('ui component add <github-url> [--version <x.y.z>] [--dry-run] [--force] [--json]');
     expect(result.stdout).toContain('ui self-update');
     expect(result.stdout).toContain('ui component remove [name] [--json]');
-    expect(result.stdout).toContain('ui component toggle [name] [--json]');
     expect(result.stdout).toContain('ui component update [name] [--json]');
     expect(result.stdout).toContain('component.json must be in the repository root');
     expect(result.stdout).toContain('stable semver Git tag');
@@ -68,7 +67,7 @@ describe('help', () => {
     const result = await capture(() => run(['component']));
     expect(result.code).toBe(0);
     expect(result.stdout).toContain('Component commands');
-    expect(result.stdout).toContain('ui component toggle [name] [--json]');
+    expect(result.stdout).toContain('ui component update [name] [--json]');
   });
   it('rejects unknown commands with a useful usage message', async () => {
     const result = await capture(() => run(['component', 'unknown']));
@@ -105,6 +104,7 @@ describe('help', () => {
     expect(updated).toEqual({ body: 'Current  v0.0.1\nLatest   v0.0.2\nRemoving installed version: 0.0.1\nInstalling latest version: 0.0.2', current: false });
     const current = formatSelfUpdateDetails('Checking installed version: 0.0.1\nChecking latest version: 0.0.1\nUI Registry is already up to date at v0.0.1.');
     expect(current).toEqual({ body: 'Current  v0.0.1\nLatest   v0.0.1\nUI Registry is already up to date at v0.0.1.', current: true });
+    expect(formatSelfUpdateDetails('Checking latest version: 0.0.2\nInstalling latest version: 0.0.2', '0.0.1')).toEqual({ body: 'Current  v0.0.1\nLatest   v0.0.2\nInstalling latest version: 0.0.2', current: false });
   });
 });
 

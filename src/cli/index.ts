@@ -1,8 +1,8 @@
 import process from 'node:process';
 import { Command, CommanderError } from 'commander';
-import { addComponent, componentHelp, help, infoComponent, listComponent, removeComponent, selfUpdate, toggleComponent, updateComponent } from './commands.js';
+import { addComponent, componentDashboard, componentHelp, help, infoComponent, listComponent, removeComponent, selfUpdate, toggleComponent, updateComponent } from './commands.js';
 import type { CommandResult } from '../types.js';
-import { chooseComponentCommand, interactive, promptRepository } from './ui.js';
+import { interactive } from './ui.js';
 
 /** Converts Commander unknown-command failures into the CLI's stable message. */
 function unknownCommand(): CommandResult {
@@ -11,7 +11,7 @@ function unknownCommand(): CommandResult {
 
 /** Parses CLI arguments and dispatches the selected command. */
 export async function run(args: string[], cwd = process.cwd()): Promise<number> {
-  if (!args.length) { process.stdout.write(help().output); return 0; }
+  const commandArgs = args.length ? args : interactive() ? ['component'] : ['help'];
   let result: CommandResult | undefined;
   const program = new Command()
     .name('ui')
@@ -26,13 +26,7 @@ export async function run(args: string[], cwd = process.cwd()): Promise<number> 
   const component = program.command('component').description('Manage installed components.');
   component.action(async () => {
     if (!interactive()) { result = componentHelp(); return; }
-    const command = await chooseComponentCommand();
-    if (command === 'list') result = await listComponent(cwd, false);
-    if (command === 'info') result = await infoComponent(cwd);
-    if (command === 'remove') result = await removeComponent(cwd);
-    if (command === 'toggle') result = await toggleComponent(cwd);
-    if (command === 'update') result = await updateComponent(cwd);
-    if (command === 'add') result = await addComponent(cwd, [await promptRepository()], { dryRun: false, force: false, update: false, json: false });
+    result = await componentDashboard(cwd);
   });
   component.command('list')
     .description('List installed components.')
@@ -66,7 +60,7 @@ export async function run(args: string[], cwd = process.cwd()): Promise<number> 
     .action(async (name: string | undefined, options: { json?: boolean }) => { result = await updateComponent(cwd, name, Boolean(options.json)); });
 
   try {
-    await program.parseAsync(args, { from: 'user' });
+    await program.parseAsync(commandArgs, { from: 'user' });
   } catch (error) {
     if (error instanceof CommanderError) {
       result = error.code === 'commander.unknownCommand' || error.code === 'commander.excessArguments' ? unknownCommand() : { output: `${error.message}\n`, exitCode: error.exitCode || 1 };

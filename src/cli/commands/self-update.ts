@@ -1,4 +1,4 @@
-import { access, copyFile, mkdtemp, rm } from 'node:fs/promises';
+import { access, copyFile, mkdtemp, readFile, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { execa } from 'execa';
@@ -7,11 +7,11 @@ import { errorResult } from './shared.js';
 import { frame, outcome, withSpinner } from '../ui.js';
 
 /** Converts installer progress into a compact version comparison and stage list. */
-export function formatSelfUpdateDetails(details: string): { body: string; current: boolean } {
+export function formatSelfUpdateDetails(details: string, currentVersion?: string): { body: string; current: boolean } {
   const lines = details.split('\n').map((line) => line.trim()).filter(Boolean);
-  const installed = lines.find((line) => line.startsWith('Checking installed version:'))?.replace('Checking installed version:', '').trim();
+  const installed = lines.find((line) => line.startsWith('Checking installed version:'))?.replace('Checking installed version:', '').trim() ?? currentVersion;
   const latest = lines.find((line) => line.startsWith('Checking latest version:'))?.replace('Checking latest version:', '').trim();
-  const stages = lines.filter((line) => !line.startsWith('Checking installed version:') && !line.startsWith('Checking latest version:'));
+  const stages = lines.filter((line) => /^(Removing installed version:|Installing latest version:|UI Registry is already up to date)/.test(line));
   const versions = [`Current  ${installed ? `v${installed}` : 'unknown'}`, `Latest   ${latest ? `v${latest}` : 'unknown'}`];
   return { body: [...versions, ...stages].join('\n'), current: /already up to date/i.test(details) };
 }
@@ -33,13 +33,14 @@ export async function selfUpdate(): Promise<CommandResult> {
   const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), 'ui-update-'));
   const temporaryInstaller = path.join(temporaryDirectory, 'install.sh');
   try {
+    const currentVersion = await readFile(path.join(cacheDirectory, 'package.json'), 'utf8').then((content) => JSON.parse(content).version as string).catch(() => undefined);
     // Prepare an isolated installer path for the launcher process.
     await copyFile(installer, temporaryInstaller);
     // Run the installer through Execa and surface its output in the result.
-    const result = await withSpinner('Updating UI Registry...', () => execa('sh', [temporaryInstaller], { cwd: installDirectory, env: process.env }), () => 'UI Registry updated');
+    const result = await withSpinner('Checking for UI Registry updates...', () => execa('sh', [temporaryInstaller], { cwd: installDirectory, env: { ...process.env, UI_SELF_UPDATE: '1' } }), () => 'Version check complete');
     // Prefer installer output while keeping success useful if it is silent.
     const details = result.stdout.trim() || 'Installer and cached CLI refreshed.';
-    const formatted = formatSelfUpdateDetails(details);
+    const formatted = formatSelfUpdateDetails(details, currentVersion);
     const message = formatted.current ? 'UI Registry is already up to date.' : 'UI Registry updated.';
     return { output: frame('self-update', `${formatted.body}\n\n${outcome(message)}`, 'Next: ui help'), exitCode: 0 };
   } catch (error) {

@@ -70,9 +70,11 @@ exec node "$cache_dir/bin/ui.js" "\$@"
 EOF
 chmod 755 "$launcher"
 
-printf 'Installed ui to %s\n' "$launcher"
-printf '\nWelcome to UI Registry.\n\n'
-printf 'Run %s help for full command information.\n\n' "$launcher"
+if [ "${UI_SELF_UPDATE:-0}" != '1' ]; then
+  printf 'Installed ui to %s\n' "$launcher"
+  printf '\nWelcome to UI Registry.\n\n'
+  printf 'Run %s help for full command information.\n\n' "$launcher"
+fi
 
 if [ "$#" -gt 0 ]; then
   exec "$launcher" "$@"
