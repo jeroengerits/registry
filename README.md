@@ -18,15 +18,12 @@ configuration and troubleshooting.
 ```sh
 ./ui
 ./ui init
-./ui hooks
 ./ui update
 ./ui doctor
 ./ui component list [--json] [--versions]
 ./ui component add <repository> [--version <version>] [--dry-run] [--force] [--json]
 ./ui component remove [name] [--json]
 ./ui component info <name> [--json]
-./ui component enable <name> [--json]
-./ui component disable <name> [--json]
 ./ui component update [name] [--json]
 ./ui component outdated [--json]
 ./ui component versions <name> [--json]
@@ -38,7 +35,7 @@ components with a GitHub URL or shorthand such as `owner/repository`.
 `component versions` lists stable versions for one installed component.
 
 Every command performs one operation and returns. `./ui component list` lists
-components. Details, enable/disable, and removal require an explicit name.
+components. Details and removal require an explicit name.
 
 Disabled components remain installed and can still be inspected, updated, or
 removed. Existing `ui.json` files treat components without an `enabled` field

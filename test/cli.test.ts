@@ -57,7 +57,6 @@ describe('help', () => {
     expect(result.code).toBe(0);
     expect(result.stdout).toContain('ui component add');
     expect(result.stdout).toContain('update                Update UI Registry');
-    expect(result.stdout).toContain('hooks                 Manage project hooks');
     expect(result.stdout).toContain('component outdated');
     expect(result.stdout).not.toContain('component.json must be in the repository root');
   });
@@ -73,7 +72,7 @@ describe('help', () => {
     expect(result.stdout).toContain('owner/repository');
   });
   it('shows focused help for every documented command', async () => {
-    const commands = ['init', 'update', 'hooks', 'doctor', 'component', 'component list', 'component info', 'component add', 'component remove', 'component update', 'component outdated', 'component versions', 'component enable', 'component disable'];
+    const commands = ['init', 'update', 'doctor', 'component', 'component list', 'component info', 'component add', 'component remove', 'component update', 'component outdated', 'component versions'];
     for (const command of commands) {
       const result = await capture(() => run(['help', ...command.split(' ')]));
       expect(result.code, command).toBe(0);
@@ -86,10 +85,6 @@ describe('help', () => {
     expect(JSON.parse(initialized.stdout)).toMatchObject({ initialized: true, file: 'ui.json' });
     const diagnosis = await capture(() => run(['doctor', '--json'], directory));
     expect(JSON.parse(diagnosis.stdout).checks).toEqual([{ check: 'Project initialized', status: 'ok' }]);
-  });
-  it('shows the hooks namespace status', async () => {
-    const result = await capture(() => run(['hooks']));
-    expect(result).toEqual({ code: 0, stdout: expect.stringContaining('No hooks configured yet.'), stderr: '' });
   });
   it('initializes a project state file once', async () => {
     const directory = await tempDirectory();
