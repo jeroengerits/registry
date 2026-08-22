@@ -4,6 +4,8 @@ import { availableVersions, parseGitReference, updateConstraint } from '../../..
 import { applyPlans, aggregateDependencies, errorResult, planFiles, resolveReferences } from '../shared.js';
 import { chooseVersion, frame, interactive, outcome, withSpinner } from '../../ui.js';
 import { present } from '../../presentation.js';
+import { saveRollback } from './revert.js';
+import { renderUpdateIntent, renderUpdateReport, updateProgress, type UpdateItem } from '../../update-flow.js';
 
 /** Resolves, validates, stages, and installs one or more components. */
 export async function addComponent(cwd: string, references: string[], options: { dryRun: boolean; force: boolean; update: boolean; version?: string; json: boolean; command?: string }): Promise<CommandResult> {
@@ -38,6 +40,7 @@ export async function addComponent(cwd: string, references: string[], options: {
     const unchangedRoots = options.update ? roots.filter((item) => item.version === state.components[item.manifest.name]?.version) : [];
     if (unchangedRoots.length) throw new Error(`${unchangedRoots.map((item) => `Component "${item.manifest.name}" is already at the latest compatible version (${item.version}).`).join('\n')}`);
     const selected = options.update ? resolved.filter((item) => rootRepositories.has(item.reference.repository) || item.version !== state.components[item.manifest.name]?.version) : resolved;
+    if (options.update && loadedState) await saveRollback(cwd, loadedState);
     const alreadyInstalled = selected.filter((item) => state.components[item.manifest.name]);
     if (alreadyInstalled.length && !options.force) {
       const names = alreadyInstalled.map((item) => `"${item.manifest.name}"`).join(', ');
@@ -50,15 +53,16 @@ export async function addComponent(cwd: string, references: string[], options: {
       const current = new Set(item.manifest.files.map((file) => file.target));
       return (state.components[item.manifest.name]?.files ?? []).map((file) => file.path).filter((file) => !current.has(file));
     });
-    const result = { components: selected.map((item) => ({ name: item.manifest.name, version: item.version, availableVersions: item.availableVersions, commit: item.commit, files: item.manifest.files.map((file) => file.target), dependencies })) };
+    const changes: UpdateItem[] = selected.map((item) => ({ name: item.manifest.name, current: `v${loadedState?.components[item.manifest.name]?.version ?? 'new'}`, next: `v${item.version}`, status: 'updated' }));
+    const result = { components: selected.map((item) => ({ name: item.manifest.name, version: item.version, availableVersions: item.availableVersions, commit: item.commit, files: item.manifest.files.map((file) => file.target), dependencies })), updates: changes };
     if (options.dryRun) {
       const preview = [`${selected.length} component${selected.length === 1 ? '' : 's'} would be changed`, '', ...selected.map((item) => `  ${item.manifest.name.padEnd(16)} v${item.version}`), '', outcome('Dry run complete. No files changed.', 'warning')];
       return present(options.json, result, frame(options.command ?? 'component add', preview.join('\n'), 'Next: remove --dry-run to apply'));
     }
     for (const item of selected) state.components[item.manifest.name] = { enabled: state.components[item.manifest.name]?.enabled ?? true, repository: item.reference.repository, constraint: updateConstraint(item.version, item.reference.version), version: item.version, path: item.manifest.files[0]?.target ?? '', files: item.manifest.files.map((file) => ({ path: file.target, sha256: '' })), dependencies: item.manifest.components };
-    await withSpinner('Installing component files...', () => applyPlans(cwd, state, plans, dependencies, obsolete, previousState), () => 'Component files installed', !options.json);
+    await withSpinner(options.update ? updateProgress(changes) : 'Installing component files...', () => applyPlans(cwd, state, plans, dependencies, obsolete, previousState), () => 'Component files installed', !options.json);
     const action = options.update ? 'Updated' : 'Added';
-    const messages = [`${selected.length} component${selected.length === 1 ? '' : 's'} ${options.update ? 'updated' : 'added'}`, '', ...selected.flatMap((item) => [outcome(`${action} ${item.manifest.name}@${item.version}`), ...(showAvailableVersions ? [`  Available: ${item.availableVersions.join(', ') || 'none'}`] : [])])];
+    const messages = [`${selected.length} component${selected.length === 1 ? '' : 's'} ${options.update ? 'updated' : 'added'}`, ...(options.update ? ['', renderUpdateIntent(changes), '', renderUpdateReport(changes, 'ui component revert')] : []), '', ...selected.flatMap((item) => [outcome(`${action} ${item.manifest.name}@${item.version}`), ...(showAvailableVersions ? [`  Available: ${item.availableVersions.join(', ') || 'none'}`] : [])])];
      return present(options.json, result, frame(options.command ?? `component ${options.update ? 'update' : 'add'}`, messages.join('\n'), 'Next: ui component'));
   } finally { await Promise.all(resolved.map((item) => item.cleanup())); }
 }

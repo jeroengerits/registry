@@ -336,8 +336,17 @@ describe('local Git installation', () => {
     expect(updated.code).toBe(0);
     expect(updated.stdout).toContain('Updated button@1.1.0');
     expect(updated.stdout).toContain('1 component updated');
+    expect(updated.stdout).toContain('Current');
+    expect(updated.stdout).toContain('v1.0.0');
+    expect(updated.stdout).toContain('v1.1.0');
+    expect(updated.stdout).toContain('ui component revert');
     expect(await readFile(path.join(project, 'components/button.tsx'), 'utf8')).toContain('Button = 2');
     expect(JSON.parse(await readFile(path.join(project, 'ui.json'), 'utf8')).components.button.enabled).toBe(true);
+    const reverted = await capture(() => run(['component', 'revert'], project));
+    expect(reverted.code).toBe(0);
+    expect(reverted.stdout).toContain('reverted');
+    expect(await readFile(path.join(project, 'components/button.tsx'), 'utf8')).toContain('Button = 1');
+    expect(JSON.parse(await readFile(path.join(project, 'ui.json'), 'utf8')).components.button.version).toBe('1.0.0');
   });
   it('removes stale files and rolls the update back when dependencies fail', async () => {
     const repository = await tempDirectory();

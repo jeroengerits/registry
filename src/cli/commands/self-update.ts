@@ -5,7 +5,8 @@ import { execa } from 'execa';
 import type { CommandResult } from '../../types.js';
 import { isRecord, errorMessage } from '../../shared.js';
 import { errorResult } from './shared.js';
-import { frame, outcome, table, withSpinner } from '../ui.js';
+import { frame, outcome, withSpinner } from '../ui.js';
+import { renderUpdateReport } from '../update-flow.js';
 
 /** Extracts a version only when the cached package JSON has the expected shape. */
 function versionFromPackage(value: unknown): string | undefined {
@@ -27,7 +28,7 @@ export function formatSelfUpdateDetails(details: string, currentVersion?: string
   const installed = lines.find((line) => line.startsWith('Checking installed version:'))?.replace('Checking installed version:', '').trim() ?? currentVersion;
   const latest = lines.find((line) => line.startsWith('Checking latest version:'))?.replace('Checking latest version:', '').trim();
   const stages = lines.filter((line) => /^(Removing installed version:|Installing latest version:|UI Registry is already up to date)/.test(line));
-  const versions = table(['Current', 'Latest'], [[installed ? `v${installed}` : 'unknown', latest ? `v${latest}` : 'unknown']]);
+  const versions = renderUpdateReport([{ name: 'UI Registry', current: installed ? `v${installed}` : 'unknown', next: latest ? `v${latest}` : 'unknown', status: /already up to date/i.test(details) ? 'unchanged' : 'updated' }]);
   return { body: [versions, ...stages].join('\n\n'), current: /already up to date/i.test(details) };
 }
 
@@ -55,7 +56,8 @@ export async function selfUpdate(): Promise<CommandResult> {
     // Prepare an isolated installer path for the launcher process.
     await copyFile(installer, temporaryInstaller);
     // Run the installer through Execa and surface its output in the result.
-    const result = await withSpinner('Checking for UI Registry updates...', () => execa('sh', [temporaryInstaller], { cwd: installDirectory, env: { ...process.env, UI_SELF_UPDATE: '1' } }), () => 'Version check complete');
+    const currentLabel = currentVersion ? `v${currentVersion}` : 'unknown';
+    const result = await withSpinner(`Current version: ${currentLabel}\nChecking for UI Registry updates...`, () => execa('sh', [temporaryInstaller], { cwd: installDirectory, env: { ...process.env, UI_SELF_UPDATE: '1' } }), () => 'Version check complete');
     // Prefer installer output while keeping success useful if it is silent.
     const details = result.stdout.trim() || 'Installer and cached CLI refreshed.';
     const formatted = formatSelfUpdateDetails(details, currentVersion);
