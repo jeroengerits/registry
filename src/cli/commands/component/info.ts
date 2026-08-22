@@ -1,6 +1,7 @@
 import type { CommandResult } from '../../../types.js';
 import { readState } from '../../../state.js';
 import { errorResult } from '../shared.js';
+import { present } from '../../presentation.js';
 import { frame, outcome, status, table } from '../../ui.js';
 
 /** Shows one component's persisted metadata and enabled state. */
@@ -14,7 +15,7 @@ export async function infoComponent(cwd: string, name?: string, json = false): P
   // Report a useful domain error instead of failing during formatting.
   if (!component) return errorResult(`Component "${name}" is not installed.`);
   // JSON consumers receive the complete persisted record without styling.
-  if (json) return { output: `${JSON.stringify({ name, ...component }, null, 2)}\n`, exitCode: 0 };
+  if (json) return present(true, { name, ...component }, '');
   // Assemble labeled metadata for the human-readable inspection card.
   const lines = [
     `${name}  ${status(component.enabled)}`,

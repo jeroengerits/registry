@@ -1,4 +1,4 @@
-import { mkdtemp, rm, writeFile, mkdir, readFile, access } from 'node:fs/promises';
+import { mkdtemp, rm, writeFile, mkdir, readFile, access, symlink, readdir } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import os from 'node:os';
@@ -6,9 +6,10 @@ import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { run } from '../src/cli/index.js';
 import { validateState } from '../src/state.js';
-import { parseGitReference } from '../src/git.js';
+import { availableVersions, parseGitReference, satisfies } from '../src/git.js';
 import { formatSelfUpdateDetails } from '../src/cli/commands/self-update.js';
 import { errorMessage, isErrnoError, isRecord } from '../src/shared.js';
+import { copySafeFile, safeFilePath } from '../src/filesystem.js';
 
 const temporaryDirectories: string[] = [];
 const exec = promisify(execFile);
@@ -70,6 +71,21 @@ describe('help', () => {
     expect(result.code).toBe(0);
     expect(result.stdout).toContain('ui component add <repository> [options]');
     expect(result.stdout).toContain('owner/repository');
+  });
+  it('shows focused help for every documented command', async () => {
+    const commands = ['init', 'update', 'hooks', 'doctor', 'component', 'component list', 'component info', 'component add', 'component remove', 'component update', 'component outdated', 'component versions', 'component enable', 'component disable'];
+    for (const command of commands) {
+      const result = await capture(() => run(['help', ...command.split(' ')]));
+      expect(result.code, command).toBe(0);
+      expect(result.stdout, command).not.toContain('Unknown help topic');
+    }
+  });
+  it('keeps JSON command output independently parseable', async () => {
+    const directory = await tempDirectory();
+    const initialized = await capture(() => run(['init', '--json'], directory));
+    expect(JSON.parse(initialized.stdout)).toMatchObject({ initialized: true, file: 'ui.json' });
+    const diagnosis = await capture(() => run(['doctor', '--json'], directory));
+    expect(JSON.parse(diagnosis.stdout).checks).toEqual([{ check: 'Project initialized', status: 'ok' }]);
   });
   it('shows the hooks namespace status', async () => {
     const result = await capture(() => run(['hooks']));
@@ -161,6 +177,29 @@ describe('shared helpers', () => {
 });
 
 describe('local Git installation', () => {
+  it('uses standard caret compatibility semantics', () => {
+    expect(satisfies('0.9.0', '^0')).toBe(true);
+    expect(satisfies('1.0.0', '^0')).toBe(false);
+    expect(satisfies('0.1.9', '^0.1')).toBe(true);
+    expect(satisfies('0.2.0', '^0.1')).toBe(false);
+    expect(satisfies('0.0.1', '^0.0.1')).toBe(true);
+    expect(satisfies('0.0.2', '^0.0.1')).toBe(false);
+  });
+
+  it('reads stable versions from remote tag metadata without cloning', async () => {
+    const repository = await tempDirectory();
+    await writeFile(path.join(repository, 'README.md'), 'fixture\n');
+    await exec('git', ['init', '-q', repository]);
+    await exec('git', ['-C', repository, 'config', 'user.email', 'test@example.invalid']);
+    await exec('git', ['-C', repository, 'config', 'user.name', 'Test']);
+    await exec('git', ['-C', repository, 'add', '.']);
+    await exec('git', ['-C', repository, 'commit', '-qm', 'fixture']);
+    await exec('git', ['-C', repository, 'tag', 'v1.2.3']);
+    await exec('git', ['-C', repository, 'tag', '1.10.0']);
+    await exec('git', ['-C', repository, 'tag', 'next']);
+    expect(await availableVersions(repository)).toEqual(['1.10.0', '1.2.3']);
+  });
+
   it('normalizes references and installs a tagged fixture without network access', async () => {
     const repository = await tempDirectory();
     await mkdir(path.join(repository, 'src'), { recursive: true });
@@ -203,6 +242,46 @@ describe('local Git installation', () => {
     const missing = await capture(() => run(['component', 'remove', 'button'], project));
     expect(missing).toEqual({ code: 1, stdout: 'Component "button" is not installed.\n', stderr: '' });
   });
+
+  it('records file hashes and doctor detects changed and missing files', async () => {
+    const repository = await tempDirectory();
+    await mkdir(path.join(repository, 'src'), { recursive: true });
+    await writeFile(path.join(repository, 'src/button.tsx'), 'export const Button = 1;\n');
+    await writeFile(path.join(repository, 'component.json'), JSON.stringify({ schemaVersion: 1, name: 'button', files: [{ source: 'src/button.tsx', target: 'components/button.tsx' }], dependencies: {}, components: [] }));
+    await exec('git', ['init', '-q', repository]);
+    await exec('git', ['-C', repository, 'config', 'user.email', 'test@example.invalid']);
+    await exec('git', ['-C', repository, 'config', 'user.name', 'Test']);
+    await exec('git', ['-C', repository, 'add', '.']);
+    await exec('git', ['-C', repository, 'commit', '-qm', 'fixture']);
+    await exec('git', ['-C', repository, 'tag', '1.0.0']);
+    const project = await tempDirectory();
+    expect((await capture(() => run(['component', 'add', repository], project))).code).toBe(0);
+    const state = JSON.parse(await readFile(path.join(project, 'ui.json'), 'utf8'));
+    expect(state.components.button.files[0].sha256).toMatch(/^[a-f0-9]{64}$/);
+    expect((await capture(() => run(['doctor'], project))).code).toBe(0);
+    await writeFile(path.join(project, 'components/button.tsx'), 'changed\n');
+    expect((await capture(() => run(['doctor'], project))).stdout).toContain('changed');
+    await rm(path.join(project, 'components/button.tsx'));
+    expect((await capture(() => run(['doctor'], project))).stdout).toContain('missing');
+  });
+
+  it('rejects symlinked install sources and destinations', async () => {
+    const sourceRoot = await tempDirectory();
+    const outside = await tempDirectory();
+    await writeFile(path.join(outside, 'file.ts'), 'outside');
+    await symlink(path.join(outside, 'file.ts'), path.join(sourceRoot, 'file.ts'));
+    await expect(safeFilePath(sourceRoot, 'file.ts', 'source')).rejects.toThrow(/symlinks/);
+
+    const project = await tempDirectory();
+    const source = path.join(sourceRoot, 'regular.ts');
+    await writeFile(source, 'regular');
+    await symlink(outside, path.join(project, 'components'));
+    await expect(copySafeFile(source, path.join(project, 'components/file.ts'), 'file')).rejects.toThrow(/symlinks/);
+  });
+
+  it('rejects traversal paths before touching the filesystem', async () => {
+    await expect(safeFilePath(await tempDirectory(), '../outside', 'target', false)).rejects.toThrow(/safe relative path|stay within/);
+  });
   it('rejects repositories without a root component.json', async () => {
     const repository = await tempDirectory();
     await writeFile(path.join(repository, 'README.md'), 'not a component\n');
@@ -244,6 +323,49 @@ describe('local Git installation', () => {
     expect(updated.stdout).toContain('1 component updated');
     expect(await readFile(path.join(project, 'components/button.tsx'), 'utf8')).toContain('Button = 2');
     expect(JSON.parse(await readFile(path.join(project, 'ui.json'), 'utf8')).components.button.enabled).toBe(true);
+  });
+  it('removes stale files and rolls the update back when dependencies fail', async () => {
+    const repository = await tempDirectory();
+    await mkdir(path.join(repository, 'src'), { recursive: true });
+    await writeFile(path.join(repository, 'src/old.ts'), 'old\n');
+    await writeFile(path.join(repository, 'component.json'), JSON.stringify({ schemaVersion: 1, name: 'button', files: [{ source: 'src/old.ts', target: 'components/old.ts' }], dependencies: {}, components: [] }));
+    await exec('git', ['init', '-q', repository]);
+    await exec('git', ['-C', repository, 'config', 'user.email', 'test@example.invalid']);
+    await exec('git', ['-C', repository, 'config', 'user.name', 'Test']);
+    await exec('git', ['-C', repository, 'add', '.']);
+    await exec('git', ['-C', repository, 'commit', '-qm', 'initial']);
+    await exec('git', ['-C', repository, 'tag', '1.0.0']);
+    const project = await tempDirectory();
+    expect((await capture(() => run(['component', 'add', repository], project))).code).toBe(0);
+
+    await rm(path.join(repository, 'src/old.ts'));
+    await writeFile(path.join(repository, 'src/new.ts'), 'new\n');
+    await writeFile(path.join(repository, 'component.json'), JSON.stringify({ schemaVersion: 1, name: 'button', files: [{ source: 'src/new.ts', target: 'components/new.ts' }], dependencies: { 'not a valid package': '1.0.0' }, components: [] }));
+    await exec('git', ['-C', repository, 'add', '.']);
+    await exec('git', ['-C', repository, 'commit', '-qm', 'breaking update']);
+    await exec('git', ['-C', repository, 'tag', '1.1.0']);
+
+    const failed = await capture(() => run(['component', 'update', 'button'], project));
+    expect(failed.code).toBe(1);
+    expect(await readFile(path.join(project, 'components/old.ts'), 'utf8')).toBe('old\n');
+    await expect(access(path.join(project, 'components/new.ts'))).rejects.toThrow();
+    expect(JSON.parse(await readFile(path.join(project, 'ui.json'), 'utf8')).components.button.version).toBe('1.0.0');
+    expect((await readdir(project)).filter((file) => file.startsWith('.ui-stage-'))).toEqual([]);
+  });
+  it('filters outdated versions by the persisted constraint', async () => {
+    const repository = await tempDirectory();
+    await writeFile(path.join(repository, 'component.json'), JSON.stringify({ schemaVersion: 1, name: 'button', files: [], dependencies: {}, components: [] }));
+    await exec('git', ['init', '-q', repository]);
+    await exec('git', ['-C', repository, 'config', 'user.email', 'test@example.invalid']);
+    await exec('git', ['-C', repository, 'config', 'user.name', 'Test']);
+    await exec('git', ['-C', repository, 'add', '.']);
+    await exec('git', ['-C', repository, 'commit', '-qm', 'versions']);
+    await exec('git', ['-C', repository, 'tag', '1.1.0']);
+    await exec('git', ['-C', repository, 'tag', '2.0.0']);
+    const project = await tempDirectory();
+    await writeFile(path.join(project, 'ui.json'), JSON.stringify({ components: { button: { version: '1.0.0', constraint: '^1', path: '', repository } } }));
+    const outdated = await capture(() => run(['component', 'outdated', '--json'], project));
+    expect(JSON.parse(outdated.stdout)).toEqual([{ name: 'button', current: 'v1.0.0', latest: 'v1.1.0' }]);
   });
   it('rejects invalid component.json before writing files', async () => {
     const repository = await tempDirectory();

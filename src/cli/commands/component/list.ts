@@ -2,6 +2,7 @@ import type { CommandResult } from '../../../types.js';
 import { readState } from '../../../state.js';
 import { availableVersions } from '../../../git.js';
 import { colors, frame, outcome, status, table, withSpinner } from '../../ui.js';
+import { present } from '../../presentation.js';
 
 /** Lists installed components in table form or as machine-readable JSON. */
 export async function listComponent(cwd: string, json: boolean, showAvailableVersions = false): Promise<CommandResult> {
@@ -14,7 +15,7 @@ export async function listComponent(cwd: string, json: boolean, showAvailableVer
   // Fetch remote tags only when the caller explicitly asks for them.
   const components: Array<typeof installed[number] & { availableVersions?: string[] }> = showAvailableVersions ? await withSpinner('Checking available component versions...', () => Promise.all(installed.map(async (component) => ({ ...component, availableVersions: component.repository ? await availableVersions(component.repository) : [] }))), (value) => `Checked ${value.length} component${value.length === 1 ? '' : 's'}`, !json) : installed;
   // Return structured data before constructing any terminal presentation.
-  if (json) return { output: `${JSON.stringify(components, null, 2)}\n`, exitCode: 0 };
+  if (json) return present(true, components, '');
   // Keep an empty registry concise in human-readable mode.
   if (!components.length) return { output: `${outcome('No installed components.', 'warning')}\n`, exitCode: 0 };
   // Calculate the summary counts once for the compact header.

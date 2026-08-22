@@ -1,4 +1,4 @@
-import { access, copyFile, mkdir, mkdtemp, rm, stat, unlink } from 'node:fs/promises';
+import { mkdtemp, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { execa } from 'execa';
 import type { ComponentManifest, UiState } from '../../types.js';
@@ -6,14 +6,16 @@ import { writeState } from '../../state.js';
 import { checkoutGit, parseGitReference, satisfies, type GitReference } from '../../git.js';
 import { readComponentManifest } from '../../registry.js';
 import { safeJoin, safeRelativePath } from '../../paths.js';
+import { copySafeFile, projectFileExists, removeSafePath, safeFilePath, sha256File } from '../../filesystem.js';
 import { colors } from '../ui.js';
+import { isErrnoError } from '../../shared.js';
 
 /** Creates the standard failed-command result without throwing. */
 export const errorResult = (message: string) => ({ output: `${colors.error(message)}\n`, exitCode: 1 });
 /** Detects the package manager from the project's lockfile. */
 async function packageManager(cwd: string): Promise<'npm' | 'pnpm' | 'yarn' | 'bun'> {
   for (const [file, manager] of [['pnpm-lock.yaml', 'pnpm'], ['yarn.lock', 'yarn'], ['bun.lockb', 'bun'], ['package-lock.json', 'npm']] as const) {
-    try { await access(path.join(cwd, file)); return manager; } catch { /* continue */ }
+    if (await projectFileExists(cwd, file, 'lockfile')) return manager;
   }
   return 'npm';
 }
@@ -72,11 +74,10 @@ export async function planFiles(cwd: string, resolved: Resolved[], overwrite = n
   const targets = new Set<string>();
   for (const component of resolved) for (const file of component.manifest.files) {
     const target = safeRelativePath(file.target, 'target');
-    const source = safeJoin(component.directory, file.source, 'source');
-    await stat(source);
+    const source = await safeFilePath(component.directory, file.source, 'source');
     if (targets.has(target)) throw new Error(`Duplicate target path ${target}.`);
     targets.add(target);
-    try { await access(safeJoin(cwd, target, 'target')); if (!overwrite.has(target)) throw new Error(`Target already exists: ${target}.`); }
+    try { await safeFilePath(cwd, target, 'target'); if (!overwrite.has(target)) throw new Error(`Target already exists: ${target}.`); }
     catch (error) { if (error instanceof Error && error.message.startsWith('Target already exists')) throw error; }
     plans.push({ component, source, target });
   }
@@ -86,12 +87,16 @@ export async function planFiles(cwd: string, resolved: Resolved[], overwrite = n
 /** Copies planned files to a temporary staging tree before mutation. */
 async function stageFiles(cwd: string, plans: FilePlan[]): Promise<{ directory: string }> {
   const directory = await mkdtemp(path.join(cwd, '.ui-stage-'));
-  for (const plan of plans) {
-    const staged = safeJoin(directory, plan.target, 'staged target');
-    await mkdir(path.dirname(staged), { recursive: true });
-    await copyFile(plan.source, staged);
+  try {
+    for (const plan of plans) {
+      const staged = safeJoin(directory, plan.target, 'staged target');
+      await copySafeFile(plan.source, staged, 'staged file');
+    }
+    return { directory };
+  } catch (error) {
+    await rm(directory, { recursive: true, force: true });
+    throw error;
   }
-  return { directory };
 }
 
 /** Combines component dependency maps and rejects conflicting ranges. */
@@ -105,31 +110,48 @@ export function aggregateDependencies(resolved: Resolved[]): Record<string, stri
 }
 
 /** Applies staged files, state, and dependencies with rollback on failure. */
-export async function applyPlans(cwd: string, state: UiState, plans: FilePlan[], dependencies: Record<string, string>): Promise<void> {
+export async function applyPlans(cwd: string, state: UiState, plans: FilePlan[], dependencies: Record<string, string>, obsolete: string[] = [], previousState: UiState | null = state): Promise<void> {
   const stage = await stageFiles(cwd, plans);
   const created: string[] = [];
   const overwritten: { destination: string; backup: string }[] = [];
+  const removed: { destination: string; backup: string }[] = [];
   try {
+    for (const relative of obsolete) {
+      try {
+        const destination = await safeFilePath(cwd, relative, 'obsolete target');
+        const backup = safeJoin(stage.directory, `.backup/${relative}`, 'obsolete backup');
+        await copySafeFile(destination, backup, 'obsolete backup');
+        removed.push({ destination, backup });
+        await removeSafePath(destination, 'obsolete target');
+      } catch (error) {
+        if (!isErrnoError(error) || error.code !== 'ENOENT') throw error;
+      }
+    }
     for (const plan of plans) {
       const destination = safeJoin(cwd, plan.target, 'target');
       try {
-        await access(destination);
+        await safeFilePath(cwd, plan.target, 'target');
         const backup = safeJoin(stage.directory, `.backup/${plan.target}`, 'backup');
-        await mkdir(path.dirname(backup), { recursive: true });
-        await copyFile(destination, backup);
+        await copySafeFile(destination, backup, 'backup');
         overwritten.push({ destination, backup });
       } catch (error) {
-        if (!(error instanceof Error && error.message.includes('ENOENT'))) throw error;
+        if (!isErrnoError(error) || error.code !== 'ENOENT') throw error;
       }
-      await mkdir(path.dirname(destination), { recursive: true });
-      await copyFile(safeJoin(stage.directory, plan.target, 'staged target'), destination);
+      await copySafeFile(safeJoin(stage.directory, plan.target, 'staged target'), destination, 'installed file');
+      const installed = state.components[plan.component.manifest.name]?.files?.find((file) => file.path === plan.target);
+      if (installed) installed.sha256 = await sha256File(destination, 'installed file');
       created.push(destination);
     }
     await writeState(cwd, state);
     await installDependencies(cwd, dependencies);
   } catch (error) {
-    for (const file of created) await unlink(file).catch(() => undefined);
-    for (const { destination, backup } of overwritten) await copyFile(backup, destination).catch(() => undefined);
+    for (const file of created) await removeSafePath(file, 'rollback file').catch(() => undefined);
+    for (const { destination, backup } of overwritten) await copySafeFile(backup, destination, 'rollback file').catch(() => undefined);
+    for (const { destination, backup } of removed) await copySafeFile(backup, destination, 'rollback file').catch(() => undefined);
+    try {
+      if (previousState) await writeState(cwd, previousState);
+      else await rm(path.join(cwd, 'ui.json'), { force: true });
+    } catch { /* Preserve the original failure while making a best-effort rollback. */ }
     throw error;
   } finally {
     await rm(stage.directory, { recursive: true, force: true });

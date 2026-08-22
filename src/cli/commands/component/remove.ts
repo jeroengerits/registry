@@ -1,10 +1,9 @@
-import { unlink } from 'node:fs/promises';
 import type { CommandResult } from '../../../types.js';
-import { isErrnoError } from '../../../shared.js';
 import { readState, writeState } from '../../../state.js';
-import { safeJoin } from '../../../paths.js';
+import { removeSafeFile } from '../../../filesystem.js';
 import { errorResult } from '../shared.js';
 import { confirmAction, frame, interactive, outcome, withSpinner } from '../../ui.js';
+import { present } from '../../presentation.js';
 
 /** Removes a component's tracked files and persisted state. */
 export async function removeComponent(cwd: string, name?: string, json = false): Promise<CommandResult> {
@@ -24,9 +23,7 @@ export async function removeComponent(cwd: string, name?: string, json = false):
   // Remove files and state together under the shared spinner.
   await withSpinner(`Removing ${name}...`, async () => {
     // Missing files are already removed and do not block state cleanup.
-    for (const file of files) await unlink(safeJoin(cwd, file, 'component file')).catch((error: unknown) => {
-      if (!(isErrnoError(error) && error.code === 'ENOENT')) throw error;
-    });
+    for (const file of files) await removeSafeFile(cwd, file, 'component file');
     // Delete the component record only after file deletion succeeds.
     delete state.components[name];
     // Persist the remaining registry state atomically.
@@ -35,5 +32,5 @@ export async function removeComponent(cwd: string, name?: string, json = false):
   // Count the tracked paths for a useful human-readable result.
   const removedFiles = files.size;
   // Keep JSON minimal while giving human output context and a next step.
-  return { output: json ? `${JSON.stringify({ name })}\n` : frame('component remove', `${name}\n\n${removedFiles} files removed\n\n${outcome(`Removed ${name}.`)}`, 'Next: ui component'), exitCode: 0 };
+  return present(json, { name }, frame('component remove', `${name}\n\n${removedFiles} files removed\n\n${outcome(`Removed ${name}.`)}`, 'Next: ui component'));
 }

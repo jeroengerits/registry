@@ -2,6 +2,7 @@ import type { CommandResult } from '../../../types.js';
 import { readState } from '../../../state.js';
 import { addComponent } from './add.js';
 import { errorResult } from '../shared.js';
+import { present } from '../../presentation.js';
 
 /** Updates one component within its persisted compatible-version constraint. */
 export async function updateComponent(cwd: string, name?: string, json = false): Promise<CommandResult> {
@@ -11,8 +12,9 @@ export async function updateComponent(cwd: string, name?: string, json = false):
     if (!names.length) return errorResult('No updatable components are installed.');
     const results: CommandResult[] = [];
     for (const componentName of names) results.push(await updateComponent(cwd, componentName, json));
-    if (json) return { output: `[${results.map((result) => result.output.trim()).join(',')}]\n`, exitCode: results.some((result) => result.exitCode !== 0) ? 1 : 0 };
-    return { output: results.map((result) => result.output).join('\n'), exitCode: results.some((result) => result.exitCode !== 0) ? 1 : 0 };
+    const exitCode = results.some((result) => result.exitCode !== 0) ? 1 : 0;
+    const data = results.map((result) => result.data ?? null);
+    return present(json, data, results.map((result) => result.output).join('\n'), exitCode);
   }
   // Read the stored repository and version constraint for the update request.
   const component = (await readState(cwd))?.components[name];

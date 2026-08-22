@@ -1,4 +1,5 @@
 import { readFile, writeFile, rename } from 'node:fs/promises';
+import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import { z } from 'zod';
 import type { UiState } from './types.js';
@@ -52,7 +53,7 @@ export async function readState(cwd: string): Promise<UiState | null> {
 /** Atomically replaces the project state file after validation by callers. */
 export async function writeState(cwd: string, state: UiState): Promise<void> {
   // Write beside the destination, then rename, so readers never see partial JSON.
-  const file = path.join(cwd, STATE_FILE); const temporary = `${file}.tmp-${process.pid}`;
+  const file = path.join(cwd, STATE_FILE); const temporary = `${file}.tmp-${process.pid}-${randomUUID()}`;
   await writeFile(temporary, `${JSON.stringify(state, null, 2)}\n`, 'utf8'); await rename(temporary, file);
 }
 

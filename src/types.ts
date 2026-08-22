@@ -50,4 +50,6 @@ export interface UiState {
 export interface CommandResult {
   output: string;
   exitCode: number;
+  /** Structured payload used when composing commands and rendering JSON. */
+  data?: unknown;
 }

@@ -3,6 +3,7 @@ import { readRootVersion, readState } from '../../../state.js';
 import { availableVersions, parseGitReference } from '../../../git.js';
 import { applyPlans, aggregateDependencies, errorResult, planFiles, resolveReferences } from '../shared.js';
 import { chooseVersion, frame, interactive, outcome, withSpinner } from '../../ui.js';
+import { present } from '../../presentation.js';
 
 /** Resolves, validates, stages, and installs one or more components. */
 export async function addComponent(cwd: string, references: string[], options: { dryRun: boolean; force: boolean; update: boolean; version?: string; json: boolean; command?: string }): Promise<CommandResult> {
@@ -27,30 +28,37 @@ export async function addComponent(cwd: string, references: string[], options: {
   try {
     const names = new Set<string>();
     for (const item of resolved) { if (names.has(item.manifest.name)) throw new Error(`Duplicate component ${item.manifest.name}.`); names.add(item.manifest.name); }
-    const state = (await readState(cwd)) ?? { components: {} };
+    const loadedState = await readState(cwd);
+    const state = loadedState ?? { components: {} };
+    const previousState = loadedState ? JSON.parse(JSON.stringify(loadedState)) as typeof loadedState : null;
     const rootVersion = await readRootVersion(cwd);
     if (rootVersion) state.version = rootVersion;
-    const alreadyInstalled = resolved.filter((item) => state.components[item.manifest.name]);
-    if (options.update) {
-      const unchanged = resolved.filter((item) => item.version === state.components[item.manifest.name]?.version);
-      if (unchanged.length) throw new Error(`${unchanged.map((item) => `Component "${item.manifest.name}" is already at the latest compatible version (${item.version}).`).join('\n')}`);
-    }
+    const rootRepositories = new Set(referencesWithVersion.map((reference) => reference.repository));
+    const roots = resolved.filter((item) => rootRepositories.has(item.reference.repository));
+    const unchangedRoots = options.update ? roots.filter((item) => item.version === state.components[item.manifest.name]?.version) : [];
+    if (unchangedRoots.length) throw new Error(`${unchangedRoots.map((item) => `Component "${item.manifest.name}" is already at the latest compatible version (${item.version}).`).join('\n')}`);
+    const selected = options.update ? resolved.filter((item) => rootRepositories.has(item.reference.repository) || item.version !== state.components[item.manifest.name]?.version) : resolved;
+    const alreadyInstalled = selected.filter((item) => state.components[item.manifest.name]);
     if (alreadyInstalled.length && !options.force) {
       const names = alreadyInstalled.map((item) => `"${item.manifest.name}"`).join(', ');
       throw new Error(`${alreadyInstalled.length === 1 ? 'Component' : 'Components'} ${names} ${alreadyInstalled.length === 1 ? 'is' : 'are'} already installed. Use --force to overwrite${alreadyInstalled.length === 1 ? ' it' : ' them'}.`);
     }
     const overwrite = new Set(alreadyInstalled.flatMap((item) => [item.manifest.files[0]?.target, ...(state.components[item.manifest.name]?.files ?? []).map((file) => file.path)].filter((target): target is string => Boolean(target))));
-    const plans = await planFiles(cwd, resolved, overwrite);
-    const dependencies = aggregateDependencies(resolved);
-    const result = { components: resolved.map((item) => ({ name: item.manifest.name, version: item.version, availableVersions: item.availableVersions, commit: item.commit, files: item.manifest.files.map((file) => file.target), dependencies })) };
+    const plans = await planFiles(cwd, selected, overwrite);
+    const dependencies = aggregateDependencies(selected);
+    const obsolete = selected.flatMap((item) => {
+      const current = new Set(item.manifest.files.map((file) => file.target));
+      return (state.components[item.manifest.name]?.files ?? []).map((file) => file.path).filter((file) => !current.has(file));
+    });
+    const result = { components: selected.map((item) => ({ name: item.manifest.name, version: item.version, availableVersions: item.availableVersions, commit: item.commit, files: item.manifest.files.map((file) => file.target), dependencies })) };
     if (options.dryRun) {
-      const preview = [`${resolved.length} component${resolved.length === 1 ? '' : 's'} would be changed`, '', ...resolved.map((item) => `  ${item.manifest.name.padEnd(16)} v${item.version}`), '', outcome('Dry run complete. No files changed.', 'warning')];
-      return { output: options.json ? `${JSON.stringify(result, null, 2)}\n` : frame(options.command ?? 'component add', preview.join('\n'), 'Next: remove --dry-run to apply'), exitCode: 0 };
+      const preview = [`${selected.length} component${selected.length === 1 ? '' : 's'} would be changed`, '', ...selected.map((item) => `  ${item.manifest.name.padEnd(16)} v${item.version}`), '', outcome('Dry run complete. No files changed.', 'warning')];
+      return present(options.json, result, frame(options.command ?? 'component add', preview.join('\n'), 'Next: remove --dry-run to apply'));
     }
-    for (const item of resolved) state.components[item.manifest.name] = { enabled: state.components[item.manifest.name]?.enabled ?? true, repository: item.reference.repository, constraint: item.reference.version ?? `^${item.version.split('.')[0]}`, version: item.version, path: item.manifest.files[0]?.target ?? '', files: item.manifest.files.map((file) => ({ path: file.target, sha256: '' })), dependencies: item.manifest.components };
-    await withSpinner('Installing component files...', () => applyPlans(cwd, state, plans, dependencies), () => 'Component files installed', !options.json);
+    for (const item of selected) state.components[item.manifest.name] = { enabled: state.components[item.manifest.name]?.enabled ?? true, repository: item.reference.repository, constraint: item.reference.version ?? `^${item.version.split('.')[0]}`, version: item.version, path: item.manifest.files[0]?.target ?? '', files: item.manifest.files.map((file) => ({ path: file.target, sha256: '' })), dependencies: item.manifest.components };
+    await withSpinner('Installing component files...', () => applyPlans(cwd, state, plans, dependencies, obsolete, previousState), () => 'Component files installed', !options.json);
     const action = options.update ? 'Updated' : 'Added';
-    const messages = [`${resolved.length} component${resolved.length === 1 ? '' : 's'} ${options.update ? 'updated' : 'added'}`, '', ...resolved.flatMap((item) => [outcome(`${action} ${item.manifest.name}@${item.version}`), ...(showAvailableVersions ? [`  Available: ${item.availableVersions.join(', ') || 'none'}`] : [])])];
-     return { output: options.json ? `${JSON.stringify(result, null, 2)}\n` : frame(options.command ?? `component ${options.update ? 'update' : 'add'}`, messages.join('\n'), 'Next: ui component'), exitCode: 0 };
+    const messages = [`${selected.length} component${selected.length === 1 ? '' : 's'} ${options.update ? 'updated' : 'added'}`, '', ...selected.flatMap((item) => [outcome(`${action} ${item.manifest.name}@${item.version}`), ...(showAvailableVersions ? [`  Available: ${item.availableVersions.join(', ') || 'none'}`] : [])])];
+     return present(options.json, result, frame(options.command ?? `component ${options.update ? 'update' : 'add'}`, messages.join('\n'), 'Next: ui component'));
   } finally { await Promise.all(resolved.map((item) => item.cleanup())); }
 }

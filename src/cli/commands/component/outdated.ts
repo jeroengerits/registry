@@ -1,7 +1,8 @@
 import type { CommandResult } from '../../../types.js';
-import { availableVersions } from '../../../git.js';
+import { availableVersions, satisfies } from '../../../git.js';
 import { readState } from '../../../state.js';
 import { colors, frame, outcome, table } from '../../ui.js';
+import { present } from '../../presentation.js';
 
 interface OutdatedComponent {
   name: string;
@@ -17,9 +18,10 @@ export async function outdatedComponents(cwd: string, json = false): Promise<Com
   for (const [name, component] of Object.entries(state.components).sort(([a], [b]) => a.localeCompare(b))) {
     if (!component.repository) continue;
     const versions = await availableVersions(component.repository);
-    if (versions[0] && versions[0] !== component.version) outdated.push({ name, current: `v${component.version}`, latest: `v${versions[0]}` });
+    const compatible = versions.filter((version) => satisfies(version, component.constraint ?? `^${component.version.split('.')[0]}`));
+    if (compatible[0] && compatible[0] !== component.version) outdated.push({ name, current: `v${component.version}`, latest: `v${compatible[0]}` });
   }
-  if (json) return { output: `${JSON.stringify(outdated, null, 2)}\n`, exitCode: 0 };
+  if (json) return present(true, outdated, '');
   if (!outdated.length) return { output: `${outcome('All components are up to date.')}\n`, exitCode: 0 };
   return { output: frame('component outdated', `${outdated.length} update${outdated.length === 1 ? '' : 's'} available\n\n${table(['Component', 'Current', 'Latest'], outdated.map((component) => [component.name, component.current, colors.info(component.latest)]))}`, 'Next: ui component update'), exitCode: 0 };
 }
