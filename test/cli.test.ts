@@ -6,7 +6,7 @@ import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { run } from '../src/cli/index.js';
 import { initializeState, validateState } from '../src/state.js';
-import { availableVersions, parseGitReference, satisfies } from '../src/git.js';
+import { availableVersions, parseGitReference, satisfies, updateConstraint } from '../src/git.js';
 import { formatSelfUpdateDetails } from '../src/cli/commands/self-update.js';
 import { errorMessage, isErrnoError, isRecord } from '../src/shared.js';
 import { copySafeFile, safeFilePath } from '../src/filesystem.js';
@@ -157,6 +157,11 @@ describe('validation', () => {
   it('validates state schema', () => {
     expect(() => validateState({ components: { button: { version: '1', path: 'button' } } })).not.toThrow();
     expect(() => validateState({ components: { button: { version: 1 } } })).toThrow(/version.*path/);
+  });
+
+  it('uses a compatible update range for selected exact versions', () => {
+    expect(updateConstraint('1.0.0', '1.0.0')).toBe('^1');
+    expect(updateConstraint('1.2.0', '^1.2')).toBe('^1.2');
   });
 
   it('initializes state exclusively when concurrent callers race', async () => {

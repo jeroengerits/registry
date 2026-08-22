@@ -1,6 +1,6 @@
 import type { CommandResult } from '../../../types.js';
 import { readRootVersion, readState } from '../../../state.js';
-import { availableVersions, parseGitReference } from '../../../git.js';
+import { availableVersions, parseGitReference, updateConstraint } from '../../../git.js';
 import { applyPlans, aggregateDependencies, errorResult, planFiles, resolveReferences } from '../shared.js';
 import { chooseVersion, frame, interactive, outcome, withSpinner } from '../../ui.js';
 import { present } from '../../presentation.js';
@@ -55,7 +55,7 @@ export async function addComponent(cwd: string, references: string[], options: {
       const preview = [`${selected.length} component${selected.length === 1 ? '' : 's'} would be changed`, '', ...selected.map((item) => `  ${item.manifest.name.padEnd(16)} v${item.version}`), '', outcome('Dry run complete. No files changed.', 'warning')];
       return present(options.json, result, frame(options.command ?? 'component add', preview.join('\n'), 'Next: remove --dry-run to apply'));
     }
-    for (const item of selected) state.components[item.manifest.name] = { enabled: state.components[item.manifest.name]?.enabled ?? true, repository: item.reference.repository, constraint: item.reference.version ?? `^${item.version.split('.')[0]}`, version: item.version, path: item.manifest.files[0]?.target ?? '', files: item.manifest.files.map((file) => ({ path: file.target, sha256: '' })), dependencies: item.manifest.components };
+    for (const item of selected) state.components[item.manifest.name] = { enabled: state.components[item.manifest.name]?.enabled ?? true, repository: item.reference.repository, constraint: updateConstraint(item.version, item.reference.version), version: item.version, path: item.manifest.files[0]?.target ?? '', files: item.manifest.files.map((file) => ({ path: file.target, sha256: '' })), dependencies: item.manifest.components };
     await withSpinner('Installing component files...', () => applyPlans(cwd, state, plans, dependencies, obsolete, previousState), () => 'Component files installed', !options.json);
     const action = options.update ? 'Updated' : 'Added';
     const messages = [`${selected.length} component${selected.length === 1 ? '' : 's'} ${options.update ? 'updated' : 'added'}`, '', ...selected.flatMap((item) => [outcome(`${action} ${item.manifest.name}@${item.version}`), ...(showAvailableVersions ? [`  Available: ${item.availableVersions.join(', ') || 'none'}`] : [])])];

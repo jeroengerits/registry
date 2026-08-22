@@ -53,6 +53,11 @@ export function satisfies(version: string, constraint = version): boolean {
   const upper: [number, number, number] = major > 0 ? [major + 1, 0, 0] : minor === undefined ? [1, 0, 0] : minor > 0 ? [0, minor + 1, 0] : [0, 0, (patch ?? 0) + 1];
   return compareParts(actual, lower) >= 0 && compareParts(actual, upper) < 0;
 }
+
+/** Converts a selected version into the default update range for installed state. */
+export function updateConstraint(version: string, requested?: string): string {
+  return requested?.startsWith('^') ? requested : `^${version.replace(/^v/, '').split('.')[0]}`;
+}
 /** Sorts versions newest-first, with lexical fallback for invalid values. */
 function compare(a: string, b: string): number { const av = semver(a) ?? [0, 0, 0]; const bv = semver(b) ?? [0, 0, 0]; return bv[0] - av[0] || bv[1] - av[1] || bv[2] - av[2] || b.localeCompare(a); }
 
