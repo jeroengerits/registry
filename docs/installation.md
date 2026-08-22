@@ -76,6 +76,7 @@ UI_INSTALL_DIR="$HOME/bin" UI_CACHE_DIR="$HOME/.cache/acme-ui" \
 ```sh
 ./ui help
 ./ui component list
+./ui component remove <name>
 ```
 
 `ui` operates on the current working directory. The launcher and its cache are

@@ -21,9 +21,9 @@ describe('component list', () => {
   });
   it('lists sorted state', async () => {
     const directory = await tempDirectory();
-    await writeFile(path.join(directory, 'ui.json'), JSON.stringify({ components: { zeta: { version: '1.0.0', path: 'zeta' }, alpha: { version: '2.0.0', path: 'alpha' } } }));
+    await writeFile(path.join(directory, 'ui.json'), JSON.stringify({ components: { zeta: { version: '1.0.0', path: 'zeta', repository: 'https://github.com/example/zeta.git' }, alpha: { version: '2.0.0', path: 'alpha' } } }));
     const result = await capture(() => run(['component', 'list'], directory));
-    expect(result.stdout).toBe('alpha@2.0.0 (alpha)\nzeta@1.0.0 (zeta)\n');
+    expect(result.stdout).toBe('alpha@2.0.0 (alpha)\nzeta@1.0.0 (zeta) - https://github.com/example/zeta.git\n');
   });
   it('supports JSON output', async () => {
     const directory = await tempDirectory();
@@ -39,6 +39,7 @@ describe('help', () => {
     expect(result.code).toBe(0);
     expect(result.stdout).toContain('ui component add <github-url> [--dry-run] [--force] [--json]');
     expect(result.stdout).toContain('ui self-update');
+    expect(result.stdout).toContain('ui component remove <name> [--json]');
     expect(result.stdout).toContain('component.json must be in the repository root');
     expect(result.stdout).toContain('stable semver Git tag');
   });
@@ -48,15 +49,17 @@ describe('help', () => {
     expect(result.stdout).toContain('UI Registry');
   });
   it('rejects unknown commands with a useful usage message', async () => {
-    const result = await capture(() => run(['component', 'remove']));
+    const result = await capture(() => run(['component', 'unknown']));
     expect(result.code).toBe(1);
     expect(result.stdout).toBe('Unknown command. Run "ui help" for available commands.\n');
   });
   it('reports missing command arguments', async () => {
     const info = await capture(() => run(['component', 'info']));
     const add = await capture(() => run(['component', 'add']));
+    const remove = await capture(() => run(['component', 'remove']));
     expect(info).toEqual({ code: 1, stdout: 'Usage: ui component info <name> [--json]\n', stderr: '' });
     expect(add).toEqual({ code: 1, stdout: 'Usage: ui component add <github-url> [--dry-run] [--force] [--json]\n', stderr: '' });
+    expect(remove).toEqual({ code: 1, stdout: 'Usage: ui component remove <name> [--json]\n', stderr: '' });
   });
   it('rejects self-update outside an installed launcher', async () => {
     const installDirectory = process.env.UI_INSTALL_DIR;
@@ -104,6 +107,11 @@ describe('local Git installation', () => {
     expect(duplicate).toEqual({ code: 1, stdout: '', stderr: 'Component "button" is already installed. Use --force to overwrite it.\n' });
     const forced = await capture(() => run(['component', 'add', `${repository}#1.2.3`, '--force'], project));
     expect(forced.code).toBe(0);
+    const removed = await capture(() => run(['component', 'remove', 'button'], project));
+    expect(removed).toEqual({ code: 0, stdout: 'Removed component "button".\n', stderr: '' });
+    await expect(access(path.join(project, 'components/button.tsx'))).rejects.toThrow();
+    const missing = await capture(() => run(['component', 'remove', 'button'], project));
+    expect(missing).toEqual({ code: 1, stdout: 'Component "button" is not installed.\n', stderr: '' });
   });
   it('rejects repositories without a root component.json', async () => {
     const repository = await tempDirectory();

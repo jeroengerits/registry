@@ -36,6 +36,7 @@ Use the installed CLI to inspect and manage the current project:
 ./ui component list --json
 ./ui component info button
 ./ui component add https://github.com/example/button.git
+./ui component remove button
 ./ui self-update
 ./ui help
 ```
@@ -46,6 +47,7 @@ The same commands can be run directly from a local checkout during development:
 node bin/ui.js component list [--json]
 node bin/ui.js component info <name> [--json]
 node bin/ui.js component add <github-url>
+node bin/ui.js component remove <name>
 node bin/ui.js help
 ```
 
