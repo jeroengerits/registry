@@ -6,6 +6,16 @@ import type { CommandResult } from '../../types.js';
 import { errorResult } from './shared.js';
 import { frame, outcome, withSpinner } from '../ui.js';
 
+/** Converts installer progress into a compact version comparison and stage list. */
+export function formatSelfUpdateDetails(details: string): { body: string; current: boolean } {
+  const lines = details.split('\n').map((line) => line.trim()).filter(Boolean);
+  const installed = lines.find((line) => line.startsWith('Checking installed version:'))?.replace('Checking installed version:', '').trim();
+  const latest = lines.find((line) => line.startsWith('Checking latest version:'))?.replace('Checking latest version:', '').trim();
+  const stages = lines.filter((line) => !line.startsWith('Checking installed version:') && !line.startsWith('Checking latest version:'));
+  const versions = [`Current  ${installed ? `v${installed}` : 'unknown'}`, `Latest   ${latest ? `v${latest}` : 'unknown'}`];
+  return { body: [...versions, ...stages].join('\n'), current: /already up to date/i.test(details) };
+}
+
 /** Re-runs the installed launcher installer using a temporary copy. */
 export async function selfUpdate(): Promise<CommandResult> {
   // The launcher supplies these locations; direct source runs do not.
@@ -29,9 +39,9 @@ export async function selfUpdate(): Promise<CommandResult> {
     const result = await withSpinner('Updating UI Registry...', () => execa('sh', [temporaryInstaller], { cwd: installDirectory, env: process.env }), () => 'UI Registry updated');
     // Prefer installer output while keeping success useful if it is silent.
     const details = result.stdout.trim() || 'Installer and cached CLI refreshed.';
-    const current = /already up to date/i.test(details);
-    const message = current ? 'UI Registry is already up to date.' : 'UI Registry updated.';
-    return { output: frame('self-update', `${details}\n\n${outcome(message)}`, 'Next: ui help'), exitCode: 0 };
+    const formatted = formatSelfUpdateDetails(details);
+    const message = formatted.current ? 'UI Registry is already up to date.' : 'UI Registry updated.';
+    return { output: frame('self-update', `${formatted.body}\n\n${outcome(message)}`, 'Next: ui help'), exitCode: 0 };
   } catch (error) {
     // Normalize subprocess diagnostics into one actionable thrown error.
     const details = error as { stderr?: string; stdout?: string; message?: string };

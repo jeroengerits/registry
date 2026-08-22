@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { run } from '../src/cli/index.js';
 import { validateState } from '../src/state.js';
 import { parseGitReference } from '../src/git.js';
+import { formatSelfUpdateDetails } from '../src/cli/commands/self-update.js';
 
 const temporaryDirectories: string[] = [];
 const exec = promisify(execFile);
@@ -98,6 +99,12 @@ describe('help', () => {
       if (installDirectory === undefined) delete process.env.UI_INSTALL_DIR; else process.env.UI_INSTALL_DIR = installDirectory;
       if (cacheDirectory === undefined) delete process.env.UI_CACHE_DIR; else process.env.UI_CACHE_DIR = cacheDirectory;
     }
+  });
+  it('shows self-update version status', () => {
+    const updated = formatSelfUpdateDetails('Checking installed version: 0.0.1\nChecking latest version: 0.0.2\nRemoving installed version: 0.0.1\nInstalling latest version: 0.0.2');
+    expect(updated).toEqual({ body: 'Current  v0.0.1\nLatest   v0.0.2\nRemoving installed version: 0.0.1\nInstalling latest version: 0.0.2', current: false });
+    const current = formatSelfUpdateDetails('Checking installed version: 0.0.1\nChecking latest version: 0.0.1\nUI Registry is already up to date at v0.0.1.');
+    expect(current).toEqual({ body: 'Current  v0.0.1\nLatest   v0.0.1\nUI Registry is already up to date at v0.0.1.', current: true });
   });
 });
 
