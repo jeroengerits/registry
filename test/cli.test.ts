@@ -38,7 +38,7 @@ describe('help', () => {
     const result = await capture(() => run(['help']));
     expect(result.code).toBe(0);
     expect(result.stdout).toContain('ui component add <github-url> --yes');
-    expect(result.stdout).toContain('components.json must be in the repository root');
+    expect(result.stdout).toContain('component.json must be in the repository root');
     expect(result.stdout).toContain('stable semver Git tag');
   });
   it('shows help with no arguments', async () => {
@@ -76,7 +76,7 @@ describe('local Git installation', () => {
     const repository = await tempDirectory();
     await mkdir(path.join(repository, 'src'), { recursive: true });
     await writeFile(path.join(repository, 'src', 'button.tsx'), 'export const Button = 1;\n');
-    await writeFile(path.join(repository, 'components.json'), JSON.stringify({ schemaVersion: 1, name: 'button', description: 'button', files: [{ source: 'src/button.tsx', target: 'components/button.tsx' }], dependencies: {}, components: [] }));
+    await writeFile(path.join(repository, 'component.json'), JSON.stringify({ schemaVersion: 1, name: 'button', description: 'button', files: [{ source: 'src/button.tsx', target: 'components/button.tsx' }], dependencies: {}, components: [] }));
     await exec('git', ['init', '-q', repository]);
     await exec('git', ['-C', repository, 'config', 'user.email', 'test@example.invalid']);
     await exec('git', ['-C', repository, 'config', 'user.name', 'Test']);
@@ -92,7 +92,7 @@ describe('local Git installation', () => {
     expect(added.code).toBe(0);
     expect(await readFile(path.join(project, 'components/button.tsx'), 'utf8')).toContain('Button');
   });
-  it('rejects repositories without a root components.json', async () => {
+  it('rejects repositories without a root component.json', async () => {
     const repository = await tempDirectory();
     await writeFile(path.join(repository, 'README.md'), 'not a component\n');
     await exec('git', ['init', '-q', repository]);
@@ -104,7 +104,21 @@ describe('local Git installation', () => {
     const project = await tempDirectory();
     const result = await capture(() => run(['component', 'add', repository, '--yes'], project));
     expect(result.code).toBe(1);
-    expect(result).toEqual({ code: 1, stdout: '', stderr: 'Provided source is not a component: missing components.json.\n' });
+    expect(result).toEqual({ code: 1, stdout: '', stderr: 'Provided source is not a component: missing component.json.\n' });
+    await expect(access(path.join(project, 'ui.json'))).rejects.toThrow();
+  });
+  it('rejects invalid component.json before writing files', async () => {
+    const repository = await tempDirectory();
+    await writeFile(path.join(repository, 'component.json'), JSON.stringify({ schemaVersion: 1, name: 'Invalid Name' }));
+    await exec('git', ['init', '-q', repository]);
+    await exec('git', ['-C', repository, 'config', 'user.email', 'test@example.invalid']);
+    await exec('git', ['-C', repository, 'config', 'user.name', 'Test']);
+    await exec('git', ['-C', repository, 'add', '.']);
+    await exec('git', ['-C', repository, 'commit', '-qm', 'invalid manifest']);
+    await exec('git', ['-C', repository, 'tag', '1.0.0']);
+    const project = await tempDirectory();
+    const result = await capture(() => run(['component', 'add', repository, '--yes'], project));
+    expect(result).toEqual({ code: 1, stdout: '', stderr: 'component.json requires schemaVersion 1, a lowercase kebab-case name, files, dependencies, and components.\n' });
     await expect(access(path.join(project, 'ui.json'))).rejects.toThrow();
   });
 });
@@ -113,7 +127,7 @@ describe('manifest generation and recursive dependencies', () => {
   async function gitRepository(name: string, manifest: object, files: Record<string, string>, version = '1.0.0') {
     const repository = await tempDirectory();
     for (const [file, content] of Object.entries(files)) { await mkdir(path.dirname(path.join(repository, file)), { recursive: true }); await writeFile(path.join(repository, file), content); }
-    await writeFile(path.join(repository, 'components.json'), JSON.stringify(manifest));
+    await writeFile(path.join(repository, 'component.json'), JSON.stringify(manifest));
     await exec('git', ['init', '-q', repository]); await exec('git', ['-C', repository, 'config', 'user.email', 'test@example.invalid']); await exec('git', ['-C', repository, 'config', 'user.name', 'Test']); await exec('git', ['-C', repository, 'add', '.']); await exec('git', ['-C', repository, 'commit', '-qm', name]); await exec('git', ['-C', repository, 'tag', version]);
     return repository;
   }
@@ -125,7 +139,7 @@ describe('manifest generation and recursive dependencies', () => {
   });
   it('detects recursive dependency cycles before writing files', async () => {
     const a = await tempDirectory(); const b = await tempDirectory();
-    const make = async (directory: string, name: string, dependency: string) => { await mkdir(path.join(directory, 'src')); await writeFile(path.join(directory, 'src', `${name}.ts`), name); await writeFile(path.join(directory, 'components.json'), JSON.stringify({ schemaVersion: 1, name, files: [{ source: `src/${name}.ts`, target: `components/${name}.ts` }], dependencies: {}, components: [{ repository: dependency }] })); await exec('git', ['init', '-q', directory]); await exec('git', ['-C', directory, 'config', 'user.email', 'test@example.invalid']); await exec('git', ['-C', directory, 'config', 'user.name', 'Test']); await exec('git', ['-C', directory, 'add', '.']); await exec('git', ['-C', directory, 'commit', '-qm', name]); await exec('git', ['-C', directory, 'tag', '1.0.0']); };
+    const make = async (directory: string, name: string, dependency: string) => { await mkdir(path.join(directory, 'src')); await writeFile(path.join(directory, 'src', `${name}.ts`), name); await writeFile(path.join(directory, 'component.json'), JSON.stringify({ schemaVersion: 1, name, files: [{ source: `src/${name}.ts`, target: `components/${name}.ts` }], dependencies: {}, components: [{ repository: dependency }] })); await exec('git', ['init', '-q', directory]); await exec('git', ['-C', directory, 'config', 'user.email', 'test@example.invalid']); await exec('git', ['-C', directory, 'config', 'user.name', 'Test']); await exec('git', ['-C', directory, 'add', '.']); await exec('git', ['-C', directory, 'commit', '-qm', name]); await exec('git', ['-C', directory, 'tag', '1.0.0']); };
     await make(a, 'a', b); await make(b, 'b', a); const project = await tempDirectory(); const result = await capture(() => run(['component', 'add', a, '--yes'], project)); expect(result.code).toBe(1); await expect(access(path.join(project, 'components/a.ts'))).rejects.toThrow();
   });
 });

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.invalid/components.schema.json",
+  "$id": "https://example.invalid/component.schema.json",
   "title": "Component registry manifest",
   "type": "object",
   "required": ["schemaVersion", "name", "files", "dependencies", "components"],

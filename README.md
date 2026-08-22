@@ -1,6 +1,6 @@
 # UI Registry CLI
 
-A local-first registry manager for installing components described by `components.json` from Git repositories.
+A local-first registry manager for installing components described by `component.json` from Git repositories.
 
 ## Usage
 
@@ -66,7 +66,7 @@ When `ui.json` is absent, list prints `No installed components.` and exits succe
 }
 ```
 
-`components.json` must be at the repository root and uses `schemaVersion: 1`, a name, optional description, file mappings, npm dependency ranges as an object, and component repository references as `{ "repository": "...", "version": "..." }` objects. `component add` recursively installs component dependencies, validates every repository, source, and target before changing the project, and detects cycles. Tags must be stable `x.y.z` versions; exact, `^major`, and `^major.minor` constraints are supported. HTTPS, SSH, and local filesystem Git references are accepted.
+`component.json` must be at the repository root and uses `schemaVersion: 1`, a name, optional description, file mappings, npm dependency ranges as an object, and component repository references as `{ "repository": "...", "version": "..." }` objects. `component add` recursively installs component dependencies, validates every repository, source, and target before changing the project, and detects cycles. Tags must be stable `x.y.z` versions; exact, `^major`, and `^major.minor` constraints are supported. HTTPS, SSH, and local filesystem Git references are accepted.
 
 Example manifest:
 
