@@ -1,15 +1,13 @@
 import type { CommandResult } from '../../../types.js';
 import { readState, writeState } from '../../../state.js';
-import { chooseComponent, frame, interactive, outcome, status } from '../../ui.js';
+import { frame, outcome, status } from '../../ui.js';
 import { errorResult } from '../shared.js';
 
 /** Flips one component's enabled state without touching installed files. */
 export async function toggleComponent(cwd: string, name?: string, json = false): Promise<CommandResult> {
   // Read normalized state so missing enabled fields default to true.
   const state = await readState(cwd);
-  // Offer a picker only when a human can interact with the terminal.
-  if (!name && interactive() && state && Object.keys(state.components).length) name = await chooseComponent(Object.keys(state.components).sort(), 'Select a component to toggle');
-  // Require an explicit name in automation and redirected output.
+  // One-shot commands require the component name explicitly.
   if (!name) return errorResult('Usage: ui component toggle <name> [--json]');
   // Resolve the selected component before mutating state.
   const component = state?.components[name];

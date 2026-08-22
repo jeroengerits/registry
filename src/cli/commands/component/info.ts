@@ -1,15 +1,13 @@
 import type { CommandResult } from '../../../types.js';
 import { readState } from '../../../state.js';
 import { errorResult } from '../shared.js';
-import { chooseComponent, frame, outcome, status, table, interactive } from '../../ui.js';
+import { frame, outcome, status, table } from '../../ui.js';
 
 /** Shows one component's persisted metadata and enabled state. */
 export async function infoComponent(cwd: string, name?: string, json = false): Promise<CommandResult> {
-  // Load state before deciding whether an interactive picker is possible.
+  // Load state before resolving the requested component.
   const state = await readState(cwd);
-  // Let interactive users choose a component while keeping scripts explicit.
-  if (!name && interactive() && state && Object.keys(state.components).length) name = await chooseComponent(Object.keys(state.components).sort(), 'Select a component to inspect');
-  // Non-interactive calls must identify the component in the argument list.
+  // One-shot commands require the component name explicitly.
   if (!name) return errorResult('Usage: ui component info <name> [--json]');
   // Resolve the requested record from the validated state map.
   const component = state?.components[name];

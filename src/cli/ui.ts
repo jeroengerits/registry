@@ -60,19 +60,6 @@ export function outcome(message: string, kind: 'success' | 'warning' | 'error' =
   return color(`${symbol} ${message}`);
 }
 
-/** Presents the top-level namespaces available from the interactive CLI. */
-export async function chooseNamespace(): Promise<'components' | 'hooks'> {
-  const choice = await select({
-    message: 'What would you like to manage?',
-    options: [
-      { value: 'components', label: 'components', hint: 'Install and manage UI components' },
-      { value: 'hooks', label: 'hooks', hint: 'Manage project hooks' },
-    ],
-  });
-  if (isCancel(choice)) throw new Error('Operation cancelled.');
-  return choice as 'components' | 'hooks';
-}
-
 /** Lets an interactive user select a stable component version. */
 export async function chooseVersion(component: string, versions: string[]): Promise<string> {
   const choice = await select({
@@ -84,50 +71,6 @@ export async function chooseVersion(component: string, versions: string[]): Prom
   return choice;
 }
 
-/** Lets an interactive user select one installed component. */
-export async function chooseComponent(names: string[], message: string): Promise<string> {
-  const choice = await select({
-    message,
-    options: names.map((name) => ({ value: name, label: name })),
-  });
-  if (isCancel(choice)) throw new Error('Operation cancelled.');
-  return choice;
-}
-
-/** Commands available from the interactive component namespace picker. */
-export type ComponentCommand = 'list' | 'details' | 'add' | 'remove' | 'update' | 'quit';
-
-/** Presents the available component namespace commands. */
-export async function chooseComponentCommand(): Promise<ComponentCommand> {
-  const choice = await select({
-    message: 'What would you like to do?',
-    options: [
-      { value: 'list', label: 'list', hint: 'View installed components' },
-      { value: 'details', label: 'details', hint: 'Inspect and manage one component' },
-      { value: 'add', label: 'add', hint: 'Install a component' },
-      { value: 'update', label: 'update', hint: 'Update a component' },
-      { value: 'remove', label: 'remove', hint: 'Delete a component and its files' },
-      { value: 'quit', label: 'quit', hint: 'Close the dashboard' },
-    ],
-  });
-  if (isCancel(choice)) throw new Error('Operation cancelled.');
-  return choice as ComponentCommand;
-}
-
-/** Presents actions that apply to the selected component. */
-export async function chooseComponentAction(name: string, enabled: boolean): Promise<'toggle' | 'update' | 'remove' | 'back'> {
-  const choice = await select({
-    message: `${name} is ${enabled ? 'enabled' : 'disabled'}`,
-    options: [
-      { value: 'toggle', label: enabled ? 'disable' : 'enable', hint: 'Change availability without reinstalling' },
-      { value: 'update', label: 'update', hint: 'Install the newest compatible version' },
-      { value: 'remove', label: 'remove', hint: 'Delete the component and its files' },
-      { value: 'back', label: 'back', hint: 'Return to the dashboard' },
-    ],
-  });
-  if (isCancel(choice)) throw new Error('Operation cancelled.');
-  return choice as 'toggle' | 'update' | 'remove' | 'back';
-}
 
 /** Prompts for the repository used by the interactive add flow. */
 export async function promptRepository(): Promise<string> {

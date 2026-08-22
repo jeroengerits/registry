@@ -93,10 +93,10 @@ ui component remove [name] [--json]
 ui component update [name] [--json]
 ```
 
-Running `./ui` or `./ui component` in an interactive terminal opens the Clack
-component dashboard. Select a component to inspect it, enable or disable it,
-update it, or remove it. Non-interactive output prints the component command
-reference instead of prompting.
+Every command performs one operation and returns. `./ui` prints the available
+namespaces, while `./ui components` lists installed components. Commands that
+inspect, enable, disable, update, or remove a component require its explicit
+name. Only version selection and destructive confirmation may prompt.
 
 Add an exact component version with `--version`:
 

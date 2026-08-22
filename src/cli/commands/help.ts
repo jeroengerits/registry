@@ -10,7 +10,7 @@ Install and manage components from GitHub repositories.
 
 Commands:
   ui
-    Choose between components and hooks in an interactive terminal.
+    Show available namespaces and commands.
 
   ui help
     Show this help.
@@ -19,7 +19,7 @@ Commands:
     Update the installed UI Registry CLI.
 
   ui components
-    Open the component dashboard.
+    List installed components.
 
   ui hooks
     Manage project hooks.
@@ -33,7 +33,13 @@ Commands:
     Use --dry-run to preview changes and --json for machine-readable output.
 
   ui component remove [name] [--json]
-    Remove an installed component and its files; interactive terminals prompt if omitted.
+    Remove an installed component and its files.
+
+  ui component info <name> [--json]
+    Show details for an installed component.
+
+  ui component toggle <name> [--json]
+    Enable or disable an installed component.
 
   ui component update [name] [--json]
     Update a component to the newest compatible Git tag.
@@ -44,12 +50,12 @@ Requirements:
   - Component files must use safe relative source and target paths.
 
 Output:
-  Human-readable output uses compact framed layouts with Clack prompts and
-  Ora progress feedback in interactive terminals. Use --json for automation;
+  Human-readable output uses relaxed tables and Ora progress feedback. Use
+  --json for automation;
   JSON output never includes prompts, colors, or spinner control sequences.
 
 Examples:
-  ui component
+  ui components
   ui self-update
   ui component add https://github.com/example/button.git
   ui component add https://github.com/example/button.git --force

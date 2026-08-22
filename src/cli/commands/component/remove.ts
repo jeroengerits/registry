@@ -3,15 +3,13 @@ import type { CommandResult } from '../../../types.js';
 import { readState, writeState } from '../../../state.js';
 import { safeJoin } from '../../../paths.js';
 import { errorResult } from '../shared.js';
-import { chooseComponent, confirmAction, frame, interactive, outcome, withSpinner } from '../../ui.js';
+import { confirmAction, frame, interactive, outcome, withSpinner } from '../../ui.js';
 
 /** Removes a component's tracked files and persisted state. */
 export async function removeComponent(cwd: string, name?: string, json = false): Promise<CommandResult> {
-  // Read state before resolving an optional interactive selection.
+  // Read state before resolving the requested component.
   const state = await readState(cwd);
-  // Let interactive users choose a component without weakening script usage.
-  if (!name && interactive() && state && Object.keys(state.components).length) name = await chooseComponent(Object.keys(state.components).sort(), 'Select a component to remove');
-  // Require a name when no picker can be shown.
+  // One-shot commands require the component name explicitly.
   if (!name) return errorResult('Usage: ui component remove <name> [--json]');
   // Resolve the record that owns the files about to be removed.
   const component = state?.components[name];
