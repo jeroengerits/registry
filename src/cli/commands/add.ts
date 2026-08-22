@@ -9,6 +9,7 @@ export async function addComponent(cwd: string, references: string[], options: {
   if (!references.length) return errorResult('Usage: ui component add <github-url> [--version <x.y.z>] [--dry-run] [--force] [--json]');
   if (options.version && !/^v?\d+\.\d+\.\d+$/.test(options.version)) return errorResult('The --version value must be a stable semver version such as 1.2.3.');
   const referencesWithVersion = references.map(parseGitReference);
+  const showAvailableVersions = !interactive() && !options.version && referencesWithVersion.some((reference) => !reference.version);
   if (options.version) {
     for (const reference of referencesWithVersion) {
       if (reference.version) throw new Error('Specify the component version either in the URL or with --version, not both.');
@@ -45,7 +46,7 @@ export async function addComponent(cwd: string, references: string[], options: {
     if (options.dryRun) return { output: options.json ? `${JSON.stringify(result, null, 2)}\n` : `${resolved.map((item) => `Would add ${item.manifest.name}@${item.version}`).join('\n')}\n`, exitCode: 0 };
     for (const item of resolved) state.components[item.manifest.name] = { repository: item.reference.repository, constraint: item.reference.version ?? `^${item.version.split('.')[0]}`, version: item.version, path: item.manifest.files[0]?.target ?? '', files: item.manifest.files.map((file) => ({ path: file.target, sha256: '' })), dependencies: item.manifest.components };
     await withSpinner('Installing component files...', () => applyPlans(cwd, state, plans, dependencies), () => 'Component files installed', !options.json);
-    const messages = resolved.flatMap((item) => [colors.info(`Available versions for ${item.manifest.name}: ${item.availableVersions.join(', ')}`), colors.success(`${options.update ? 'Updated' : 'Added'} ${item.manifest.name}@${item.version}`)]);
+    const messages = resolved.flatMap((item) => [ ...(showAvailableVersions ? [colors.info(`Available versions for ${item.manifest.name}: ${item.availableVersions.join(', ')}`)] : []), colors.success(`${options.update ? 'Updated' : 'Added'} ${item.manifest.name}@${item.version}`)]);
     return { output: options.json ? `${JSON.stringify(result, null, 2)}\n` : `${messages.join('\n')}\n`, exitCode: 0 };
   } finally { await Promise.all(resolved.map((item) => item.cleanup())); }
 }
