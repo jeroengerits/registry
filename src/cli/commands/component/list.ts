@@ -20,7 +20,7 @@ export async function listComponent(cwd: string, json: boolean, showAvailableVer
   // Calculate the summary counts once for the compact header.
   const enabled = components.filter((component) => component.enabled).length;
   // Build a stable table body before applying the shared command frame.
-  const lines = [`${components.length} components  ·  ${enabled} enabled  ·  ${components.length - enabled} disabled${state.version ? `  ·  app v${state.version}` : ''}`, '', 'COMPONENT     VERSION    STATE       LOCATION'];
+  const lines = [`${components.length} components`, `${enabled} enabled  ·  ${components.length - enabled} disabled${state.version ? `  ·  app v${state.version}` : ''}`, '', 'COMPONENT     VERSION    STATE       LOCATION'];
   // Add one primary row and optional metadata rows per component.
   for (const component of components) {
     lines.push(`${component.name.padEnd(13)} v${component.version.padEnd(9)} ${status(component.enabled)}  ${component.path}`);
@@ -28,5 +28,5 @@ export async function listComponent(cwd: string, json: boolean, showAvailableVer
     if (showAvailableVersions) lines.push(`             ${colors.muted(`Available: ${(component.availableVersions ?? []).join(', ') || 'none'}`)}`);
   }
   // Keep the status legend and next action visible without extra prompts.
-  return { output: frame('component list', lines.join('\n'), 'Status: ● enabled  ○ disabled\nAction: ui component toggle <name>'), exitCode: 0 };
+  return { output: frame('component list', lines.join('\n'), 'Next: ui component'), exitCode: 0 };
 }

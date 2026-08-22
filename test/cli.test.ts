@@ -24,11 +24,12 @@ describe('component list', () => {
     const directory = await tempDirectory();
     await writeFile(path.join(directory, 'ui.json'), JSON.stringify({ components: { zeta: { version: '1.0.0', path: 'zeta', repository: 'https://github.com/example/zeta.git' }, alpha: { version: '2.0.0', path: 'alpha' } } }));
     const result = await capture(() => run(['component', 'list'], directory));
-    expect(result.stdout).toContain('◆ UI REGISTRY  ·  component list');
-    expect(result.stdout).toContain('2 components  ·  2 enabled  ·  0 disabled');
+    expect(result.stdout).toContain('UI Registry  /  component list');
+    expect(result.stdout).toContain('2 components');
+    expect(result.stdout).toContain('2 enabled  ·  0 disabled');
     expect(result.stdout).toContain('alpha         v2.0.0');
     expect(result.stdout).toContain('zeta          v1.0.0');
-    expect(result.stdout).toContain('Action: ui component toggle <name>');
+    expect(result.stdout).toContain('Next: ui component');
   });
   it('supports JSON output', async () => {
     const directory = await tempDirectory();
@@ -42,7 +43,7 @@ describe('component list', () => {
     const result = await capture(() => run(['component', 'info', 'button'], directory));
     expect(result.code).toBe(0);
     expect(result.stdout).toContain('button  ○ disabled');
-    expect(result.stdout).toContain('Toggle: ui component toggle button');
+    expect(result.stdout).toContain('UI Registry  /  component details  /  button');
   });
 });
 
@@ -142,7 +143,7 @@ describe('local Git installation', () => {
     const toggled = await capture(() => run(['component', 'toggle', 'button'], project));
     expect(toggled.code).toBe(0);
     expect(toggled.stdout).toContain('● enabled  →  ○ disabled');
-    expect(toggled.stdout).toContain('Files unchanged');
+    expect(toggled.stdout).toContain('button is disabled');
     expect(JSON.parse(await readFile(path.join(project, 'ui.json'), 'utf8')).components.button.enabled).toBe(false);
     const toggledJson = await capture(() => run(['component', 'toggle', 'button', '--json'], project));
     expect(JSON.parse(toggledJson.stdout)).toMatchObject({ name: 'button', previousStatus: 'disabled', status: 'enabled', component: { enabled: true } });
@@ -152,8 +153,8 @@ describe('local Git installation', () => {
     expect(forced.code).toBe(0);
     const removed = await capture(() => run(['component', 'remove', 'button'], project));
     expect(removed.code).toBe(0);
-    expect(removed.stdout).toContain('Removed component "button".');
-    expect(removed.stdout).toContain('Files removed');
+    expect(removed.stdout).toContain('Removed button.');
+    expect(removed.stdout).toContain('files removed');
     await expect(access(path.join(project, 'components/button.tsx'))).rejects.toThrow();
     const missing = await capture(() => run(['component', 'remove', 'button'], project));
     expect(missing).toEqual({ code: 1, stdout: 'Component "button" is not installed.\n', stderr: '' });

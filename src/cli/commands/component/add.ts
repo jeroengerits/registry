@@ -51,6 +51,6 @@ export async function addComponent(cwd: string, references: string[], options: {
     await withSpinner('Installing component files...', () => applyPlans(cwd, state, plans, dependencies), () => 'Component files installed', !options.json);
     const action = options.update ? 'Updated' : 'Added';
     const messages = [`${resolved.length} component${resolved.length === 1 ? '' : 's'} ${options.update ? 'updated' : 'added'}`, '', ...resolved.flatMap((item) => [outcome(`${action} ${item.manifest.name}@${item.version}`), ...(showAvailableVersions ? [`  Available: ${item.availableVersions.join(', ') || 'none'}`] : [])])];
-    return { output: options.json ? `${JSON.stringify(result, null, 2)}\n` : frame(options.command ?? `component ${options.update ? 'update' : 'add'}`, messages.join('\n'), 'Next: ui component list'), exitCode: 0 };
+     return { output: options.json ? `${JSON.stringify(result, null, 2)}\n` : frame(options.command ?? `component ${options.update ? 'update' : 'add'}`, messages.join('\n'), 'Next: ui component'), exitCode: 0 };
   } finally { await Promise.all(resolved.map((item) => item.cleanup())); }
 }

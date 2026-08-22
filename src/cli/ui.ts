@@ -33,9 +33,9 @@ export const colors = {
   error: pc.red,
 };
 
-/** Wraps command-specific content in the shared one-shot CLI frame. */
+/** Wraps command content in the shared relaxed CLI layout. */
 export function frame(command: string, body: string, footer?: string): string {
-  const lines = [colors.info(`◆ UI REGISTRY  ·  ${command}`), colors.muted('────────────────────────────────────────'), body.trimEnd()];
+  const lines = [colors.info(`UI Registry  /  ${command}`), '', body.trimEnd()];
   if (footer) lines.push('', colors.muted(footer));
   return `${lines.join('\n')}\n`;
 }

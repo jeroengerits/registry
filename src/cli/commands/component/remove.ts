@@ -36,5 +36,5 @@ export async function removeComponent(cwd: string, name?: string, json = false):
   // Count the tracked paths for a useful human-readable result.
   const removedFiles = files.size;
   // Keep JSON minimal while giving human output context and a next step.
-  return { output: json ? `${JSON.stringify({ name })}\n` : frame(`component remove  ·  ${name}`, `${name}\n\nFiles removed  ${removedFiles}\n\n${outcome(`Removed component "${name}".`)}`, 'Next: ui component list'), exitCode: 0 };
+  return { output: json ? `${JSON.stringify({ name })}\n` : frame('component remove', `${name}\n\n${removedFiles} files removed\n\n${outcome(`Removed ${name}.`)}`, 'Next: ui component'), exitCode: 0 };
 }

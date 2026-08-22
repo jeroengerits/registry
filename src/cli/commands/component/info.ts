@@ -20,15 +20,15 @@ export async function infoComponent(cwd: string, name?: string, json = false): P
   // Assemble labeled metadata for the human-readable inspection card.
   const lines = [
     `${name}  ${status(component.enabled)}`,
-    '────────────────────────────────────────',
-    `Version      ${component.version}`,
-    `Location     ${component.path}`,
-    `Repository   ${component.repository ?? 'local / unknown'}`,
-    `Files        ${component.files?.length ?? 0}`,
-    `Dependencies ${component.dependencies?.length ?? 0}`,
+    '',
+    `Version       ${component.version}`,
+    `Location      ${component.path}`,
+    `Repository    ${component.repository ?? 'local / unknown'}`,
+    `Files         ${component.files?.length ?? 0}`,
+    `Dependencies  ${component.dependencies?.length ?? 0}`,
     '',
     outcome('Component details loaded.'),
   ];
   // Apply the shared frame and expose the next useful action.
-  return { output: frame(`component info  ·  ${name}`, lines.join('\n'), `Toggle: ui component toggle ${name}`), exitCode: 0 };
+  return { output: frame(`component details  /  ${name}`, lines.join('\n'), 'Next: ui component'), exitCode: 0 };
 }

@@ -20,8 +20,7 @@ per-component enabled/disabled toggle without changing installed files.
 Every human-readable command uses the compact registry identity line:
 
 ```text
-◆ UI REGISTRY  ·  <command>
-────────────────────────────────────────
+UI Registry  /  <command>
 ```
 
 The body is command-specific:

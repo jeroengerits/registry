@@ -88,7 +88,7 @@ git commit -m "feat: persist component enabled state"
 
 - [ ] **Step 1: Add output contract tests**
 
-Assert human-readable output contains `◆ UI REGISTRY`, a command label, and
+Assert human-readable output contains `UI Registry`, a command label, and
 semantic status symbols. Assert `--json` output contains no ANSI escape code,
 prompt text, spinner frame, or frame header.
 

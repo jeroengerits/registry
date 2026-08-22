@@ -28,5 +28,5 @@ export async function toggleComponent(cwd: string, name?: string, json = false):
   // Keep JSON output stable and free from prompts or terminal control codes.
   if (json) return { output: `${JSON.stringify({ name, previousStatus, status: nextStatus, component: { name, ...component } }, null, 2)}\n`, exitCode: 0 };
   // Show the transition and make the non-destructive behavior explicit.
-  return { output: frame('component toggle', `${name}\n\n${status(previousStatus === 'enabled')}  →  ${status(component.enabled)}\n\nFiles unchanged\n\n${outcome(`Component ${nextStatus}`)}`, `Next: ui component toggle ${name}`), exitCode: 0 };
+  return { output: frame('component status', `${name}\n\n${status(previousStatus === 'enabled')}  →  ${status(component.enabled)}\n\n${outcome(`${name} is ${nextStatus}.`)}`, 'Next: ui component'), exitCode: 0 };
 }
