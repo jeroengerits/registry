@@ -6,7 +6,7 @@ import { chooseVersion, frame, interactive, outcome, withSpinner } from '../../u
 
 /** Resolves, validates, stages, and installs one or more components. */
 export async function addComponent(cwd: string, references: string[], options: { dryRun: boolean; force: boolean; update: boolean; version?: string; json: boolean; command?: string }): Promise<CommandResult> {
-  if (!references.length) return errorResult('Usage: ui component add <github-url> [--version <x.y.z>] [--dry-run] [--force] [--json]');
+  if (!references.length) return errorResult('Usage: ui component add <repository> [--version <version>] [--dry-run] [--force] [--json]');
   if (options.version && !/^v?\d+\.\d+\.\d+$/.test(options.version)) return errorResult('The --version value must be a stable semver version such as 1.2.3.');
   const referencesWithVersion = references.map(parseGitReference);
   const showAvailableVersions = !interactive() && !options.version && referencesWithVersion.some((reference) => !reference.version);

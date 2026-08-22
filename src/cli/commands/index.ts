@@ -9,3 +9,8 @@ export { toggleComponent } from './component/toggle.js';
 export { updateComponent } from './component/update.js';
 export { help } from './help.js';
 export { initProject } from './init.js';
+export { enableComponent } from './component/enable.js';
+export { disableComponent } from './component/disable.js';
+export { componentVersions } from './component/versions.js';
+export { outdatedComponents } from './component/outdated.js';
+export { doctor } from './doctor.js';

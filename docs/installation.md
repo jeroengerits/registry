@@ -46,7 +46,7 @@ curl -fsSL https://raw.githubusercontent.com/jeroengerits/registry/main/install.
 Run the installed CLI to download and build the latest version:
 
 ```sh
-./ui self-update
+./ui update
 ```
 
 This preserves the launcher and replaces the cached build only after the
@@ -86,17 +86,22 @@ UI_INSTALL_DIR="$HOME/bin" UI_CACHE_DIR="$HOME/.cache/acme-ui" \
 The complete command set is:
 
 ```text
-ui self-update
-ui component list [--json] [--available-versions]
-ui component add <github-url> [--version <x.y.z>] [--dry-run] [--force] [--json]
+ui update
+ui doctor
+ui component list [--json] [--versions]
+ui component add <repository> [--version <version>] [--dry-run] [--force] [--json]
 ui component remove [name] [--json]
+ui component info <name> [--json]
+ui component enable <name> [--json]
+ui component disable <name> [--json]
 ui component update [name] [--json]
+ui component outdated [--json]
+ui component versions <name> [--json]
 ```
 
-Every command performs one operation and returns. `./ui` prints the available
-namespaces, while `./ui components` lists installed components. Commands that
-inspect, enable, disable, update, or remove a component require its explicit
-name. Only version selection and destructive confirmation may prompt.
+Every command performs one operation and returns. Commands that inspect, enable,
+disable, or remove a component require its explicit name. Only version selection
+and destructive confirmation may prompt.
 
 Initialize a project before installing components:
 
@@ -104,23 +109,21 @@ Initialize a project before installing components:
 ./ui init
 ```
 
-Add an exact component version with `--version`:
+Add a component by URL or owner/repository shorthand with an exact version:
 
 ```sh
-./ui component add https://github.com/example/button.git --version 1.2.3
+./ui component add example/button --version 1.2.3
 ```
 
-If `--version` is omitted, the latest stable tag is selected and the available
-versions are shown. In an interactive terminal, you can choose another tag;
-the latest tag is preselected.
+If `--version` is omitted, the latest stable version is selected.
 
-The dashboard's enable/disable action changes only the enabled status persisted
-in `ui.json`; it never removes or restores files.
+The enable/disable commands change only the enabled status persisted in `ui.json`;
+they never remove or restore files.
 
-Show all available stable versions for installed components:
+Show available stable versions for one installed component:
 
 ```sh
-./ui component list --available-versions
+./ui component versions button
 ```
 
 `ui` operates on the current working directory. The launcher and its cache are

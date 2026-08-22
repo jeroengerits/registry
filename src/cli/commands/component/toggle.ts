@@ -28,3 +28,17 @@ export async function toggleComponent(cwd: string, name?: string, json = false):
   // Show the transition and make the non-destructive behavior explicit.
   return { output: frame('component status', `${name}\n\n${status(previousStatus === 'enabled')}  →  ${status(component.enabled)}\n\n${outcome(`${name} is ${nextStatus}.`)}`, 'Next: ui component'), exitCode: 0 };
 }
+
+/** Sets a component's enabled state idempotently for script-friendly commands. */
+export async function setComponentEnabled(cwd: string, name: string | undefined, enabled: boolean, json = false): Promise<CommandResult> {
+  const state = await readState(cwd);
+  if (!name) return errorResult(`Usage: ui component ${enabled ? 'enable' : 'disable'} <name> [--json]`);
+  const component = state?.components[name];
+  if (!state || !component) return errorResult(`Component "${name}" is not installed.`);
+  const previousStatus = component.enabled ? 'enabled' : 'disabled';
+  component.enabled = enabled;
+  const nextStatus = enabled ? 'enabled' : 'disabled';
+  await writeState(cwd, state);
+  if (json) return { output: `${JSON.stringify({ name, previousStatus, status: nextStatus, component: { name, ...component } }, null, 2)}\n`, exitCode: 0 };
+  return { output: frame(`component ${enabled ? 'enable' : 'disable'}`, `${name}\n\n${outcome(`${name} is ${nextStatus}.`)}`, 'Next: ui component list'), exitCode: 0 };
+}

@@ -23,11 +23,16 @@ export function validateComponentManifest(value: unknown): ComponentManifest {
   return { ...parsed.data, files };
 }
 
+/** Narrows filesystem failures without asserting an arbitrary error shape. */
+function isErrnoError(error: unknown): error is NodeJS.ErrnoException {
+  return error instanceof Error && 'code' in error;
+}
+
 /** Reads and validates the root `component.json` from a checkout. */
 export async function readComponentManifest(directory: string): Promise<ComponentManifest> {
   try { return validateComponentManifest(JSON.parse(await readFile(path.join(directory, 'component.json'), 'utf8'))); }
   catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') throw new Error('Provided source is not a component: missing component.json.');
+    if (isErrnoError(error) && error.code === 'ENOENT') throw new Error('Provided source is not a component: missing component.json.');
     if (error instanceof SyntaxError) throw new Error('component.json contains invalid JSON.');
     throw error;
   }

@@ -25,6 +25,7 @@ export function parseGitReference(value: string): GitReference {
   if (!repository || (version !== undefined && !version)) throw new Error(`Invalid Git reference: ${value}`);
   if (repository.startsWith('git@github.com:')) repository = `https://github.com/${repository.slice('git@github.com:'.length)}`;
   else if (repository.startsWith('github.com/')) repository = `https://${repository}`;
+  else if (/^[^/\s]+\/[^/\s]+$/.test(repository)) repository = `https://github.com/${repository}`;
   if (repository.startsWith('https://github.com/') && !repository.endsWith('.git')) repository += '.git';
   return { repository, version };
 }
@@ -39,7 +40,11 @@ export function satisfies(version: string, constraint = version): boolean {
   const actual = semver(version); if (!actual) return version === constraint;
   const exact = semver(constraint); if (exact) return actual.every((part, index) => part === exact[index]);
   const match = constraint.match(/^\^(\d+)(?:\.(\d+))?(?:\.(\d+))?$/); if (!match) return false;
-  return actual[0] === Number(match[1]) && (match[1] === undefined || actual[1] >= Number(match[2] ?? 0)) && (match[2] === undefined || actual[2] >= Number(match[3] ?? 0));
+  const major = Number(match[1]);
+  const minor = match[2] === undefined ? undefined : Number(match[2]);
+  const patch = match[3] === undefined ? undefined : Number(match[3]);
+  if (actual[0] !== major || (minor !== undefined && actual[1] < minor)) return false;
+  return minor === undefined || actual[1] > minor || patch === undefined || actual[2] >= patch;
 }
 function compare(a: string, b: string): number { const av = semver(a) ?? [0, 0, 0]; const bv = semver(b) ?? [0, 0, 0]; return bv[0] - av[0] || bv[1] - av[1] || bv[2] - av[2] || b.localeCompare(a); }
 

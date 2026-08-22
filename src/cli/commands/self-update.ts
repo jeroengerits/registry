@@ -6,6 +6,24 @@ import type { CommandResult } from '../../types.js';
 import { errorResult } from './shared.js';
 import { frame, outcome, table, withSpinner } from '../ui.js';
 
+type UnknownRecord = Record<string, unknown>;
+
+function isRecord(value: unknown): value is UnknownRecord {
+  return typeof value === 'object' && value !== null;
+}
+
+function versionFromPackage(value: unknown): string | undefined {
+  return isRecord(value) && typeof value.version === 'string' ? value.version : undefined;
+}
+
+function subprocessMessage(error: unknown): string {
+  if (!isRecord(error)) return String(error);
+  const stderr = typeof error.stderr === 'string' ? error.stderr.trim() : '';
+  const stdout = typeof error.stdout === 'string' ? error.stdout.trim() : '';
+  const message = typeof error.message === 'string' ? error.message : '';
+  return stderr || stdout || message || String(error);
+}
+
 /** Converts installer progress into a compact version comparison and stage list. */
 export function formatSelfUpdateDetails(details: string, currentVersion?: string): { body: string; current: boolean } {
   const lines = details.split('\n').map((line) => line.trim()).filter(Boolean);
@@ -33,7 +51,7 @@ export async function selfUpdate(): Promise<CommandResult> {
   const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), 'ui-update-'));
   const temporaryInstaller = path.join(temporaryDirectory, 'install.sh');
   try {
-    const currentVersion = await readFile(path.join(cacheDirectory, 'package.json'), 'utf8').then((content) => JSON.parse(content).version as string).catch(() => undefined);
+    const currentVersion = await readFile(path.join(cacheDirectory, 'package.json'), 'utf8').then((content) => versionFromPackage(JSON.parse(content) as unknown)).catch(() => undefined);
     // Prepare an isolated installer path for the launcher process.
     await copyFile(installer, temporaryInstaller);
     // Run the installer through Execa and surface its output in the result.
@@ -42,11 +60,10 @@ export async function selfUpdate(): Promise<CommandResult> {
     const details = result.stdout.trim() || 'Installer and cached CLI refreshed.';
     const formatted = formatSelfUpdateDetails(details, currentVersion);
     const message = formatted.current ? 'UI Registry is already up to date.' : 'UI Registry updated.';
-    return { output: frame('self-update', `${formatted.body}\n\n${outcome(message)}`, 'Next: ui help'), exitCode: 0 };
+    return { output: frame('update', `${formatted.body}\n\n${outcome(message)}`, 'Next: ui help'), exitCode: 0 };
   } catch (error) {
     // Normalize subprocess diagnostics into one actionable thrown error.
-    const details = error as { stderr?: string; stdout?: string; message?: string };
-    throw new Error(details.stderr?.trim() || details.stdout?.trim() || details.message || String(error));
+    throw new Error(subprocessMessage(error));
   } finally {
     // Always remove the temporary installer after success or failure.
     await rm(temporaryDirectory, { recursive: true, force: true });

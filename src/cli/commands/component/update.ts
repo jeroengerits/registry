@@ -5,8 +5,15 @@ import { errorResult } from '../shared.js';
 
 /** Updates one component within its persisted compatible-version constraint. */
 export async function updateComponent(cwd: string, name?: string, json = false): Promise<CommandResult> {
-  // Updates require a named component because no safe default exists.
-  if (!name) return errorResult('Usage: ui component update <name> [--json]');
+  if (!name) {
+    const state = await readState(cwd);
+    const names = Object.entries(state?.components ?? {}).filter(([, component]) => component.repository).map(([componentName]) => componentName).sort();
+    if (!names.length) return errorResult('No updatable components are installed.');
+    const results = [];
+    for (const componentName of names) results.push(await updateComponent(cwd, componentName, json));
+    if (json) return { output: `[${results.map((result) => result.output.trim()).join(',')}]\n`, exitCode: results.some((result) => result.exitCode !== 0) ? 1 : 0 };
+    return { output: results.map((result) => result.output).join('\n'), exitCode: results.some((result) => result.exitCode !== 0) ? 1 : 0 };
+  }
   // Read the stored repository and version constraint for the update request.
   const component = (await readState(cwd))?.components[name];
   // Refuse updates when the component cannot be resolved back to its source.

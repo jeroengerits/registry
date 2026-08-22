@@ -50,23 +50,25 @@ describe('component list', () => {
 });
 
 describe('help', () => {
-  it('shows the supported commands and requirements', async () => {
+  it('shows a scannable root command reference', async () => {
     const result = await capture(() => run(['help']));
     expect(result.code).toBe(0);
-    expect(result.stdout).toContain('ui component add <github-url> [--version <x.y.z>] [--dry-run] [--force] [--json]');
-    expect(result.stdout).toContain('ui self-update');
-    expect(result.stdout).toContain('ui components');
-    expect(result.stdout).toContain('ui hooks');
-    expect(result.stdout).toContain('ui component remove [name] [--json]');
-    expect(result.stdout).toContain('ui component update [name] [--json]');
-    expect(result.stdout).toContain('component.json must be in the repository root');
-    expect(result.stdout).toContain('stable semver Git tag');
-    expect(result.stdout).toContain('JSON output never includes prompts');
+    expect(result.stdout).toContain('ui component add');
+    expect(result.stdout).toContain('update                Update UI Registry');
+    expect(result.stdout).toContain('hooks                 Manage project hooks');
+    expect(result.stdout).toContain('component outdated');
+    expect(result.stdout).not.toContain('component.json must be in the repository root');
   });
   it('shows help with no arguments', async () => {
     const result = await capture(() => run([]));
     expect(result.code).toBe(0);
     expect(result.stdout).toContain('UI Registry');
+  });
+  it('shows focused command help', async () => {
+    const result = await capture(() => run(['help', 'component', 'add']));
+    expect(result.code).toBe(0);
+    expect(result.stdout).toContain('ui component add <repository> [options]');
+    expect(result.stdout).toContain('owner/repository');
   });
   it('shows the hooks namespace status', async () => {
     const result = await capture(() => run(['hooks']));
@@ -76,10 +78,11 @@ describe('help', () => {
     const directory = await tempDirectory();
     const initialized = await capture(() => run(['init'], directory));
     expect(initialized.code).toBe(0);
-    expect(initialized.stdout).toContain('UI project initialized.');
+    expect(initialized.stdout).toContain('Project ready.');
     expect(JSON.parse(await readFile(path.join(directory, 'ui.json'), 'utf8'))).toEqual({ components: {} });
     const duplicate = await capture(() => run(['init'], directory));
-    expect(duplicate).toEqual({ code: 1, stdout: 'This project is already initialized. ui.json already exists.\n', stderr: '' });
+    expect(duplicate.code).toBe(0);
+    expect(duplicate.stdout).toContain('already initialized');
   });
   it('shows component namespace commands without a TTY', async () => {
     const result = await capture(() => run(['component']));
@@ -99,9 +102,9 @@ describe('help', () => {
     const update = await capture(() => run(['component', 'update']));
     const toggle = await capture(() => run(['component', 'toggle']));
     expect(info).toEqual({ code: 1, stdout: 'Usage: ui component info <name> [--json]\n', stderr: '' });
-    expect(add).toEqual({ code: 1, stdout: 'Usage: ui component add <github-url> [--version <x.y.z>] [--dry-run] [--force] [--json]\n', stderr: '' });
+    expect(add).toEqual({ code: 1, stdout: 'Usage: ui component add <repository> [--version <version>] [--dry-run] [--force] [--json]\n', stderr: '' });
     expect(remove).toEqual({ code: 1, stdout: 'Usage: ui component remove <name> [--json]\n', stderr: '' });
-    expect(update).toEqual({ code: 1, stdout: 'Usage: ui component update <name> [--json]\n', stderr: '' });
+    expect(update).toEqual({ code: 1, stdout: 'No updatable components are installed.\n', stderr: '' });
     expect(toggle).toEqual({ code: 1, stdout: 'Usage: ui component toggle <name> [--json]\n', stderr: '' });
   });
   it('rejects self-update outside an installed launcher', async () => {

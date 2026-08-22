@@ -1,6 +1,6 @@
 import process from 'node:process';
 import { Command, CommanderError } from 'commander';
-import { addComponent, componentHelp, help, infoComponent, initProject, listComponent, removeComponent, selfUpdate, toggleComponent, updateComponent } from './commands/index.js';
+import { addComponent, componentHelp, componentVersions, disableComponent, doctor, enableComponent, help, infoComponent, initProject, listComponent, outdatedComponents, removeComponent, selfUpdate, toggleComponent, updateComponent } from './commands/index.js';
 import type { CommandResult } from '../types.js';
 import { colors, frame, outcome } from './ui.js';
 
@@ -20,26 +20,29 @@ export async function run(args: string[], cwd = process.cwd()): Promise<number> 
     .exitOverride()
     .configureOutput({ writeOut: () => undefined, writeErr: () => undefined });
 
-  program.command('help').description('Show command help.').action(() => { result = help(); });
+  program.command('help [command...]').description('Show help for a command.').action((command: string[]) => { result = help(command?.join(' ')); });
   program.command('init').description('Initialize a new UI project.').option('--json', 'Print machine-readable JSON.').action(async (options: { json?: boolean }) => { result = await initProject(cwd, Boolean(options.json)); });
-  program.command('self-update').description('Update the installed UI Registry CLI.').action(async () => { result = await selfUpdate(); });
-  program.command('components').description('List installed components.').action(async () => { result = await listComponent(cwd, false); });
-  program.command('hooks').description('Manage project hooks.').action(() => { result = { output: frame('hooks', outcome('No hooks configured yet.', 'warning'), 'Next: ui components'), exitCode: 0 }; });
+  program.command('update').description('Update the UI Registry CLI.').action(async () => { result = await selfUpdate(); });
+  program.command('self-update', { hidden: true }).action(async () => { result = await selfUpdate(); });
+  program.command('components', { hidden: true }).action(async () => { result = await listComponent(cwd, false); });
+  program.command('hooks').description('Manage project hooks.').action(() => { result = { output: frame('hooks', outcome('No hooks configured yet.', 'warning'), 'Next: ui component list'), exitCode: 0 }; });
+  program.command('doctor').description('Check project configuration.').option('--json', 'Print machine-readable JSON.').action(async (options: { json?: boolean }) => { result = await doctor(cwd, Boolean(options.json)); });
 
   const component = program.command('component').description('Manage installed components.');
   component.action(() => { result = componentHelp(); });
   component.command('list')
     .description('List installed components.')
     .option('--json', 'Print machine-readable JSON.')
-    .option('--available-versions', 'Show all stable Git tags.')
-    .action(async (options: { json?: boolean; availableVersions?: boolean }) => { result = await listComponent(cwd, Boolean(options.json), Boolean(options.availableVersions)); });
+    .option('--versions', 'Show stable versions for each installed component.')
+    .option('--available-versions', 'Deprecated alias for --versions.')
+     .action(async (options: { json?: boolean; versions?: boolean; availableVersions?: boolean }) => { result = await listComponent(cwd, Boolean(options.json), Boolean(options.versions || options.availableVersions)); });
   component.command('info [name]')
     .description('Show an installed component.')
     .option('--json', 'Print machine-readable JSON.')
     .action(async (name: string | undefined, options: { json?: boolean }) => { result = await infoComponent(cwd, name, Boolean(options.json)); });
   component.command('add [repositories...]')
-    .description('Install one or more components.')
-    .option('--version <version>', 'Install an exact stable Git tag.')
+    .description('Install a component from a GitHub repository.')
+    .option('--version <version>', 'Install a specific version.')
     .option('--dry-run', 'Preview changes without writing files.')
     .option('--force', 'Overwrite an installed component.')
     .option('--json', 'Print machine-readable JSON.')
@@ -50,14 +53,29 @@ export async function run(args: string[], cwd = process.cwd()): Promise<number> 
     .description('Remove an installed component and its files.')
     .option('--json', 'Print machine-readable JSON.')
     .action(async (name: string | undefined, options: { json?: boolean }) => { result = await removeComponent(cwd, name, Boolean(options.json)); });
-  component.command('toggle [name]')
-    .description('Toggle whether an installed component is enabled.')
-    .option('--json', 'Print machine-readable JSON.')
-    .action(async (name: string | undefined, options: { json?: boolean }) => { result = await toggleComponent(cwd, name, Boolean(options.json)); });
+   component.command('enable [name]')
+     .description('Enable an installed component.')
+     .option('--json', 'Print machine-readable JSON.')
+     .action(async (name: string | undefined, options: { json?: boolean }) => { result = await enableComponent(cwd, name, Boolean(options.json)); });
+   component.command('disable [name]')
+     .description('Disable an installed component.')
+     .option('--json', 'Print machine-readable JSON.')
+     .action(async (name: string | undefined, options: { json?: boolean }) => { result = await disableComponent(cwd, name, Boolean(options.json)); });
+   component.command('toggle [name]', { hidden: true })
+     .option('--json', 'Print machine-readable JSON.')
+     .action(async (name: string | undefined, options: { json?: boolean }) => { result = await toggleComponent(cwd, name, Boolean(options.json)); });
   component.command('update [name]')
-    .description('Update to the newest compatible Git tag.')
-    .option('--json', 'Print machine-readable JSON.')
-    .action(async (name: string | undefined, options: { json?: boolean }) => { result = await updateComponent(cwd, name, Boolean(options.json)); });
+     .description('Update to the latest compatible version.')
+     .option('--json', 'Print machine-readable JSON.')
+     .action(async (name: string | undefined, options: { json?: boolean }) => { result = await updateComponent(cwd, name, Boolean(options.json)); });
+   component.command('outdated')
+     .description('Show available component updates.')
+     .option('--json', 'Print machine-readable JSON.')
+     .action(async (options: { json?: boolean }) => { result = await outdatedComponents(cwd, Boolean(options.json)); });
+   component.command('versions <name>')
+     .description('Show available versions for a component.')
+     .option('--json', 'Print machine-readable JSON.')
+     .action(async (name: string, options: { json?: boolean }) => { result = await componentVersions(cwd, name, Boolean(options.json)); });
 
   try {
     await program.parseAsync(commandArgs, { from: 'user' });
