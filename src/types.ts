@@ -24,6 +24,7 @@ export interface InstalledFile {
 
 export interface ComponentState {
   version: string;
+  constraint?: string;
   path: string;
   repository?: string;
   files?: InstalledFile[];
@@ -32,6 +33,7 @@ export interface ComponentState {
 
 export interface UiState {
   $schema?: string;
+  version?: string;
   components: Record<string, ComponentState>;
 }
 

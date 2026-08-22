@@ -37,6 +37,7 @@ Use the installed CLI to inspect and manage the current project:
 ./ui component info button
 ./ui component add https://github.com/example/button.git
 ./ui component remove button
+./ui component update button
 ./ui self-update
 ./ui help
 ```
@@ -48,6 +49,7 @@ node bin/ui.js component list [--json]
 node bin/ui.js component info <name> [--json]
 node bin/ui.js component add <github-url>
 node bin/ui.js component remove <name>
+node bin/ui.js component update <name>
 node bin/ui.js help
 ```
 
@@ -59,9 +61,11 @@ When `ui.json` is absent, list prints `No installed components.` and exits succe
 ```json
 {
   "$schema": "./schemas/ui.schema.json",
+  "version": "1.0.0",
   "components": {
     "button": {
       "version": "1.0.0",
+      "constraint": "^1",
       "path": "components/button.tsx",
       "files": [{ "path": "components/button.tsx", "sha256": "..." }]
     }
@@ -69,7 +73,7 @@ When `ui.json` is absent, list prints `No installed components.` and exits succe
 }
 ```
 
-`component.json` must be at the repository root and uses `schemaVersion: 1`, a name, optional description, file mappings, npm dependency ranges as an object, and component repository references as `{ "repository": "...", "version": "..." }` objects. `component add` recursively installs component dependencies, validates every repository, source, and target before changing the project, and detects cycles. Tags must be stable `x.y.z` versions; exact, `^major`, and `^major.minor` constraints are supported. HTTPS, SSH, and local filesystem Git references are accepted.
+`component.json` must be at the repository root and uses `schemaVersion: 1`, a name, optional description, file mappings, npm dependency ranges as an object, and component repository references as `{ "repository": "...", "version": "..." }` objects. `component add` recursively installs component dependencies, validates every repository, source, and target before changing the project, and detects cycles. `component update <name>` selects the newest stable Git tag within the installed component's compatibility constraint. The root app version is read from `package.json` and stored in `ui.json`. Tags must be stable `x.y.z` versions; exact, `^major`, and `^major.minor` constraints are supported. HTTPS, SSH, and local filesystem Git references are accepted.
 
 Example manifest:
 

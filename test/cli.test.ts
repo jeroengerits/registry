@@ -40,6 +40,7 @@ describe('help', () => {
     expect(result.stdout).toContain('ui component add <github-url> [--dry-run] [--force] [--json]');
     expect(result.stdout).toContain('ui self-update');
     expect(result.stdout).toContain('ui component remove <name> [--json]');
+    expect(result.stdout).toContain('ui component update <name> [--json]');
     expect(result.stdout).toContain('component.json must be in the repository root');
     expect(result.stdout).toContain('stable semver Git tag');
   });
@@ -57,9 +58,11 @@ describe('help', () => {
     const info = await capture(() => run(['component', 'info']));
     const add = await capture(() => run(['component', 'add']));
     const remove = await capture(() => run(['component', 'remove']));
+    const update = await capture(() => run(['component', 'update']));
     expect(info).toEqual({ code: 1, stdout: 'Usage: ui component info <name> [--json]\n', stderr: '' });
     expect(add).toEqual({ code: 1, stdout: 'Usage: ui component add <github-url> [--dry-run] [--force] [--json]\n', stderr: '' });
     expect(remove).toEqual({ code: 1, stdout: 'Usage: ui component remove <name> [--json]\n', stderr: '' });
+    expect(update).toEqual({ code: 1, stdout: 'Usage: ui component update <name> [--json]\n', stderr: '' });
   });
   it('rejects self-update outside an installed launcher', async () => {
     const installDirectory = process.env.UI_INSTALL_DIR;
@@ -127,6 +130,30 @@ describe('local Git installation', () => {
     expect(result.code).toBe(1);
     expect(result).toEqual({ code: 1, stdout: '', stderr: 'Provided source is not a component: missing component.json.\n' });
     await expect(access(path.join(project, 'ui.json'))).rejects.toThrow();
+  });
+  it('stores the root app version and updates within the component major version', async () => {
+    const repository = await tempDirectory();
+    await mkdir(path.join(repository, 'src'), { recursive: true });
+    await writeFile(path.join(repository, 'src', 'button.tsx'), 'export const Button = 1;\n');
+    await writeFile(path.join(repository, 'component.json'), JSON.stringify({ schemaVersion: 1, name: 'button', files: [{ source: 'src/button.tsx', target: 'components/button.tsx' }], dependencies: {}, components: [] }));
+    await exec('git', ['init', '-q', repository]);
+    await exec('git', ['-C', repository, 'config', 'user.email', 'test@example.invalid']);
+    await exec('git', ['-C', repository, 'config', 'user.name', 'Test']);
+    await exec('git', ['-C', repository, 'add', '.']);
+    await exec('git', ['-C', repository, 'commit', '-qm', 'v1.0.0']);
+    await exec('git', ['-C', repository, 'tag', '1.0.0']);
+    const project = await tempDirectory();
+    await writeFile(path.join(project, 'package.json'), JSON.stringify({ name: 'example-app', version: '2.0.0' }));
+    const added = await capture(() => run(['component', 'add', `${repository}#^1`], project));
+    expect(added.code).toBe(0);
+    expect(JSON.parse(await readFile(path.join(project, 'ui.json'), 'utf8'))).toMatchObject({ version: '2.0.0', components: { button: { version: '1.0.0', constraint: '^1' } } });
+    await writeFile(path.join(repository, 'src', 'button.tsx'), 'export const Button = 2;\n');
+    await exec('git', ['-C', repository, 'add', '.']);
+    await exec('git', ['-C', repository, 'commit', '-qm', 'v1.1.0']);
+    await exec('git', ['-C', repository, 'tag', '1.1.0']);
+    const updated = await capture(() => run(['component', 'update', 'button'], project));
+    expect(updated).toEqual({ code: 0, stdout: 'Updated button@1.1.0\n', stderr: '' });
+    expect(await readFile(path.join(project, 'components/button.tsx'), 'utf8')).toContain('Button = 2');
   });
   it('rejects invalid component.json before writing files', async () => {
     const repository = await tempDirectory();

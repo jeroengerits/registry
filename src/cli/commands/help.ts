@@ -2,7 +2,47 @@ import type { CommandResult } from '../../types.js';
 
 export function help(): CommandResult {
   return {
-    output: `UI Registry\n\nInstall and manage components from GitHub repositories.\n\nCommands:\n  ui help\n    Show this help.\n\n  ui self-update\n    Update the installed UI Registry CLI.\n\n  ui component list [--json]\n    List components installed in the current directory.\n\n  ui component info <name> [--json]\n    Show details for an installed component.\n\n  ui component add <github-url> [--dry-run] [--force] [--json]\n    Validate root component.json and install the component locally.\n    Use --force to overwrite an already installed component.\n    Use --dry-run to preview changes and --json for machine-readable output.\n\n  ui component remove <name> [--json]\n    Remove an installed component and its files.\n\nRequirements:\n  - component.json must be in the repository root.\n  - The repository must contain a stable semver Git tag.\n  - Component files must use safe relative source and target paths.\n\nExamples:\n  ui self-update\n  ui component add https://github.com/example/button.git\n  ui component add https://github.com/example/button.git --force\n  ui component remove button\n  ui component list\n`,
+    output: `UI Registry
+
+Install and manage components from GitHub repositories.
+
+Commands:
+  ui help
+    Show this help.
+
+  ui self-update
+    Update the installed UI Registry CLI.
+
+  ui component list [--json]
+    List components installed in the current directory.
+
+  ui component info <name> [--json]
+    Show details for an installed component.
+
+  ui component add <github-url> [--dry-run] [--force] [--json]
+    Validate root component.json and install the component locally.
+    Use --force to overwrite an already installed component.
+    Use --dry-run to preview changes and --json for machine-readable output.
+
+  ui component remove <name> [--json]
+    Remove an installed component and its files.
+
+  ui component update <name> [--json]
+    Update a component to the newest compatible Git tag.
+
+Requirements:
+  - component.json must be in the repository root.
+  - The repository must contain a stable semver Git tag.
+  - Component files must use safe relative source and target paths.
+
+Examples:
+  ui self-update
+  ui component add https://github.com/example/button.git
+  ui component add https://github.com/example/button.git --force
+  ui component remove button
+  ui component update button
+  ui component list
+`,
     exitCode: 0,
   };
 }

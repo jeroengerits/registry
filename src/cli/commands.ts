@@ -4,3 +4,4 @@ export { infoComponent } from './commands/info.js';
 export { listComponent } from './commands/list.js';
 export { removeComponent } from './commands/remove.js';
 export { selfUpdate } from './commands/self-update.js';
+export { updateComponent } from './commands/update.js';
