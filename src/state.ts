@@ -9,6 +9,7 @@ import { isRecord } from './shared.js';
 export const STATE_FILE = 'ui.json';
 
 const installedFileSchema = z.object({
+  // Hashes are retained for doctor integrity checks after installation.
   path: z.string(),
   sha256: z.string(),
 }).strict();
@@ -19,6 +20,7 @@ const componentReferenceSchema = z.object({
 }).strict();
 
 const componentStateSchema = z.object({
+  // Legacy state omitted enabled; Zod supplies the historical default.
   enabled: z.boolean().default(true),
   version: z.string(),
   constraint: z.string().optional(),
@@ -31,6 +33,7 @@ const componentStateSchema = z.object({
 const uiStateSchema = z.object({
   $schema: z.string().optional(),
   version: z.string().optional(),
+  // Component names are dynamic keys, while each value has a strict schema.
   components: z.record(z.string(), componentStateSchema),
 }).strict();
 

@@ -53,6 +53,7 @@ export async function resolveReferences(references: GitReference[]): Promise<Res
     const checkout = await checkoutGit(reference);
     let manifest: ComponentManifest;
     try { manifest = await readComponentManifest(checkout.directory); } catch (error) { await checkout.cleanup(); throw error; }
+    // Register before walking dependencies so cycles are visible through `visiting`.
     selected.set(key, { manifest, reference, directory: checkout.directory, version: checkout.version, availableVersions: checkout.versions, commit: checkout.commit, cleanup: checkout.cleanup });
     for (const dependency of [...manifest.components].sort((a, b) => a.repository.localeCompare(b.repository))) await visit(parseGitReference(dependency.version ? `${dependency.repository}#${dependency.version}` : dependency.repository));
     visiting.delete(key);
@@ -116,6 +117,7 @@ export async function applyPlans(cwd: string, state: UiState, plans: FilePlan[],
   const overwritten: { destination: string; backup: string }[] = [];
   const removed: { destination: string; backup: string }[] = [];
   try {
+    // Remove files no longer declared by the updated manifest before copying replacements.
     for (const relative of obsolete) {
       try {
         const destination = await safeFilePath(cwd, relative, 'obsolete target');

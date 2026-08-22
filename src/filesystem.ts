@@ -3,6 +3,7 @@ import { copyFile, lstat, mkdir, unlink } from 'node:fs/promises';
 import path from 'node:path';
 import { safeJoin } from './paths.js';
 
+/** Walks every existing path segment to prevent symlink-based boundary escapes. */
 async function assertNoSymlinks(file: string, label: string, required: boolean, boundary?: string): Promise<boolean> {
   const absolute = path.resolve(file);
   const base = path.resolve(boundary ?? path.dirname(absolute));
@@ -13,6 +14,7 @@ async function assertNoSymlinks(file: string, label: string, required: boolean, 
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
   }
+  // Check parent directories as well as the final file; a safe filename can still sit inside a symlink.
   for (const part of relative.split(path.sep).filter(Boolean)) {
     current = path.join(current, part);
     try {
@@ -46,6 +48,7 @@ export async function projectFileExists(root: string, relative: string, label: s
 export async function copySafeFile(source: string, destination: string, label = 'file'): Promise<void> {
   await assertNoSymlinks(source, `${label} source`, true);
   await assertNoSymlinks(destination, `${label} destination`, false, path.dirname(destination));
+  // Create parents only after validating the destination's existing path segments.
   await mkdir(path.dirname(destination), { recursive: true });
   await assertNoSymlinks(destination, `${label} destination`, false, path.dirname(destination));
   await copyFile(source, destination);

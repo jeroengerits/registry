@@ -4,6 +4,8 @@ import { addComponent, componentHelp, componentVersions, disableComponent, docto
 import { frame, outcome } from '../ui.js';
 
 export interface CommandOption { flags: string; description: string; }
+
+/** Single source of truth for Commander registration and generated help. */
 export interface CommandDefinition {
   path: string;
   description: string;
@@ -14,6 +16,8 @@ export interface CommandDefinition {
 }
 
 const jsonOption = { flags: '--json', description: 'Print machine-readable JSON.' };
+
+/** Applies metadata-defined descriptions and options to a Commander command. */
 function configure(command: Command, definition: CommandDefinition): Command {
   command.description(definition.description);
   definition.options?.forEach((option) => command.option(option.flags, option.description));
@@ -53,5 +57,6 @@ export function registerCommands(program: Command, cwd: string, setResult: (resu
 }
 
 export function focusedDefinition(path: string): CommandDefinition | undefined {
+  // Accept both `component list` and the focused `list` help shorthand.
   return commandDefinitions.find((definition) => definition.path === path || definition.path === `component ${path}`);
 }

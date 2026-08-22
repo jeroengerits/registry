@@ -7,6 +7,7 @@ import { isErrnoError } from './shared.js';
 
 /** Runtime schema for the untrusted component manifest file. */
 const manifestSchema = z.object({
+  // Keep the schema version literal so future manifest formats fail explicitly.
   schemaVersion: z.literal(1),
   name: z.string().regex(/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/),
   description: z.string().optional(),
@@ -19,6 +20,7 @@ const manifestSchema = z.object({
 export function validateComponentManifest(value: unknown): ComponentManifest {
   const parsed = manifestSchema.safeParse(value);
   if (!parsed.success) throw new Error('component.json requires schemaVersion 1, a lowercase kebab-case name, files, dependencies, and components.');
+  // Normalize paths once at the trust boundary so installers can use validated values.
   const files = parsed.data.files.map((file, index) => ({ source: safeRelativePath(file.source, `files[${index}].source`), target: safeRelativePath(file.target, `files[${index}].target`) }));
   if (new Set(files.map((file) => file.target)).size !== files.length) throw new Error('component.json contains duplicate target paths.');
   return { ...parsed.data, files };

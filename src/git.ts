@@ -37,6 +37,7 @@ function semver(value: string): [number, number, number] | undefined {
   return match ? [Number(match[1]), Number(match[2]), Number(match[3])] : undefined;
 }
 
+/** Compares parsed semantic-version tuples from oldest to newest. */
 function compareParts(a: [number, number, number], b: [number, number, number]): number {
   return a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
 }
@@ -49,6 +50,7 @@ export function satisfies(version: string, constraint = version): boolean {
   const major = Number(match[1]);
   const minor = match[2] === undefined ? undefined : Number(match[2]);
   const patch = match[3] === undefined ? undefined : Number(match[3]);
+  // A caret range includes its lower bound and excludes the next compatible release.
   const lower: [number, number, number] = [major, minor ?? 0, patch ?? 0];
   const upper: [number, number, number] = major > 0 ? [major + 1, 0, 0] : minor === undefined ? [1, 0, 0] : minor > 0 ? [0, minor + 1, 0] : [0, 0, (patch ?? 0) + 1];
   return compareParts(actual, lower) >= 0 && compareParts(actual, upper) < 0;
@@ -95,6 +97,7 @@ export async function availableVersions(repository: string): Promise<string[]> {
 
 /** Caches tag metadata for one command invocation without sharing stale data globally. */
 export function createVersionLookup(): (repository: string) => Promise<string[]> {
+  // Cache promises, not just resolved values, so concurrent callers share one Git request.
   const cache = new Map<string, Promise<string[]>>();
   return (repository) => {
     const cached = cache.get(repository);
