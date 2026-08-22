@@ -2,7 +2,7 @@
 
 Install and manage reusable UI components from Git repositories or local directories.
 
-Latest release: [v0.0.15](https://github.com/jeroengerits/registry/releases/tag/v0.0.15)
+Latest release: [v0.0.16](https://github.com/jeroengerits/registry/releases/tag/v0.0.16)
 
 ## Install
 
@@ -69,6 +69,9 @@ Use `--dry-run` to preview changes and `--force` to replace an installed compone
 
 # Update one component
 ./ui component update button
+
+# Update one component to a specific stable version
+./ui component update button --version 1.2.3
 
 # Undo the last component update
 ./ui component revert

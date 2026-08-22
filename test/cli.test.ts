@@ -70,6 +70,8 @@ describe('help', () => {
     expect(result.code).toBe(0);
     expect(result.stdout).toContain('ui component add <repository-or-path> [options]');
     expect(result.stdout).toContain('owner/repository');
+    const updateHelp = await capture(() => run(['help', 'component', 'update']));
+    expect(updateHelp.stdout).toContain('--version <version>');
   });
   it('shows focused help for every documented command', async () => {
     const commands = ['init', 'update', 'doctor', 'component', 'component list', 'component info', 'component add', 'component remove', 'component update', 'component outdated', 'component versions'];
@@ -100,7 +102,7 @@ describe('help', () => {
     const result = await capture(() => run(['component']));
     expect(result.code).toBe(0);
     expect(result.stdout).toContain('Component commands');
-    expect(result.stdout).toContain('ui component update [name] [--json]');
+    expect(result.stdout).toContain('ui component update [name] [--version <version>] [--json]');
   });
   it('rejects unknown commands with a useful usage message', async () => {
     const result = await capture(() => run(['component', 'unknown']));
@@ -114,7 +116,7 @@ describe('help', () => {
     const update = await capture(() => run(['component', 'update']));
     const toggle = await capture(() => run(['component', 'toggle']));
     expect(info).toEqual({ code: 1, stdout: 'Usage: ui component info <name> [--json]\n', stderr: '' });
-    expect(add).toEqual({ code: 1, stdout: 'Usage: ui component add <repository> [--version <version>] [--dry-run] [--force] [--json]\n', stderr: '' });
+    expect(add).toEqual({ code: 1, stdout: 'Usage: ui component add <repository-or-path> [--version <version>] [--dry-run] [--force] [--json]\n', stderr: '' });
     expect(remove).toEqual({ code: 1, stdout: 'Usage: ui component remove <name> [--json]\n', stderr: '' });
     expect(update).toEqual({ code: 1, stdout: 'No updatable components are installed.\n', stderr: '' });
     expect(toggle).toEqual({ code: 1, stdout: 'Usage: ui component toggle <name> [--json]\n', stderr: '' });
@@ -339,7 +341,7 @@ describe('local Git installation', () => {
     await exec('git', ['-C', repository, 'add', '.']);
     await exec('git', ['-C', repository, 'commit', '-qm', 'v1.1.0']);
     await exec('git', ['-C', repository, 'tag', '1.1.0']);
-    const updated = await capture(() => run(['component', 'update', 'button'], project));
+    const updated = await capture(() => run(['component', 'update', 'button', '--version', '1.1.0'], project));
     expect(updated.code).toBe(0);
     expect(updated.stdout).toContain('Updated button@1.1.0');
     expect(updated.stdout).toContain('1 component updated');
