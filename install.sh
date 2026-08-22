@@ -56,16 +56,7 @@ printf 'Installed ui to %s\n' "$launcher"
 printf '\nWelcome to UI Registry.\n\n'
 printf 'Available commands:\n'
 printf '  %s components list [--json]\n' "$launcher"
-printf '  %s components create <name> [--json]\n' "$launcher"
 printf '  %s components info <name> [--json]\n' "$launcher"
-printf '  %s hooks list [--json]\n' "$launcher"
-printf '  %s add <git-reference> --yes\n' "$launcher"
-printf '  %s add <git-reference> --dry-run [--json]\n' "$launcher"
-printf '  %s update [<name>] [--overwrite]\n' "$launcher"
-printf '  %s remove <name> [--overwrite]\n' "$launcher"
-printf '  %s doctor\n' "$launcher"
-printf '  %s manifest validate <file>\n' "$launcher"
-printf '  %s manifest generate <directory> [output]\n' "$launcher"
 
 if [ "$#" -gt 0 ]; then
   exec "$launcher" "$@"

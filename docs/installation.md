@@ -78,16 +78,7 @@ installation:
 
 ```text
 ./ui components list [--json]
-./ui components create <name> [--json]
 ./ui components info <name> [--json]
-./ui hooks list [--json]
-./ui add <git-reference> --yes
-./ui add <git-reference> --dry-run [--json]
-./ui update [<name>] [--overwrite]
-./ui remove <name> [--overwrite]
-./ui doctor
-./ui manifest validate <file>
-./ui manifest generate <directory> [output]
 ```
 
 `ui` operates on the current working directory. The launcher and its cache are
