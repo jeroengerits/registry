@@ -39,15 +39,6 @@ Use the installed CLI to inspect and manage the current project:
 ./ui help
 ```
 
-After installation, the installer prints this complete command list:
-
-```text
-./ui components list [--json]
-./ui components info <name> [--json]
-./ui components add <github-url> --yes
-./ui help
-```
-
 The same commands can be run directly from a local checkout during development:
 
 ```sh
