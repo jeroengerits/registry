@@ -15,7 +15,7 @@ The installer requires:
 - `curl` or `wget`;
 - `tar`.
 
-The current release is `v0.1.0`. The installer builds the CLI locally from the
+The current release is `v0.0.7`. The installer builds the CLI locally from the
 selected repository branch, so Node.js is also required for self-updates.
 
 It writes the launcher to `./ui` and the built CLI to `./.ui-registry`, relative

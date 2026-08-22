@@ -1,6 +1,6 @@
 import process from 'node:process';
 import { Command, CommanderError } from 'commander';
-import { addComponent, componentHelp, help, infoComponent, listComponent, removeComponent, selfUpdate, toggleComponent, updateComponent } from './commands.js';
+import { addComponent, componentHelp, help, infoComponent, listComponent, removeComponent, selfUpdate, toggleComponent, updateComponent } from './commands/index.js';
 import type { CommandResult } from '../types.js';
 import { frame } from './ui.js';
 

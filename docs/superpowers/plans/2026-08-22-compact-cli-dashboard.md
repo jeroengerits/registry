@@ -23,7 +23,7 @@
 - Modify `src/cli/commands/component/remove.ts`: render selection, confirmation, and removal result.
 - Create `src/cli/commands/component/toggle.ts`: flip one persisted component status.
 - Modify `src/cli/commands/self-update.ts`: render staged self-update output.
-- Modify `src/cli/commands.ts`: export the toggle command.
+- Modify `src/cli/commands/index.ts`: export the toggle command.
 - Modify `src/cli/index.ts`: register `component toggle [name] [--json]`.
 - Modify `src/cli/commands/help.ts`: document the new command and output behavior.
 - Modify `test/cli.test.ts`: cover state migration, toggle flows, status output, and JSON behavior.
@@ -125,7 +125,7 @@ git commit -m "refactor: add shared cli output primitives"
 
 **Files:**
 - Create: `src/cli/commands/component/toggle.ts`
-- Modify: `src/cli/commands.ts`
+- Modify: `src/cli/commands/index.ts`
 - Modify: `src/cli/index.ts`
 - Modify: `src/cli/commands/help.ts`
 - Test: `test/cli.test.ts`
@@ -169,7 +169,7 @@ Run: `npm test -- --run test/cli.test.ts`
 Expected: all toggle tests pass.
 
 ```sh
-git add src/cli/commands/component/toggle.ts src/cli/commands.ts src/cli/index.ts src/cli/commands/help.ts test/cli.test.ts
+git add src/cli/commands/component/toggle.ts src/cli/commands/index.ts src/cli/index.ts src/cli/commands/help.ts test/cli.test.ts
 git commit -m "feat: add component toggle command"
 ```
 
