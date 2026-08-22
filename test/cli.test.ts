@@ -23,7 +23,7 @@ describe('component list', () => {
     const directory = await tempDirectory();
     await writeFile(path.join(directory, 'ui.json'), JSON.stringify({ components: { zeta: { version: '1.0.0', path: 'zeta', repository: 'https://github.com/example/zeta.git' }, alpha: { version: '2.0.0', path: 'alpha' } } }));
     const result = await capture(() => run(['component', 'list'], directory));
-    expect(result.stdout).toBe('alpha@2.0.0 (alpha)\nzeta@1.0.0 (zeta) - https://github.com/example/zeta.git\n');
+    expect(result.stdout).toBe('Installed components (2)\n\nalpha @2.0.0\n  Path: alpha\n\nzeta @1.0.0\n  Path: zeta\n  Repository: https://github.com/example/zeta.git\n');
   });
   it('supports JSON output', async () => {
     const directory = await tempDirectory();
@@ -107,7 +107,7 @@ describe('local Git installation', () => {
     expect(added).toEqual({ code: 0, stdout: 'Added button@1.2.3\n', stderr: '' });
     expect(await readFile(path.join(project, 'components/button.tsx'), 'utf8')).toContain('Button');
     const available = await capture(() => run(['component', 'list', '--available-versions'], project));
-    expect(available.stdout).toContain('available: 1.2.3');
+    expect(available.stdout).toContain('Available: 1.2.3');
     const duplicate = await capture(() => run(['component', 'add', repository], project));
     expect(duplicate).toEqual({ code: 1, stdout: '', stderr: 'Component "button" is already installed. Use --force to overwrite it.\n' });
     const forced = await capture(() => run(['component', 'add', repository, '--force'], project));
