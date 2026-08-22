@@ -37,7 +37,7 @@ fi
 tar -xzf "$temporary_dir/source.tar.gz" -C "$temporary_dir"
 source_dir="$temporary_dir/registry-$branch"
 
-(cd "$source_dir" && npm ci --ignore-scripts --no-audit --no-fund >/dev/null)
+(cd "$source_dir" && npm install --ignore-scripts --no-package-lock --no-audit --no-fund >/dev/null)
 (cd "$source_dir" && npm run build >/dev/null)
 
 rm -rf "$cache_dir"
