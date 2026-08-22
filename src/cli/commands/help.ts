@@ -41,7 +41,7 @@ function commandReference(command: string): CommandResult {
   if (!definition) return { output: `${colors.error(`Unknown help topic: ${command}`)}\n`, exitCode: 1 };
   const usage = definition.usage ? ` ${definition.usage}` : '';
   const options = definition.options?.length ? `\n\nOptions:\n${definition.options.map((option) => `  ${option.flags.padEnd(22)}${option.description}`).join('\n')}` : '';
-  const argument = definition.path === 'component add' ? '\n\nArguments:\n  repository  GitHub URL or owner/repository' : '';
+  const argument = definition.path === 'component add' ? '\n\nArguments:\n  repository-or-path  GitHub URL, owner/repository, or local component directory' : '';
   const output = `${colors.info(`ui ${definition.path}${usage}`)}\n\n${definition.description}${argument}${options}`;
   return { output: `${output}\n`, exitCode: 0 };
 }

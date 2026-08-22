@@ -55,7 +55,7 @@ export async function resolveReferences(references: GitReference[]): Promise<Res
     try { manifest = await readComponentManifest(checkout.directory); } catch (error) { await checkout.cleanup(); throw error; }
     // Register before walking dependencies so cycles are visible through `visiting`.
     selected.set(key, { manifest, reference, directory: checkout.directory, version: checkout.version, availableVersions: checkout.versions, commit: checkout.commit, cleanup: checkout.cleanup });
-    for (const dependency of [...manifest.components].sort((a, b) => a.repository.localeCompare(b.repository))) await visit(parseGitReference(dependency.version ? `${dependency.repository}#${dependency.version}` : dependency.repository));
+    for (const dependency of [...manifest.components].sort((a, b) => a.repository.localeCompare(b.repository))) await visit(parseGitReference(dependency.version ? `${dependency.repository}#${dependency.version}` : dependency.repository, selected.get(key)?.directory ?? process.cwd()));
     visiting.delete(key);
   };
   try { for (const reference of references) await visit(reference); } catch (error) { await Promise.all([...selected.values()].map((item) => item.cleanup())); throw error; }

@@ -1,6 +1,7 @@
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, rm, stat } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { execa } from 'execa';
 import { errorMessage } from './shared.js';
 
@@ -14,7 +15,7 @@ export interface GitReference { repository: string; version?: string; }
 export interface GitCheckout { directory: string; version: string; versions: string[]; commit: string; cleanup: () => Promise<void>; }
 
 /** Normalizes GitHub shorthand and extracts an optional version constraint. */
-export function parseGitReference(value: string): GitReference {
+export function parseGitReference(value: string, baseDirectory = process.cwd()): GitReference {
   const input = value.trim();
   if (!input) throw new Error('A Git repository reference is required.');
   const hash = input.lastIndexOf('#');
@@ -24,6 +25,10 @@ export function parseGitReference(value: string): GitReference {
   let repository = split > -1 ? input.slice(0, split) : input;
   const version = split > -1 ? input.slice(split + 1) : undefined;
   if (!repository || (version !== undefined && !version)) throw new Error(`Invalid Git reference: ${value}`);
+  if (repository.startsWith('file://')) repository = fileURLToPath(repository);
+  if (repository === '.' || repository === '..' || repository.startsWith(`.${path.sep}`) || repository.startsWith('./') || repository.startsWith('../') || path.isAbsolute(repository)) {
+    return { repository: path.resolve(baseDirectory, repository), version };
+  }
   if (repository.startsWith('git@github.com:')) repository = `https://github.com/${repository.slice('git@github.com:'.length)}`;
   else if (repository.startsWith('github.com/')) repository = `https://${repository}`;
   else if (/^[^/\s]+\/[^/\s]+$/.test(repository)) repository = `https://github.com/${repository}`;
@@ -65,6 +70,7 @@ function compare(a: string, b: string): number { const av = semver(a) ?? [0, 0, 
 
 /** Clones a repository, selects a stable tag, and returns cleanup metadata. */
 export async function checkoutGit(reference: GitReference): Promise<GitCheckout> {
+  if (path.isAbsolute(reference.repository)) return checkoutLocal(reference);
   const directory = await mkdtemp(path.join(os.tmpdir(), 'ui-registry-git-'));
   try {
     await runGit('git', ['clone', '--quiet', reference.repository, directory]);
@@ -81,6 +87,25 @@ export async function checkoutGit(reference: GitReference): Promise<GitCheckout>
     const commit = (await runGit('git', ['rev-parse', 'HEAD'], { cwd: directory })).stdout.trim();
     return { directory, version, versions, commit, cleanup: () => rm(directory, { recursive: true, force: true }) };
   } catch (error) { await rm(directory, { recursive: true, force: true }); throw new Error(`Unable to prepare Git repository: ${errorMessage(error)}`); }
+}
+
+/** Reads a local component directory without cloning or deleting the caller's files. */
+async function checkoutLocal(reference: GitReference): Promise<GitCheckout> {
+  const directory = reference.repository;
+  const information = await stat(directory).catch(() => undefined);
+  if (!information?.isDirectory()) throw new Error(`Local component path is not a directory: ${directory}`);
+  let versions: string[] = [];
+  try {
+    const tags = (await runGit('git', ['tag', '--list'], { cwd: directory })).stdout.split(/\r?\n/).filter(Boolean).map((tag) => tag.replace(/^v/, '')).filter((tag) => semver(tag));
+    versions = tags.sort(compare);
+  } catch {
+    // A plain directory is valid; it simply has no Git version history.
+  }
+  const version = versions.find((candidate) => !reference.version || satisfies(candidate, reference.version)) ?? reference.version ?? 'local';
+  if (reference.version && versions.length && !satisfies(version, reference.version)) throw new Error(`Local component ${directory} has no version matching ${reference.version}.`);
+  let commit = '';
+  try { commit = (await runGit('git', ['rev-parse', 'HEAD'], { cwd: directory })).stdout.trim(); } catch { /* Plain local directories have no commit identity. */ }
+  return { directory, version, versions, commit, cleanup: async () => undefined };
 }
 
 /** Lists stable semantic-version tags without retaining the checkout. */

@@ -69,7 +69,7 @@ describe('help', () => {
   it('shows focused command help', async () => {
     const result = await capture(() => run(['help', 'component', 'add']));
     expect(result.code).toBe(0);
-    expect(result.stdout).toContain('ui component add <repository> [options]');
+    expect(result.stdout).toContain('ui component add <repository-or-path> [options]');
     expect(result.stdout).toContain('owner/repository');
   });
   it('shows focused help for every documented command', async () => {
@@ -192,6 +192,18 @@ describe('shared helpers', () => {
 });
 
 describe('local Git installation', () => {
+  it('installs a component from a local directory without Git metadata', async () => {
+    const project = await tempDirectory();
+    const component = path.join(project, 'local-component');
+    await mkdir(path.join(component, 'src'), { recursive: true });
+    await writeFile(path.join(component, 'src', 'badge.ts'), 'export const Badge = 1;\n');
+    await writeFile(path.join(component, 'component.json'), JSON.stringify({ schemaVersion: 1, name: 'local-badge', files: [{ source: 'src/badge.ts', target: 'components/badge.ts' }], dependencies: {}, components: [] }));
+    const result = await capture(() => run(['component', 'add', './local-component'], project));
+    expect(result.code).toBe(0);
+    expect(result.stdout).toContain('Added local-badge@local');
+    expect(await readFile(path.join(project, 'components/badge.ts'), 'utf8')).toContain('Badge');
+  });
+
   it('uses standard caret compatibility semantics', () => {
     expect(satisfies('0.9.0', '^0')).toBe(true);
     expect(satisfies('1.0.0', '^0')).toBe(false);
