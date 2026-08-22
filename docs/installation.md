@@ -15,6 +15,9 @@ The installer requires:
 - `curl` or `wget`;
 - `tar`.
 
+The current release is `v0.0.1`. The installer builds the CLI locally from the
+selected repository branch, so Node.js is also required for self-updates.
+
 It writes the launcher to `./ui` and the built CLI to `./.ui-registry`, relative
 to the directory where the installer is run. Run the launcher explicitly:
 
@@ -80,6 +83,17 @@ UI_INSTALL_DIR="$HOME/bin" UI_CACHE_DIR="$HOME/.cache/acme-ui" \
 ./ui component update <name>
 ```
 
+The complete command set is:
+
+```text
+ui self-update
+ui component list [--json] [--available-versions]
+ui component info <name> [--json]
+ui component add <github-url> [--version <x.y.z>] [--dry-run] [--force] [--json]
+ui component remove <name> [--json]
+ui component update <name> [--json]
+```
+
 Add an exact component version with `--version`:
 
 ```sh
@@ -90,6 +104,9 @@ If `--version` is omitted, the latest stable tag is selected and the available
 versions are shown. In an interactive terminal, you can choose another tag;
 the latest tag is preselected.
 
+When `component info` or `component remove` is run without a name in an
+interactive terminal, the CLI opens a picker containing installed components.
+
 Show all available stable versions for installed components:
 
 ```sh
@@ -99,3 +116,5 @@ Show all available stable versions for installed components:
 `ui` operates on the current working directory. The launcher and its cache are
 local to the installation directory, while it stores installed component
 state in `ui.json` and installs declared npm dependencies during `component add`.
+The root app version from `package.json` is recorded in `ui.json`. Interactive
+spinners and colors are disabled for JSON, CI, and redirected output.

@@ -2,6 +2,8 @@
 
 Install and manage Git-based components described by `component.json`.
 
+Current release: [v0.0.1](https://github.com/jeroengerits/registry/releases/tag/v0.0.1)
+
 ## Install
 
 ```sh
@@ -34,6 +36,9 @@ output remain plain and script-friendly.
 
 In an interactive terminal, omitting the name from `component info` or
 `component remove` opens a component picker.
+
+The CLI uses Commander.js for parsing, Zod for manifest validation, Execa for
+Git and package-manager processes, and Ora/Picocolors/Clack for terminal UX.
 
 ## Component Manifest
 
