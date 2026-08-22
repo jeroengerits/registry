@@ -103,7 +103,7 @@ describe('local Git installation', () => {
     const dryRun = await capture(() => run(['component', 'add', repository, '--dry-run', '--json'], project));
     expect(dryRun.code, dryRun.stderr).toBe(0);
     expect(JSON.parse(dryRun.stdout).components[0].name).toBe('button');
-    const added = await capture(() => run(['component', 'add', repository, '--version', '1.2.3'], project));
+    const added = await capture(() => run(['component', 'add', repository, '--version=1.2.3'], project));
     expect(added.code).toBe(0);
     expect(await readFile(path.join(project, 'components/button.tsx'), 'utf8')).toContain('Button');
     const available = await capture(() => run(['component', 'list', '--available-versions'], project));
@@ -154,7 +154,7 @@ describe('local Git installation', () => {
     await exec('git', ['-C', repository, 'commit', '-qm', 'v1.1.0']);
     await exec('git', ['-C', repository, 'tag', '1.1.0']);
     const updated = await capture(() => run(['component', 'update', 'button'], project));
-    expect(updated).toEqual({ code: 0, stdout: 'Updated button@1.1.0\n', stderr: '' });
+    expect(updated).toEqual({ code: 0, stdout: 'Available versions for button: 1.1.0, 1.0.0\nUpdated button@1.1.0\n', stderr: '' });
     expect(await readFile(path.join(project, 'components/button.tsx'), 'utf8')).toContain('Button = 2');
   });
   it('rejects invalid component.json before writing files', async () => {

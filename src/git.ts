@@ -6,7 +6,7 @@ import { promisify } from 'node:util';
 
 const runGit = promisify(execFile);
 export interface GitReference { repository: string; version?: string; }
-export interface GitCheckout { directory: string; version: string; commit: string; cleanup: () => Promise<void>; }
+export interface GitCheckout { directory: string; version: string; versions: string[]; commit: string; cleanup: () => Promise<void>; }
 
 export function parseGitReference(value: string): GitReference {
   const input = value.trim();
@@ -42,13 +42,14 @@ export async function checkoutGit(reference: GitReference): Promise<GitCheckout>
     await runGit('git', ['clone', '--quiet', reference.repository, directory]);
     const rawTags = (await runGit('git', ['tag', '--list', '--sort=-version:refname'], { cwd: directory })).stdout.split(/\r?\n/).filter(Boolean);
     const tags = rawTags.map((tag) => ({ tag, version: tag.replace(/^v/, '') }));
-    const version = tags.map((item) => item.version).filter((tag) => semver(tag) && (!reference.version || satisfies(tag, reference.version))).sort(compare)[0];
+    const versions = tags.map((item) => item.version).filter((tag) => semver(tag)).sort(compare);
+    const version = versions.filter((tag) => !reference.version || satisfies(tag, reference.version))[0];
     if (!version) throw new Error(`Repository ${reference.repository} has no stable semver tag.`);
     const tag = tags.find((candidate) => candidate.version === version);
     if (!tag) throw new Error(`Version ${reference.version} was not found in ${reference.repository}.`);
     await runGit('git', ['checkout', '--quiet', tag.tag], { cwd: directory });
     const commit = (await runGit('git', ['rev-parse', 'HEAD'], { cwd: directory })).stdout.trim();
-    return { directory, version, commit, cleanup: () => rm(directory, { recursive: true, force: true }) };
+    return { directory, version, versions, commit, cleanup: () => rm(directory, { recursive: true, force: true }) };
   } catch (error) { await rm(directory, { recursive: true, force: true }); throw new Error(`Unable to prepare Git repository: ${error instanceof Error ? error.message : String(error)}`); }
 }
 

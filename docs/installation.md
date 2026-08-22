@@ -86,6 +86,9 @@ Add an exact component version with `--version`:
 ./ui component add https://github.com/example/button.git --version 1.2.3
 ```
 
+If `--version` is omitted, the latest stable tag is selected and the available
+versions are shown.
+
 Show all available stable versions for installed components:
 
 ```sh

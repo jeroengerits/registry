@@ -24,7 +24,7 @@ export async function installDependencies(cwd: string, dependencies: Record<stri
   await exec(manager === 'npm' ? 'npm' : manager, manager === 'npm' ? ['install', '--save', ...names] : ['add', ...names], { cwd });
 }
 
-export interface Resolved { manifest: ComponentManifest; reference: GitReference; directory: string; version: string; commit: string; cleanup: () => Promise<void>; }
+export interface Resolved { manifest: ComponentManifest; reference: GitReference; directory: string; version: string; availableVersions: string[]; commit: string; cleanup: () => Promise<void>; }
 
 function canonical(repository: string): string {
   const parsed = parseGitReference(repository).repository;
@@ -46,7 +46,7 @@ export async function resolveReferences(references: GitReference[]): Promise<Res
     const checkout = await checkoutGit(reference);
     let manifest: ComponentManifest;
     try { manifest = await readComponentManifest(checkout.directory); } catch (error) { await checkout.cleanup(); throw error; }
-    selected.set(key, { manifest, reference, directory: checkout.directory, version: checkout.version, commit: checkout.commit, cleanup: checkout.cleanup });
+    selected.set(key, { manifest, reference, directory: checkout.directory, version: checkout.version, availableVersions: checkout.versions, commit: checkout.commit, cleanup: checkout.cleanup });
     for (const dependency of [...manifest.components].sort((a, b) => a.repository.localeCompare(b.repository))) await visit(parseGitReference(dependency.version ? `${dependency.repository}#${dependency.version}` : dependency.repository));
     visiting.delete(key);
   };

@@ -2,7 +2,7 @@ import process from 'node:process';
 import { addComponent, help, infoComponent, listComponent, removeComponent, selfUpdate, updateComponent } from './commands.js';
 
 export async function run(args: string[], cwd = process.cwd()): Promise<number> {
-  const json = args.includes('--json'); const versionIndex = args.indexOf('--version'); const version = versionIndex > -1 ? args[versionIndex + 1] : undefined; const positional = args.filter((arg, index) => !arg.startsWith('--') && !(versionIndex > -1 && index === versionIndex + 1)); let result;
+  const json = args.includes('--json'); const versionIndex = args.findIndex((arg) => arg === '--version' || arg.startsWith('--version=')); const inlineVersion = versionIndex > -1 && args[versionIndex].startsWith('--version=') ? args[versionIndex].slice('--version='.length) : undefined; const version = versionIndex > -1 ? inlineVersion ?? args[versionIndex + 1] : undefined; const versionValueIndex = inlineVersion !== undefined ? -1 : versionIndex + 1; const positional = args.filter((arg, index) => !arg.startsWith('--') && !(versionIndex > -1 && index === versionValueIndex)); let result;
   try {
     if (positional[0] === 'help' || positional.length === 0) result = help();
     else if (positional[0] === 'self-update') result = await selfUpdate();

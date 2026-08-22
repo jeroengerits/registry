@@ -23,8 +23,9 @@ configuration and troubleshooting.
 ```
 
 `component update` selects the newest compatible Git tag. `--force` overwrites
-an already installed component. `--available-versions` shows all stable tags
-for each installed component.
+an already installed component. Add a specific tag with `--version`; without
+it, the latest stable tag is selected and available versions are shown.
+`--available-versions` shows all stable tags for each installed component.
 
 ## Component Manifest
 
