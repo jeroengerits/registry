@@ -1,7 +1,7 @@
 import ora from 'ora';
 import pc from 'picocolors';
 import Table from 'cli-table3';
-import { confirm, isCancel, select, text } from '@clack/prompts';
+import { confirm, isCancel, select } from '@clack/prompts';
 
 /** Returns true when interactive prompts and terminal styling are safe. */
 export function interactive(): boolean {
@@ -71,15 +71,6 @@ export async function chooseVersion(component: string, versions: string[]): Prom
   });
   if (isCancel(choice)) throw new Error('Operation cancelled.');
   return choice;
-}
-
-
-/** Prompts for the repository used by the interactive add flow. */
-export async function promptRepository(): Promise<string> {
-  const value = await text({ message: 'Git repository URL', placeholder: 'https://github.com/example/button.git' });
-  if (isCancel(value)) throw new Error('Operation cancelled.');
-  if (!value.trim()) throw new Error('A Git repository URL is required.');
-  return value.trim();
 }
 
 /** Confirms a potentially destructive action and handles cancellation. */

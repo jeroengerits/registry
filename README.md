@@ -2,7 +2,7 @@
 
 Install and manage Git-based components described by `component.json`.
 
-Current release: [v0.0.11](https://github.com/jeroengerits/registry/releases/tag/v0.0.11)
+Current release: [v0.0.13](https://github.com/jeroengerits/registry/releases/tag/v0.0.13)
 
 ## Install
 
