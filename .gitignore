@@ -8,3 +8,4 @@ coverage/
 .ui-remove-backup-*
 .ui-registry/
 /ui
+.superpowers/
