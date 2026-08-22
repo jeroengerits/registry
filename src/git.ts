@@ -87,3 +87,15 @@ export async function availableVersions(repository: string): Promise<string[]> {
     .filter((version) => semver(version))
     .sort(compare);
 }
+
+/** Caches tag metadata for one command invocation without sharing stale data globally. */
+export function createVersionLookup(): (repository: string) => Promise<string[]> {
+  const cache = new Map<string, Promise<string[]>>();
+  return (repository) => {
+    const cached = cache.get(repository);
+    if (cached) return cached;
+    const lookup = availableVersions(repository);
+    cache.set(repository, lookup);
+    return lookup;
+  };
+}

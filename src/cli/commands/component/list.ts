@@ -1,6 +1,7 @@
 import type { CommandResult } from '../../../types.js';
 import { readState } from '../../../state.js';
-import { availableVersions } from '../../../git.js';
+import { createVersionLookup } from '../../../git.js';
+import { mapConcurrent } from '../../../shared.js';
 import { colors, frame, outcome, status, table, withSpinner } from '../../ui.js';
 import { present } from '../../presentation.js';
 
@@ -13,7 +14,10 @@ export async function listComponent(cwd: string, json: boolean, showAvailableVer
   // Sort names for stable output and predictable automation.
   const installed = Object.entries(state.components).sort(([a], [b]) => a.localeCompare(b)).map(([name, details]) => ({ name, ...details }));
   // Fetch remote tags only when the caller explicitly asks for them.
-  const components: Array<typeof installed[number] & { availableVersions?: string[] }> = showAvailableVersions ? await withSpinner('Checking available component versions...', () => Promise.all(installed.map(async (component) => ({ ...component, availableVersions: component.repository ? await availableVersions(component.repository) : [] }))), (value) => `Checked ${value.length} component${value.length === 1 ? '' : 's'}`, !json) : installed;
+  const components: Array<typeof installed[number] & { availableVersions?: string[] }> = showAvailableVersions ? await withSpinner('Checking available component versions...', async () => {
+    const lookup = createVersionLookup();
+    return mapConcurrent(installed, 4, async (component) => ({ ...component, availableVersions: component.repository ? await lookup(component.repository) : [] }));
+  }, (value) => `Checked ${value.length} component${value.length === 1 ? '' : 's'}`, !json) : installed;
   // Return structured data before constructing any terminal presentation.
   if (json) return present(true, components, '');
   // Keep an empty registry concise in human-readable mode.

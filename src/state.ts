@@ -57,6 +57,17 @@ export async function writeState(cwd: string, state: UiState): Promise<void> {
   await writeFile(temporary, `${JSON.stringify(state, null, 2)}\n`, 'utf8'); await rename(temporary, file);
 }
 
+/** Creates initial state exclusively so concurrent init commands cannot overwrite it. */
+export async function initializeState(cwd: string, state: UiState): Promise<boolean> {
+  try {
+    await writeFile(path.join(cwd, STATE_FILE), `${JSON.stringify(state, null, 2)}\n`, { encoding: 'utf8', flag: 'wx' });
+    return true;
+  } catch (error) {
+    if (isRecord(error) && error.code === 'EEXIST') return false;
+    throw error;
+  }
+}
+
 /** Reads the host application's package version for display and state metadata. */
 export async function readRootVersion(cwd: string): Promise<string | undefined> {
   try {

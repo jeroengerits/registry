@@ -2,7 +2,6 @@ import type { CommandResult } from '../../../types.js';
 import { readState } from '../../../state.js';
 import { addComponent } from './add.js';
 import { errorResult } from '../shared.js';
-import { present } from '../../presentation.js';
 
 /** Updates one component within its persisted compatible-version constraint. */
 export async function updateComponent(cwd: string, name?: string, json = false): Promise<CommandResult> {
@@ -10,11 +9,12 @@ export async function updateComponent(cwd: string, name?: string, json = false):
     const state = await readState(cwd);
     const names = Object.entries(state?.components ?? {}).filter(([, component]) => component.repository).map(([componentName]) => componentName).sort();
     if (!names.length) return errorResult('No updatable components are installed.');
-    const results: CommandResult[] = [];
-    for (const componentName of names) results.push(await updateComponent(cwd, componentName, json));
-    const exitCode = results.some((result) => result.exitCode !== 0) ? 1 : 0;
-    const data = results.map((result) => result.data ?? null);
-    return present(json, data, results.map((result) => result.output).join('\n'), exitCode);
+    const references = names.map((componentName) => {
+      const component = state?.components[componentName];
+      const major = component?.version.replace(/^v/, '').split('.')[0] ?? '0';
+      return `${component?.repository}#${component?.constraint ?? `^${major}`}`;
+    });
+    return addComponent(cwd, references, { dryRun: false, force: true, update: true, json, command: 'component update' });
   }
   // Read the stored repository and version constraint for the update request.
   const component = (await readState(cwd))?.components[name];

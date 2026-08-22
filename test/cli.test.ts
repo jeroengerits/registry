@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { run } from '../src/cli/index.js';
-import { validateState } from '../src/state.js';
+import { initializeState, validateState } from '../src/state.js';
 import { availableVersions, parseGitReference, satisfies } from '../src/git.js';
 import { formatSelfUpdateDetails } from '../src/cli/commands/self-update.js';
 import { errorMessage, isErrnoError, isRecord } from '../src/shared.js';
@@ -157,6 +157,16 @@ describe('validation', () => {
   it('validates state schema', () => {
     expect(() => validateState({ components: { button: { version: '1', path: 'button' } } })).not.toThrow();
     expect(() => validateState({ components: { button: { version: 1 } } })).toThrow(/version.*path/);
+  });
+
+  it('initializes state exclusively when concurrent callers race', async () => {
+    const directory = await tempDirectory();
+    const results = await Promise.all([
+      initializeState(directory, { components: {} }),
+      initializeState(directory, { components: {} }),
+    ]);
+    expect(results.sort()).toEqual([false, true]);
+    expect(JSON.parse(await readFile(path.join(directory, 'ui.json'), 'utf8'))).toEqual({ components: {} });
   });
 });
 
