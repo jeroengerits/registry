@@ -12,7 +12,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "ui:components:list": "node bin/ui.js components list",
-    "ui:hooks:list": "node bin/ui.js hooks list"
+    "ui:hooks:list": "node bin/ui.js hooks list",
+    "ui:components:create": "node bin/ui.js components create"
   },
   "devDependencies": {
     "@eslint/js": "^9.22.0",

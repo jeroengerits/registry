@@ -1,4 +1,4 @@
-import { access, copyFile, mkdir, mkdtemp, readFile, rm, stat, unlink } from 'node:fs/promises';
+import { access, copyFile, mkdir, mkdtemp, readFile, rm, stat, unlink, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { execFile } from 'node:child_process';
@@ -41,6 +41,24 @@ async function resolveReferences(references: GitReference[]): Promise<Resolved[]
 }
 
 export async function listComponents(cwd: string, json: boolean): Promise<CommandResult> { const state = await readState(cwd); if (!state) return { output: json ? '[]\n' : 'No installed components.\n', exitCode: 0 }; const components = Object.entries(state.components).sort(([a], [b]) => a.localeCompare(b)).map(([name, details]) => ({ name, ...details })); return { output: json ? `${JSON.stringify(components, null, 2)}\n` : components.map((component) => `${component.name}@${component.version} (${component.path})`).join('\n') + (components.length ? '\n' : 'No installed components.\n'), exitCode: 0 }; }
+export async function createComponent(cwd: string, name: string | undefined, json: boolean): Promise<CommandResult> {
+  if (!name) return errorResult('Usage: ui components create <name> [--json]');
+  if (!/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(name)) return errorResult('Component name must be a lowercase kebab-case name, such as "date-picker".');
+  const directory = safeJoin(cwd, path.join('components', name), 'component directory');
+  try {
+    await access(directory);
+    return errorResult(`Component directory already exists: ${path.relative(cwd, directory)}`);
+  } catch (error) {
+    if (!(error instanceof Error && 'code' in error && error.code === 'ENOENT')) throw error;
+  }
+  await mkdir(path.join(directory, 'src'), { recursive: true });
+  await writeFile(path.join(directory, 'package.json'), `${JSON.stringify({ name, version: '0.1.0', private: true, type: 'module' }, null, 2)}\n`, 'utf8');
+  await writeFile(path.join(directory, 'components.json'), `${JSON.stringify({ schemaVersion: 1, name, files: [], dependencies: {}, components: [] }, null, 2)}\n`, 'utf8');
+  await writeFile(path.join(directory, 'src', '.gitkeep'), '', 'utf8');
+  const result = { name, directory: path.relative(cwd, directory), files: ['package.json', 'components.json', 'src/.gitkeep'] };
+  return { output: json ? `${JSON.stringify(result, null, 2)}\n` : `Created ${result.directory}\n`, exitCode: 0 };
+}
+
 export async function infoComponent(cwd: string, name?: string, json = false): Promise<CommandResult> { if (!name) return errorResult('Usage: ui components info <name> [--json]'); const component = (await readState(cwd))?.components[name]; if (!component) return errorResult(`Component "${name}" is not installed.`); return { output: json ? `${JSON.stringify({ name, ...component }, null, 2)}\n` : `${name}@${component.version}\nPath: ${component.path}\n`, exitCode: 0 }; }
 
 interface FilePlan { component: Resolved; source: string; target: string; }

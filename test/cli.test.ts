@@ -1,4 +1,4 @@
-import { mkdtemp, rm, writeFile, mkdir, readFile, access } from 'node:fs/promises';
+import { mkdtemp, rm, writeFile, mkdir, readFile, access, stat } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import os from 'node:os';
@@ -37,6 +37,22 @@ describe('components list', () => {
     await writeFile(path.join(directory, 'ui.json'), JSON.stringify({ components: { button: { version: '1.0.0', path: 'components/button' } } }));
     const result = await capture(() => run(['hooks', 'list'], directory));
     expect(result).toEqual({ code: 0, stdout: 'button@1.0.0 (components/button)\n', stderr: '' });
+  });
+  it('creates an empty component package', async () => {
+    const directory = await tempDirectory();
+    const result = await capture(() => run(['components', 'create', 'date-picker'], directory));
+    expect(result).toEqual({ code: 0, stdout: 'Created components/date-picker\n', stderr: '' });
+    expect(JSON.parse(await readFile(path.join(directory, 'components/date-picker', 'components.json'), 'utf8'))).toEqual({ schemaVersion: 1, name: 'date-picker', files: [], dependencies: {}, components: [] });
+    expect(JSON.parse(await readFile(path.join(directory, 'components/date-picker', 'package.json'), 'utf8'))).toEqual({ name: 'date-picker', version: '0.1.0', private: true, type: 'module' });
+    await expect(stat(path.join(directory, 'components/date-picker', 'src'))).resolves.toBeDefined();
+  });
+  it('rejects invalid names and existing component packages', async () => {
+    const directory = await tempDirectory();
+    expect((await capture(() => run(['components', 'create', 'Date Picker'], directory))).code).toBe(1);
+    expect((await capture(() => run(['components', 'create', 'button'], directory))).code).toBe(0);
+    const duplicate = await capture(() => run(['components', 'create', 'button'], directory));
+    expect(duplicate.code).toBe(1);
+    expect(`${duplicate.stdout}${duplicate.stderr}`).toContain('already exists');
   });
 });
 
