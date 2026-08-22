@@ -2,7 +2,7 @@ import type { CommandResult } from '../../../types.js';
 import { readRootVersion, readState } from '../../../state.js';
 import { availableVersions, parseGitReference, updateConstraint } from '../../../git.js';
 import { applyPlans, aggregateDependencies, errorResult, planFiles, resolveReferences } from '../shared.js';
-import { chooseVersion, frame, interactive, outcome, withSpinner } from '../../ui.js';
+import { chooseVersion, confirmAction, frame, interactive, outcome, withSpinner } from '../../ui.js';
 import { present } from '../../presentation.js';
 import { saveRollback } from './revert.js';
 import { renderUpdateIntent, renderUpdateReport, updateProgress, type UpdateItem } from '../../update-flow.js';
@@ -40,7 +40,6 @@ export async function addComponent(cwd: string, references: string[], options: {
     const unchangedRoots = options.update ? roots.filter((item) => item.version === state.components[item.manifest.name]?.version) : [];
     if (unchangedRoots.length) throw new Error(`${unchangedRoots.map((item) => `Component "${item.manifest.name}" is already at the latest compatible version (${item.version}).`).join('\n')}`);
     const selected = options.update ? resolved.filter((item) => rootRepositories.has(item.reference.repository) || item.version !== state.components[item.manifest.name]?.version) : resolved;
-    if (options.update && loadedState) await saveRollback(cwd, loadedState);
     const alreadyInstalled = selected.filter((item) => state.components[item.manifest.name]);
     if (alreadyInstalled.length && !options.force) {
       const names = alreadyInstalled.map((item) => `"${item.manifest.name}"`).join(', ');
@@ -54,6 +53,11 @@ export async function addComponent(cwd: string, references: string[], options: {
       return (state.components[item.manifest.name]?.files ?? []).map((file) => file.path).filter((file) => !current.has(file));
     });
     const changes: UpdateItem[] = selected.map((item) => ({ name: item.manifest.name, current: `v${loadedState?.components[item.manifest.name]?.version ?? 'new'}`, next: `v${item.version}`, status: 'updated' }));
+    if (options.update && !options.json && interactive()) {
+      process.stdout.write(`${renderUpdateIntent(changes)}\n\n`);
+      if (!(await confirmAction('Apply this update plan?'))) return errorResult('Update cancelled.');
+    }
+    if (options.update && loadedState) await saveRollback(cwd, loadedState);
     const result = { components: selected.map((item) => ({ name: item.manifest.name, version: item.version, availableVersions: item.availableVersions, commit: item.commit, files: item.manifest.files.map((file) => file.target), dependencies })), updates: changes };
     if (options.dryRun) {
       const preview = [`${selected.length} component${selected.length === 1 ? '' : 's'} would be changed`, '', ...selected.map((item) => `  ${item.manifest.name.padEnd(16)} v${item.version}`), '', outcome('Dry run complete. No files changed.', 'warning')];
