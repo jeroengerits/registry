@@ -2,6 +2,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { execa } from 'execa';
+import { errorMessage } from './shared.js';
 
 /** Executes Git commands through Execa so failures retain useful context. */
 const runGit = execa;
@@ -30,6 +31,7 @@ export function parseGitReference(value: string): GitReference {
   return { repository, version };
 }
 
+/** Parses only stable three-part semantic versions used by registry tags. */
 function semver(value: string): [number, number, number] | undefined {
   const match = value.replace(/^v/, '').match(/^(\d+)\.(\d+)\.(\d+)$/);
   return match ? [Number(match[1]), Number(match[2]), Number(match[3])] : undefined;
@@ -46,6 +48,7 @@ export function satisfies(version: string, constraint = version): boolean {
   if (actual[0] !== major || (minor !== undefined && actual[1] < minor)) return false;
   return minor === undefined || actual[1] > minor || patch === undefined || actual[2] >= patch;
 }
+/** Sorts versions newest-first, with lexical fallback for invalid values. */
 function compare(a: string, b: string): number { const av = semver(a) ?? [0, 0, 0]; const bv = semver(b) ?? [0, 0, 0]; return bv[0] - av[0] || bv[1] - av[1] || bv[2] - av[2] || b.localeCompare(a); }
 
 /** Clones a repository, selects a stable tag, and returns cleanup metadata. */
@@ -53,9 +56,11 @@ export async function checkoutGit(reference: GitReference): Promise<GitCheckout>
   const directory = await mkdtemp(path.join(os.tmpdir(), 'ui-registry-git-'));
   try {
     await runGit('git', ['clone', '--quiet', reference.repository, directory]);
+    // Keep the original tag spelling so checkout works for both v1.2.3 and 1.2.3.
     const rawTags = (await runGit('git', ['tag', '--list', '--sort=-version:refname'], { cwd: directory })).stdout.split(/\r?\n/).filter(Boolean);
     const tags = rawTags.map((tag) => ({ tag, version: tag.replace(/^v/, '') }));
     const versions = tags.map((item) => item.version).filter((tag) => semver(tag)).sort(compare);
+    // Select the newest tag that satisfies the requested range.
     const version = versions.filter((tag) => !reference.version || satisfies(tag, reference.version))[0];
     if (!version) throw new Error(`Repository ${reference.repository} has no stable semver tag.`);
     const tag = tags.find((candidate) => candidate.version === version);
@@ -63,7 +68,7 @@ export async function checkoutGit(reference: GitReference): Promise<GitCheckout>
     await runGit('git', ['checkout', '--quiet', tag.tag], { cwd: directory });
     const commit = (await runGit('git', ['rev-parse', 'HEAD'], { cwd: directory })).stdout.trim();
     return { directory, version, versions, commit, cleanup: () => rm(directory, { recursive: true, force: true }) };
-  } catch (error) { await rm(directory, { recursive: true, force: true }); throw new Error(`Unable to prepare Git repository: ${error instanceof Error ? error.message : String(error)}`); }
+  } catch (error) { await rm(directory, { recursive: true, force: true }); throw new Error(`Unable to prepare Git repository: ${errorMessage(error)}`); }
 }
 
 /** Lists stable semantic-version tags without retaining the checkout. */

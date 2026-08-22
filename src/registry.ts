@@ -3,6 +3,7 @@ import path from 'node:path';
 import { z } from 'zod';
 import { safeRelativePath } from './paths.js';
 import type { ComponentManifest } from './types.js';
+import { isErrnoError } from './shared.js';
 
 /** Runtime schema for the untrusted component manifest file. */
 const manifestSchema = z.object({
@@ -21,11 +22,6 @@ export function validateComponentManifest(value: unknown): ComponentManifest {
   const files = parsed.data.files.map((file, index) => ({ source: safeRelativePath(file.source, `files[${index}].source`), target: safeRelativePath(file.target, `files[${index}].target`) }));
   if (new Set(files.map((file) => file.target)).size !== files.length) throw new Error('component.json contains duplicate target paths.');
   return { ...parsed.data, files };
-}
-
-/** Narrows filesystem failures without asserting an arbitrary error shape. */
-function isErrnoError(error: unknown): error is NodeJS.ErrnoException {
-  return error instanceof Error && 'code' in error;
 }
 
 /** Reads and validates the root `component.json` from a checkout. */

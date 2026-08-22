@@ -9,7 +9,7 @@ export async function updateComponent(cwd: string, name?: string, json = false):
     const state = await readState(cwd);
     const names = Object.entries(state?.components ?? {}).filter(([, component]) => component.repository).map(([componentName]) => componentName).sort();
     if (!names.length) return errorResult('No updatable components are installed.');
-    const results = [];
+    const results: CommandResult[] = [];
     for (const componentName of names) results.push(await updateComponent(cwd, componentName, json));
     if (json) return { output: `[${results.map((result) => result.output.trim()).join(',')}]\n`, exitCode: results.some((result) => result.exitCode !== 0) ? 1 : 0 };
     return { output: results.map((result) => result.output).join('\n'), exitCode: results.some((result) => result.exitCode !== 0) ? 1 : 0 };

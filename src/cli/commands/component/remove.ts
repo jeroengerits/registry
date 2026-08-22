@@ -1,5 +1,6 @@
 import { unlink } from 'node:fs/promises';
 import type { CommandResult } from '../../../types.js';
+import { isErrnoError } from '../../../shared.js';
 import { readState, writeState } from '../../../state.js';
 import { safeJoin } from '../../../paths.js';
 import { errorResult } from '../shared.js';
@@ -24,7 +25,7 @@ export async function removeComponent(cwd: string, name?: string, json = false):
   await withSpinner(`Removing ${name}...`, async () => {
     // Missing files are already removed and do not block state cleanup.
     for (const file of files) await unlink(safeJoin(cwd, file, 'component file')).catch((error: unknown) => {
-      if (!(error instanceof Error && 'code' in error && error.code === 'ENOENT')) throw error;
+      if (!(isErrnoError(error) && error.code === 'ENOENT')) throw error;
     });
     // Delete the component record only after file deletion succeeds.
     delete state.components[name];

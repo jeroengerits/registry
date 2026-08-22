@@ -10,6 +10,7 @@ import { colors } from '../ui.js';
 
 /** Creates the standard failed-command result without throwing. */
 export const errorResult = (message: string) => ({ output: `${colors.error(message)}\n`, exitCode: 1 });
+/** Detects the package manager from the project's lockfile. */
 async function packageManager(cwd: string): Promise<'npm' | 'pnpm' | 'yarn' | 'bun'> {
   for (const [file, manager] of [['pnpm-lock.yaml', 'pnpm'], ['yarn.lock', 'yarn'], ['bun.lockb', 'bun'], ['package-lock.json', 'npm']] as const) {
     try { await access(path.join(cwd, file)); return manager; } catch { /* continue */ }
@@ -28,6 +29,7 @@ export async function installDependencies(cwd: string, dependencies: Record<stri
 /** A component checkout plus manifest and cleanup data needed by planning. */
 export interface Resolved { manifest: ComponentManifest; reference: GitReference; directory: string; version: string; availableVersions: string[]; commit: string; cleanup: () => Promise<void>; }
 
+/** Creates a stable key for dependency de-duplication across URL spellings. */
 function canonical(repository: string): string {
   const parsed = parseGitReference(repository).repository;
   return path.isAbsolute(parsed) ? path.resolve(parsed) : parsed.replace(/\.git$/, '').replace(/\/$/, '').toLowerCase();
@@ -81,6 +83,7 @@ export async function planFiles(cwd: string, resolved: Resolved[], overwrite = n
   return plans;
 }
 
+/** Copies planned files to a temporary staging tree before mutation. */
 async function stageFiles(cwd: string, plans: FilePlan[]): Promise<{ directory: string }> {
   const directory = await mkdtemp(path.join(cwd, '.ui-stage-'));
   for (const plan of plans) {

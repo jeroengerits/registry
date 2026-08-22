@@ -13,6 +13,7 @@ export async function withSpinner<T>(message: string, action: () => Promise<T>, 
   if (!enabled || !interactive()) return action();
   const progress = ora(message);
   let started = false;
+  // Delay the spinner so fast operations stay silent.
   const timer = setTimeout(() => { progress.start(message); started = true; }, 150);
   try {
     const value = await action();
@@ -43,6 +44,7 @@ export function frame(command: string, body: string, footer?: string): string {
 
 /** Renders aligned terminal data while preserving colored cell content. */
 export function table(headers: string[], rows: string[][]): string {
+  // Keep table styling centralized so commands only provide data.
   const result = new Table({ head: headers.map(colors.muted), style: { head: [], border: [] } });
   result.push(...rows);
   return result.toString();

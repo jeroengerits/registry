@@ -3,25 +3,22 @@ import os from 'node:os';
 import path from 'node:path';
 import { execa } from 'execa';
 import type { CommandResult } from '../../types.js';
+import { isRecord, errorMessage } from '../../shared.js';
 import { errorResult } from './shared.js';
 import { frame, outcome, table, withSpinner } from '../ui.js';
 
-type UnknownRecord = Record<string, unknown>;
-
-function isRecord(value: unknown): value is UnknownRecord {
-  return typeof value === 'object' && value !== null;
-}
-
+/** Extracts a version only when the cached package JSON has the expected shape. */
 function versionFromPackage(value: unknown): string | undefined {
   return isRecord(value) && typeof value.version === 'string' ? value.version : undefined;
 }
 
+/** Chooses the most useful diagnostic field from an Execa failure. */
 function subprocessMessage(error: unknown): string {
-  if (!isRecord(error)) return String(error);
+  if (!isRecord(error)) return errorMessage(error);
   const stderr = typeof error.stderr === 'string' ? error.stderr.trim() : '';
   const stdout = typeof error.stdout === 'string' ? error.stdout.trim() : '';
   const message = typeof error.message === 'string' ? error.message : '';
-  return stderr || stdout || message || String(error);
+  return stderr || stdout || message || errorMessage(error);
 }
 
 /** Converts installer progress into a compact version comparison and stage list. */
@@ -51,7 +48,10 @@ export async function selfUpdate(): Promise<CommandResult> {
   const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), 'ui-update-'));
   const temporaryInstaller = path.join(temporaryDirectory, 'install.sh');
   try {
-    const currentVersion = await readFile(path.join(cacheDirectory, 'package.json'), 'utf8').then((content) => versionFromPackage(JSON.parse(content) as unknown)).catch(() => undefined);
+    const currentVersion = await readFile(path.join(cacheDirectory, 'package.json'), 'utf8').then((content) => {
+      const packageData: unknown = JSON.parse(content);
+      return versionFromPackage(packageData);
+    }).catch(() => undefined);
     // Prepare an isolated installer path for the launcher process.
     await copyFile(installer, temporaryInstaller);
     // Run the installer through Execa and surface its output in the result.

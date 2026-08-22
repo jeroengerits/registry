@@ -44,6 +44,7 @@ Run "ui help <command>" for more information.
   };
 }
 
+/** Resolves a focused help topic without expanding the root help screen. */
 function commandReference(command: string): CommandResult {
   if (command === 'component') return componentHelp();
   const references: Record<string, string> = {

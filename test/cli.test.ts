@@ -8,6 +8,7 @@ import { run } from '../src/cli/index.js';
 import { validateState } from '../src/state.js';
 import { parseGitReference } from '../src/git.js';
 import { formatSelfUpdateDetails } from '../src/cli/commands/self-update.js';
+import { errorMessage, isErrnoError, isRecord } from '../src/shared.js';
 
 const temporaryDirectories: string[] = [];
 const exec = promisify(execFile);
@@ -140,6 +141,22 @@ describe('validation', () => {
   it('validates state schema', () => {
     expect(() => validateState({ components: { button: { version: '1', path: 'button' } } })).not.toThrow();
     expect(() => validateState({ components: { button: { version: 1 } } })).toThrow(/version.*path/);
+  });
+});
+
+describe('shared helpers', () => {
+  it('narrows records and filesystem errors safely', () => {
+    expect(isRecord({ value: 1 })).toBe(true);
+    expect(isRecord(null)).toBe(false);
+    expect(isRecord([])).toBe(false);
+    const error = Object.assign(new Error('missing'), { code: 'ENOENT' });
+    expect(isErrnoError(error)).toBe(true);
+    expect(isErrnoError('missing')).toBe(false);
+  });
+
+  it('formats errors consistently', () => {
+    expect(errorMessage(new Error('failed'))).toBe('failed');
+    expect(errorMessage('failed')).toBe('failed');
   });
 });
 

@@ -2,6 +2,7 @@ import process from 'node:process';
 import { Command, CommanderError } from 'commander';
 import { addComponent, componentHelp, componentVersions, disableComponent, doctor, enableComponent, help, infoComponent, initProject, listComponent, outdatedComponents, removeComponent, selfUpdate, toggleComponent, updateComponent } from './commands/index.js';
 import type { CommandResult } from '../types.js';
+import { errorMessage } from '../shared.js';
 import { colors, frame, outcome } from './ui.js';
 
 /** Converts Commander unknown-command failures into the CLI's stable message. */
@@ -83,7 +84,7 @@ export async function run(args: string[], cwd = process.cwd()): Promise<number> 
     if (error instanceof CommanderError) {
       result = error.code === 'commander.unknownCommand' || error.code === 'commander.excessArguments' ? unknownCommand() : { output: `${error.message}\n`, exitCode: error.exitCode || 1 };
     } else {
-      process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
+      process.stderr.write(`${errorMessage(error)}\n`);
       return 1;
     }
   }

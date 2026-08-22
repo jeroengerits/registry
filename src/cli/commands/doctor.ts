@@ -4,10 +4,13 @@ import type { CommandResult } from '../../types.js';
 import { readState } from '../../state.js';
 import { colors, frame, outcome, table } from '../ui.js';
 
+type CheckStatus = 'ok' | 'missing';
+interface DoctorCheck { check: string; status: CheckStatus; }
+
 /** Checks project registry state and installed component files. */
 export async function doctor(cwd: string, json = false): Promise<CommandResult> {
   const state = await readState(cwd);
-  const checks: Array<{ check: string; status: string }> = [{ check: 'Project initialized', status: state ? 'ok' : 'missing' }];
+  const checks: DoctorCheck[] = [{ check: 'Project initialized', status: state ? 'ok' : 'missing' }];
   if (state) {
     for (const [name, component] of Object.entries(state.components)) {
       const files = component.files ?? [];
