@@ -32,6 +32,9 @@ available versions.
 Interactive terminals show colored status and progress feedback; JSON and CI
 output remain plain and script-friendly.
 
+In an interactive terminal, omitting the name from `component info` or
+`component remove` opens a component picker.
+
 ## Component Manifest
 
 Every component repository needs a root `component.json`:

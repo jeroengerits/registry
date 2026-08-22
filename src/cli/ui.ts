@@ -36,3 +36,12 @@ export async function chooseVersion(component: string, versions: string[]): Prom
   if (isCancel(choice)) throw new Error('Operation cancelled.');
   return choice;
 }
+
+export async function chooseComponent(names: string[], message: string): Promise<string> {
+  const choice = await select({
+    message,
+    options: names.map((name) => ({ value: name, label: name })),
+  });
+  if (isCancel(choice)) throw new Error('Operation cancelled.');
+  return choice;
+}

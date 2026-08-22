@@ -5,10 +5,12 @@ import { safeJoin } from '../../paths.js';
 import { errorResult } from './shared.js';
 import { withSpinner } from '../ui.js';
 import { colors } from '../ui.js';
+import { chooseComponent, interactive } from '../ui.js';
 
 export async function removeComponent(cwd: string, name?: string, json = false): Promise<CommandResult> {
-  if (!name) return errorResult('Usage: ui component remove <name> [--json]');
   const state = await readState(cwd);
+  if (!name && interactive() && state && Object.keys(state.components).length) name = await chooseComponent(Object.keys(state.components).sort(), 'Select a component to remove');
+  if (!name) return errorResult('Usage: ui component remove <name> [--json]');
   const component = state?.components[name];
   if (!state || !component) return errorResult(`Component "${name}" is not installed.`);
 
