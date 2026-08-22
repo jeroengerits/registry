@@ -13,4 +13,10 @@ export function validateComponentManifest(value: unknown): ComponentManifest {
   const components = value.components.map((item, index) => { if (!record(item) || typeof item.repository !== 'string' || !item.repository || (item.version !== undefined && (typeof item.version !== 'string' || !item.version))) throw new Error(`components.json components[${index}] requires repository and optional non-empty version.`); return { repository: item.repository, ...(item.version === undefined ? {} : { version: item.version }) }; });
   return { schemaVersion: 1, name: value.name, ...(value.description === undefined ? {} : { description: value.description }), files, dependencies, components };
 }
-export async function readComponentManifest(directory: string): Promise<ComponentManifest> { return validateComponentManifest(JSON.parse(await readFile(path.join(directory, 'components.json'), 'utf8'))); }
+export async function readComponentManifest(directory: string): Promise<ComponentManifest> {
+  try { return validateComponentManifest(JSON.parse(await readFile(path.join(directory, 'components.json'), 'utf8'))); }
+  catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') throw new Error('Provided source is not a component: missing components.json.');
+    throw error;
+  }
+}

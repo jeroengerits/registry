@@ -104,7 +104,7 @@ describe('local Git installation', () => {
     const project = await tempDirectory();
     const result = await capture(() => run(['components', 'add', repository, '--yes'], project));
     expect(result.code).toBe(1);
-    expect(`${result.stdout}${result.stderr}`).toContain('components.json');
+    expect(result).toEqual({ code: 1, stdout: '', stderr: 'Provided source is not a component: missing components.json.\n' });
     await expect(access(path.join(project, 'ui.json'))).rejects.toThrow();
   });
 });
