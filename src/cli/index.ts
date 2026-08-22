@@ -2,11 +2,11 @@ import process from 'node:process';
 import { Command, CommanderError } from 'commander';
 import { addComponent, componentHelp, help, infoComponent, listComponent, removeComponent, selfUpdate, toggleComponent, updateComponent } from './commands/index.js';
 import type { CommandResult } from '../types.js';
-import { frame } from './ui.js';
+import { colors, frame, outcome } from './ui.js';
 
 /** Converts Commander unknown-command failures into the CLI's stable message. */
 function unknownCommand(): CommandResult {
-  return { output: 'Unknown command. Run "ui help" for available commands.\n', exitCode: 1 };
+  return { output: `${colors.error('Unknown command.')} Run "ui help" for available commands.\n`, exitCode: 1 };
 }
 
 /** Parses CLI arguments and dispatches the selected command. */
@@ -23,7 +23,7 @@ export async function run(args: string[], cwd = process.cwd()): Promise<number> 
   program.command('help').description('Show command help.').action(() => { result = help(); });
   program.command('self-update').description('Update the installed UI Registry CLI.').action(async () => { result = await selfUpdate(); });
   program.command('components').description('List installed components.').action(async () => { result = await listComponent(cwd, false); });
-  program.command('hooks').description('Manage project hooks.').action(() => { result = { output: frame('hooks', 'No hooks configured yet.', 'Next: ui components'), exitCode: 0 }; });
+  program.command('hooks').description('Manage project hooks.').action(() => { result = { output: frame('hooks', outcome('No hooks configured yet.', 'warning'), 'Next: ui components'), exitCode: 0 }; });
 
   const component = program.command('component').description('Manage installed components.');
   component.action(() => { result = componentHelp(); });
