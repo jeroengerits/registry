@@ -16,12 +16,12 @@
 - Modify `src/state.ts`: replace manual state validation with strict Zod parsing and default `enabled: true`.
 - Modify `schemas/ui.schema.json`: document the optional enabled property.
 - Modify `src/cli/ui.ts`: add shared frame, semantic status, result, prompt, and delayed-spinner helpers.
-- Modify `src/cli/commands/list.ts`: render the compact component table and status counts.
-- Modify `src/cli/commands/info.ts`: render the dedicated detail layout and status.
-- Modify `src/cli/commands/add.ts`: render staged install output through shared helpers.
-- Modify `src/cli/commands/update.ts`: render before/after update output.
-- Modify `src/cli/commands/remove.ts`: render selection, confirmation, and removal result.
-- Create `src/cli/commands/toggle.ts`: flip one persisted component status.
+- Modify `src/cli/commands/component/list.ts`: render the compact component table and status counts.
+- Modify `src/cli/commands/component/info.ts`: render the dedicated detail layout and status.
+- Modify `src/cli/commands/component/add.ts`: render staged install output through shared helpers.
+- Modify `src/cli/commands/component/update.ts`: render before/after update output.
+- Modify `src/cli/commands/component/remove.ts`: render selection, confirmation, and removal result.
+- Create `src/cli/commands/component/toggle.ts`: flip one persisted component status.
 - Modify `src/cli/commands/self-update.ts`: render staged self-update output.
 - Modify `src/cli/commands.ts`: export the toggle command.
 - Modify `src/cli/index.ts`: register `component toggle [name] [--json]`.
@@ -124,7 +124,7 @@ git commit -m "refactor: add shared cli output primitives"
 ### Task 3: Implement the toggle command
 
 **Files:**
-- Create: `src/cli/commands/toggle.ts`
+- Create: `src/cli/commands/component/toggle.ts`
 - Modify: `src/cli/commands.ts`
 - Modify: `src/cli/index.ts`
 - Modify: `src/cli/commands/help.ts`
@@ -169,15 +169,15 @@ Run: `npm test -- --run test/cli.test.ts`
 Expected: all toggle tests pass.
 
 ```sh
-git add src/cli/commands/toggle.ts src/cli/commands.ts src/cli/index.ts src/cli/commands/help.ts test/cli.test.ts
+git add src/cli/commands/component/toggle.ts src/cli/commands.ts src/cli/index.ts src/cli/commands/help.ts test/cli.test.ts
 git commit -m "feat: add component toggle command"
 ```
 
 ### Task 4: Upgrade list and info layouts
 
 **Files:**
-- Modify: `src/cli/commands/list.ts`
-- Modify: `src/cli/commands/info.ts`
+- Modify: `src/cli/commands/component/list.ts`
+- Modify: `src/cli/commands/component/info.ts`
 - Modify: `test/cli.test.ts`
 
 - [ ] **Step 1: Add list status assertions**
@@ -204,16 +204,16 @@ requested by the current flag.
 Run: `npm test -- --run test/cli.test.ts`
 
 ```sh
-git add src/cli/commands/list.ts src/cli/commands/info.ts test/cli.test.ts
+git add src/cli/commands/component/list.ts src/cli/commands/component/info.ts test/cli.test.ts
 git commit -m "feat: show component status in list and info"
 ```
 
 ### Task 5: Upgrade mutation command layouts and prompts
 
 **Files:**
-- Modify: `src/cli/commands/add.ts`
-- Modify: `src/cli/commands/update.ts`
-- Modify: `src/cli/commands/remove.ts`
+- Modify: `src/cli/commands/component/add.ts`
+- Modify: `src/cli/commands/component/update.ts`
+- Modify: `src/cli/commands/component/remove.ts`
 - Modify: `src/cli/commands/self-update.ts`
 - Modify: `src/cli/ui.ts`
 - Modify: `test/cli.test.ts`
@@ -247,7 +247,7 @@ show the resulting CLI version. Preserve the safe replacement behavior.
 Run: `npm test`
 
 ```sh
-git add src/cli/commands/add.ts src/cli/commands/update.ts src/cli/commands/remove.ts src/cli/commands/self-update.ts src/cli/ui.ts test/cli.test.ts
+git add src/cli/commands/component/add.ts src/cli/commands/component/update.ts src/cli/commands/component/remove.ts src/cli/commands/self-update.ts src/cli/ui.ts test/cli.test.ts
 git commit -m "feat: standardize cli command layouts"
 ```
 

@@ -9,6 +9,11 @@ cache_dir="${UI_CACHE_DIR:-$PWD/.ui-registry}"
 archive_url="$repository/archive/refs/heads/$branch.tar.gz"
 temporary_dir="$(mktemp -d "${TMPDIR:-/tmp}/ui-registry.XXXXXX")"
 
+current_version='not installed'
+if [ -f "$cache_dir/package.json" ]; then
+  current_version="$(node -p "JSON.parse(require('fs').readFileSync(process.argv[1], 'utf8')).version" "$cache_dir/package.json" 2>/dev/null || printf '%s' 'unknown')"
+fi
+
 cleanup() {
   rm -rf "$temporary_dir"
 }
@@ -18,6 +23,7 @@ if ! command -v node >/dev/null 2>&1; then
   printf '%s\n' 'ui-registry requires Node.js 22 or newer.' >&2
   exit 1
 fi
+
 
 node_version="$(node -p 'process.versions.node.split(".")[0]')"
 if [ "$node_version" -lt 22 ]; then
@@ -40,8 +46,18 @@ source_dir="$temporary_dir/registry-$branch"
 (cd "$source_dir" && npm_config_loglevel=error npm install --ignore-scripts --no-package-lock --no-audit --no-fund >/dev/null)
 (cd "$source_dir" && npm_config_loglevel=error npm run build >/dev/null)
 
+latest_version="$(node -p "JSON.parse(require('fs').readFileSync(process.argv[1], 'utf8')).version" "$source_dir/package.json")"
+printf 'Checking latest version: %s\n' "$latest_version"
+
+if [ "$current_version" = "$latest_version" ]; then
+  printf 'UI Registry is already up to date at v%s.\n' "$current_version"
+  exit 0
+fi
+
+printf 'Removing installed version: %s\n' "$current_version"
 rm -rf "$cache_dir"
 mkdir -p "$(dirname "$cache_dir")"
+printf 'Installing latest version: %s\n' "$latest_version"
 mv "$source_dir" "$cache_dir"
 
 mkdir -p "$install_dir"

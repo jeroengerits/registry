@@ -1,6 +1,8 @@
 import type { CommandResult } from '../../types.js';
 
+/** Returns the top-level command reference and usage examples. */
 export function help(): CommandResult {
+  // Keep the complete reference in one plain-text result for TTYs and scripts.
   return {
     output: `UI Registry
 
@@ -37,6 +39,11 @@ Requirements:
   - component.json must be in the repository root.
   - The repository must contain a stable semver Git tag.
   - Component files must use safe relative source and target paths.
+
+Output:
+  Human-readable output uses compact framed layouts with Clack prompts and
+  Ora progress feedback in interactive terminals. Use --json for automation;
+  JSON output never includes prompts, colors, or spinner control sequences.
 
 Examples:
   ui self-update

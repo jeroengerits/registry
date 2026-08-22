@@ -1,12 +1,15 @@
 import process from 'node:process';
 import { Command, CommanderError } from 'commander';
-import { addComponent, help, infoComponent, listComponent, removeComponent, selfUpdate, toggleComponent, updateComponent } from './commands.js';
+import { addComponent, componentHelp, help, infoComponent, listComponent, removeComponent, selfUpdate, toggleComponent, updateComponent } from './commands.js';
 import type { CommandResult } from '../types.js';
+import { chooseComponentCommand, interactive, promptRepository } from './ui.js';
 
+/** Converts Commander unknown-command failures into the CLI's stable message. */
 function unknownCommand(): CommandResult {
   return { output: 'Unknown command. Run "ui help" for available commands.\n', exitCode: 1 };
 }
 
+/** Parses CLI arguments and dispatches the selected command. */
 export async function run(args: string[], cwd = process.cwd()): Promise<number> {
   if (!args.length) { process.stdout.write(help().output); return 0; }
   let result: CommandResult | undefined;
@@ -21,6 +24,16 @@ export async function run(args: string[], cwd = process.cwd()): Promise<number> 
   program.command('self-update').description('Update the installed UI Registry CLI.').action(async () => { result = await selfUpdate(); });
 
   const component = program.command('component').description('Manage installed components.');
+  component.action(async () => {
+    if (!interactive()) { result = componentHelp(); return; }
+    const command = await chooseComponentCommand();
+    if (command === 'list') result = await listComponent(cwd, false);
+    if (command === 'info') result = await infoComponent(cwd);
+    if (command === 'remove') result = await removeComponent(cwd);
+    if (command === 'toggle') result = await toggleComponent(cwd);
+    if (command === 'update') result = await updateComponent(cwd);
+    if (command === 'add') result = await addComponent(cwd, [await promptRepository()], { dryRun: false, force: false, update: false, json: false });
+  });
   component.command('list')
     .description('List installed components.')
     .option('--json', 'Print machine-readable JSON.')
@@ -56,7 +69,7 @@ export async function run(args: string[], cwd = process.cwd()): Promise<number> 
     await program.parseAsync(args, { from: 'user' });
   } catch (error) {
     if (error instanceof CommanderError) {
-      result = error.code === 'commander.unknownCommand' ? unknownCommand() : { output: `${error.message}\n`, exitCode: error.exitCode || 1 };
+      result = error.code === 'commander.unknownCommand' || error.code === 'commander.excessArguments' ? unknownCommand() : { output: `${error.message}\n`, exitCode: error.exitCode || 1 };
     } else {
       process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
       return 1;

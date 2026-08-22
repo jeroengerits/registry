@@ -95,6 +95,11 @@ ui component toggle [name] [--json]
 ui component update [name] [--json]
 ```
 
+Running `./ui component` without a subcommand opens a Clack command picker in
+an interactive terminal. Selecting `add` asks for the repository URL and then
+continues through the normal version picker and install flow. Non-interactive
+output prints the component command reference instead of prompting.
+
 Add an exact component version with `--version`:
 
 ```sh

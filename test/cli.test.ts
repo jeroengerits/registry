@@ -56,11 +56,18 @@ describe('help', () => {
     expect(result.stdout).toContain('ui component update [name] [--json]');
     expect(result.stdout).toContain('component.json must be in the repository root');
     expect(result.stdout).toContain('stable semver Git tag');
+    expect(result.stdout).toContain('JSON output never includes prompts');
   });
   it('shows help with no arguments', async () => {
     const result = await capture(() => run([]));
     expect(result.code).toBe(0);
     expect(result.stdout).toContain('UI Registry');
+  });
+  it('shows component namespace commands without a TTY', async () => {
+    const result = await capture(() => run(['component']));
+    expect(result.code).toBe(0);
+    expect(result.stdout).toContain('Component commands');
+    expect(result.stdout).toContain('ui component toggle [name] [--json]');
   });
   it('rejects unknown commands with a useful usage message', async () => {
     const result = await capture(() => run(['component', 'unknown']));
@@ -121,12 +128,14 @@ describe('local Git installation', () => {
     const added = await capture(() => run(['component', 'add', repository, '--version=1.2.3'], project));
     expect(added.code).toBe(0);
     expect(added.stdout).toContain('Added button@1.2.3');
+    expect(added.stdout).toContain('1 component added');
     expect(await readFile(path.join(project, 'components/button.tsx'), 'utf8')).toContain('Button');
     const available = await capture(() => run(['component', 'list', '--available-versions'], project));
     expect(available.stdout).toContain('Available: 1.2.3');
     const toggled = await capture(() => run(['component', 'toggle', 'button'], project));
     expect(toggled.code).toBe(0);
     expect(toggled.stdout).toContain('● enabled  →  ○ disabled');
+    expect(toggled.stdout).toContain('Files unchanged');
     expect(JSON.parse(await readFile(path.join(project, 'ui.json'), 'utf8')).components.button.enabled).toBe(false);
     const toggledJson = await capture(() => run(['component', 'toggle', 'button', '--json'], project));
     expect(JSON.parse(toggledJson.stdout)).toMatchObject({ name: 'button', previousStatus: 'disabled', status: 'enabled', component: { enabled: true } });
@@ -137,6 +146,7 @@ describe('local Git installation', () => {
     const removed = await capture(() => run(['component', 'remove', 'button'], project));
     expect(removed.code).toBe(0);
     expect(removed.stdout).toContain('Removed component "button".');
+    expect(removed.stdout).toContain('Files removed');
     await expect(access(path.join(project, 'components/button.tsx'))).rejects.toThrow();
     const missing = await capture(() => run(['component', 'remove', 'button'], project));
     expect(missing).toEqual({ code: 1, stdout: 'Component "button" is not installed.\n', stderr: '' });
@@ -179,6 +189,7 @@ describe('local Git installation', () => {
     const updated = await capture(() => run(['component', 'update', 'button'], project));
     expect(updated.code).toBe(0);
     expect(updated.stdout).toContain('Updated button@1.1.0');
+    expect(updated.stdout).toContain('1 component updated');
     expect(await readFile(path.join(project, 'components/button.tsx'), 'utf8')).toContain('Button = 2');
     expect(JSON.parse(await readFile(path.join(project, 'ui.json'), 'utf8')).components.button.enabled).toBe(true);
   });

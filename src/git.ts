@@ -3,10 +3,16 @@ import os from 'node:os';
 import path from 'node:path';
 import { execa } from 'execa';
 
+/** Executes Git commands through Execa so failures retain useful context. */
 const runGit = execa;
+
+/** A repository URL plus an optional exact or compatible version constraint. */
 export interface GitReference { repository: string; version?: string; }
+
+/** Temporary checkout details and its cleanup operation. */
 export interface GitCheckout { directory: string; version: string; versions: string[]; commit: string; cleanup: () => Promise<void>; }
 
+/** Normalizes GitHub shorthand and extracts an optional version constraint. */
 export function parseGitReference(value: string): GitReference {
   const input = value.trim();
   if (!input) throw new Error('A Git repository reference is required.');
@@ -27,6 +33,8 @@ function semver(value: string): [number, number, number] | undefined {
   const match = value.replace(/^v/, '').match(/^(\d+)\.(\d+)\.(\d+)$/);
   return match ? [Number(match[1]), Number(match[2]), Number(match[3])] : undefined;
 }
+
+/** Checks an exact, major, or major/minor compatibility constraint. */
 export function satisfies(version: string, constraint = version): boolean {
   const actual = semver(version); if (!actual) return version === constraint;
   const exact = semver(constraint); if (exact) return actual.every((part, index) => part === exact[index]);
@@ -35,6 +43,7 @@ export function satisfies(version: string, constraint = version): boolean {
 }
 function compare(a: string, b: string): number { const av = semver(a) ?? [0, 0, 0]; const bv = semver(b) ?? [0, 0, 0]; return bv[0] - av[0] || bv[1] - av[1] || bv[2] - av[2] || b.localeCompare(a); }
 
+/** Clones a repository, selects a stable tag, and returns cleanup metadata. */
 export async function checkoutGit(reference: GitReference): Promise<GitCheckout> {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'ui-registry-git-'));
   try {
@@ -52,6 +61,7 @@ export async function checkoutGit(reference: GitReference): Promise<GitCheckout>
   } catch (error) { await rm(directory, { recursive: true, force: true }); throw new Error(`Unable to prepare Git repository: ${error instanceof Error ? error.message : String(error)}`); }
 }
 
+/** Lists stable semantic-version tags without retaining the checkout. */
 export async function availableVersions(repository: string): Promise<string[]> {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'ui-registry-tags-'));
   try {

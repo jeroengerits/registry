@@ -8,6 +8,7 @@ import { readComponentManifest } from '../../registry.js';
 import { safeJoin, safeRelativePath } from '../../paths.js';
 import { colors } from '../ui.js';
 
+/** Creates the standard failed-command result without throwing. */
 export const errorResult = (message: string) => ({ output: `${colors.error(message)}\n`, exitCode: 1 });
 async function packageManager(cwd: string): Promise<'npm' | 'pnpm' | 'yarn' | 'bun'> {
   for (const [file, manager] of [['pnpm-lock.yaml', 'pnpm'], ['yarn.lock', 'yarn'], ['bun.lockb', 'bun'], ['package-lock.json', 'npm']] as const) {
@@ -16,6 +17,7 @@ async function packageManager(cwd: string): Promise<'npm' | 'pnpm' | 'yarn' | 'b
   return 'npm';
 }
 
+/** Installs declared dependencies with the package manager detected in the project. */
 export async function installDependencies(cwd: string, dependencies: Record<string, string>): Promise<void> {
   const names = Object.keys(dependencies).sort().map((name) => `${name}@${dependencies[name]}`);
   if (!names.length) return;
@@ -23,6 +25,7 @@ export async function installDependencies(cwd: string, dependencies: Record<stri
   await execa(manager === 'npm' ? 'npm' : manager, manager === 'npm' ? ['install', '--save', ...names] : ['add', ...names], { cwd });
 }
 
+/** A component checkout plus manifest and cleanup data needed by planning. */
 export interface Resolved { manifest: ComponentManifest; reference: GitReference; directory: string; version: string; availableVersions: string[]; commit: string; cleanup: () => Promise<void>; }
 
 function canonical(repository: string): string {
@@ -30,6 +33,7 @@ function canonical(repository: string): string {
   return path.isAbsolute(parsed) ? path.resolve(parsed) : parsed.replace(/\.git$/, '').replace(/\/$/, '').toLowerCase();
 }
 
+/** Resolves root and recursive component references with cycle detection. */
 export async function resolveReferences(references: GitReference[]): Promise<Resolved[]> {
   const selected = new Map<string, Resolved>();
   const visiting = new Set<string>();
@@ -57,8 +61,10 @@ export async function resolveReferences(references: GitReference[]): Promise<Res
   return result;
 }
 
+/** Describes one validated copy from a checkout into the project. */
 export interface FilePlan { component: Resolved; source: string; target: string; }
 
+/** Builds safe file-copy operations and rejects collisions before mutation. */
 export async function planFiles(cwd: string, resolved: Resolved[], overwrite = new Set<string>()): Promise<FilePlan[]> {
   const plans: FilePlan[] = [];
   const targets = new Set<string>();
@@ -85,6 +91,7 @@ async function stageFiles(cwd: string, plans: FilePlan[]): Promise<{ directory: 
   return { directory };
 }
 
+/** Combines component dependency maps and rejects conflicting ranges. */
 export function aggregateDependencies(resolved: Resolved[]): Record<string, string> {
   const result: Record<string, string> = {};
   for (const item of resolved) for (const [name, range] of Object.entries(item.manifest.dependencies)) {
@@ -94,6 +101,7 @@ export function aggregateDependencies(resolved: Resolved[]): Record<string, stri
   return Object.fromEntries(Object.entries(result).sort(([a], [b]) => a.localeCompare(b)));
 }
 
+/** Applies staged files, state, and dependencies with rollback on failure. */
 export async function applyPlans(cwd: string, state: UiState, plans: FilePlan[], dependencies: Record<string, string>): Promise<void> {
   const stage = await stageFiles(cwd, plans);
   const created: string[] = [];

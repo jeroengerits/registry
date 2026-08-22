@@ -39,6 +39,10 @@ Toggle one component without changing its files or version:
 ./ui component toggle button
 ```
 
+Run `./ui component` without a subcommand in an interactive terminal to open a
+command picker for list, info, add, remove, toggle, and update. In CI or a
+redirected terminal, it prints the component command reference instead.
+
 Disabled components remain installed and can still be inspected, updated, or
 removed. Existing `ui.json` files treat components without an `enabled` field
 as enabled.

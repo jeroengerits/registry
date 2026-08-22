@@ -3,6 +3,7 @@ import path from 'node:path';
 import { z } from 'zod';
 import type { UiState } from './types.js';
 
+/** Filename used for project-local registry state. */
 export const STATE_FILE = 'ui.json';
 
 const installedFileSchema = z.object({
@@ -33,6 +34,7 @@ const uiStateSchema = z.object({
 
 function record(value: unknown): value is Record<string, unknown> { return typeof value === 'object' && value !== null && !Array.isArray(value); }
 
+/** Parses state at the trust boundary and defaults legacy components to enabled. */
 export function validateState(value: unknown): UiState {
   const parsed = uiStateSchema.safeParse(value);
   if (parsed.success) return parsed.data;
@@ -42,15 +44,18 @@ export function validateState(value: unknown): UiState {
   if (component) throw new Error(`ui.json component "${String(component)}" must contain string "version" and "path".`);
   throw new Error('ui.json must contain a valid "components" object.');
 }
+/** Reads and validates project state, returning null when no state exists. */
 export async function readState(cwd: string): Promise<UiState | null> {
   try { return validateState(JSON.parse(await readFile(path.join(cwd, STATE_FILE), 'utf8'))); }
   catch (error) { if (record(error) && error.code === 'ENOENT') return null; if (error instanceof SyntaxError) throw new Error('ui.json contains invalid JSON.'); throw error; }
 }
+/** Atomically replaces the project state file after validation by callers. */
 export async function writeState(cwd: string, state: UiState): Promise<void> {
   const file = path.join(cwd, STATE_FILE); const temporary = `${file}.tmp-${process.pid}`;
   await writeFile(temporary, `${JSON.stringify(state, null, 2)}\n`, 'utf8'); await rename(temporary, file);
 }
 
+/** Reads the host application's package version for display and state metadata. */
 export async function readRootVersion(cwd: string): Promise<string | undefined> {
   try {
     const value: unknown = JSON.parse(await readFile(path.join(cwd, 'package.json'), 'utf8'));

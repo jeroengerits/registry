@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { safeRelativePath } from './paths.js';
 import type { ComponentManifest } from './types.js';
 
+/** Runtime schema for the untrusted component manifest file. */
 const manifestSchema = z.object({
   schemaVersion: z.literal(1),
   name: z.string().regex(/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/),
@@ -13,6 +14,7 @@ const manifestSchema = z.object({
   components: z.array(z.object({ repository: z.string().min(1), version: z.string().min(1).optional() }).strict()),
 }).strict();
 
+/** Validates a manifest and normalizes every source and target path. */
 export function validateComponentManifest(value: unknown): ComponentManifest {
   const parsed = manifestSchema.safeParse(value);
   if (!parsed.success) throw new Error('component.json requires schemaVersion 1, a lowercase kebab-case name, files, dependencies, and components.');
@@ -21,6 +23,7 @@ export function validateComponentManifest(value: unknown): ComponentManifest {
   return { ...parsed.data, files };
 }
 
+/** Reads and validates the root `component.json` from a checkout. */
 export async function readComponentManifest(directory: string): Promise<ComponentManifest> {
   try { return validateComponentManifest(JSON.parse(await readFile(path.join(directory, 'component.json'), 'utf8'))); }
   catch (error) {

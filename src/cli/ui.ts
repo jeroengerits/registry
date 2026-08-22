@@ -1,11 +1,13 @@
 import ora from 'ora';
 import pc from 'picocolors';
-import { confirm, isCancel, select } from '@clack/prompts';
+import { confirm, isCancel, select, text } from '@clack/prompts';
 
+/** Returns true when interactive prompts and terminal styling are safe. */
 export function interactive(): boolean {
   return Boolean(process.stdout.isTTY && process.stderr.isTTY && !process.env.CI);
 }
 
+/** Runs a slow task with a delayed spinner and concise completion message. */
 export async function withSpinner<T>(message: string, action: () => Promise<T>, success: (value: T) => string, enabled = true): Promise<T> {
   if (!enabled || !interactive()) return action();
   const progress = ora(message);
@@ -23,6 +25,7 @@ export async function withSpinner<T>(message: string, action: () => Promise<T>, 
   }
 }
 
+/** Semantic terminal colors shared by every human-readable command. */
 export const colors = {
   info: pc.cyan,
   muted: pc.dim,
@@ -30,22 +33,26 @@ export const colors = {
   error: pc.red,
 };
 
+/** Wraps command-specific content in the shared one-shot CLI frame. */
 export function frame(command: string, body: string, footer?: string): string {
   const lines = [colors.info(`◆ UI REGISTRY  ·  ${command}`), colors.muted('────────────────────────────────────────'), body.trimEnd()];
   if (footer) lines.push('', colors.muted(footer));
   return `${lines.join('\n')}\n`;
 }
 
+/** Renders enabled state with both a symbol and a text label. */
 export function status(enabled: boolean): string {
   return enabled ? colors.success('● enabled') : colors.muted('○ disabled');
 }
 
+/** Renders a semantic success, warning, or error outcome. */
 export function outcome(message: string, kind: 'success' | 'warning' | 'error' = 'success'): string {
   const symbol = kind === 'success' ? '✓' : kind === 'warning' ? '!' : '×';
   const color = kind === 'success' ? colors.success : kind === 'warning' ? pc.yellow : colors.error;
   return color(`${symbol} ${message}`);
 }
 
+/** Lets an interactive user select a stable component version. */
 export async function chooseVersion(component: string, versions: string[]): Promise<string> {
   const choice = await select({
     message: `Choose a version for ${component}`,
@@ -56,6 +63,7 @@ export async function chooseVersion(component: string, versions: string[]): Prom
   return choice;
 }
 
+/** Lets an interactive user select one installed component. */
 export async function chooseComponent(names: string[], message: string): Promise<string> {
   const choice = await select({
     message,
@@ -65,6 +73,35 @@ export async function chooseComponent(names: string[], message: string): Promise
   return choice;
 }
 
+/** Commands available from the interactive component namespace picker. */
+export type ComponentCommand = 'list' | 'info' | 'add' | 'remove' | 'toggle' | 'update';
+
+/** Presents the available component namespace commands. */
+export async function chooseComponentCommand(): Promise<ComponentCommand> {
+  const choice = await select({
+    message: 'What would you like to do?',
+    options: [
+      { value: 'list', label: 'list', hint: 'Show installed components' },
+      { value: 'info', label: 'info', hint: 'Inspect a component' },
+      { value: 'add', label: 'add', hint: 'Install a component' },
+      { value: 'remove', label: 'remove', hint: 'Delete a component and its files' },
+      { value: 'toggle', label: 'toggle', hint: 'Enable or disable a component' },
+      { value: 'update', label: 'update', hint: 'Update a component' },
+    ],
+  });
+  if (isCancel(choice)) throw new Error('Operation cancelled.');
+  return choice as ComponentCommand;
+}
+
+/** Prompts for the repository used by the interactive add flow. */
+export async function promptRepository(): Promise<string> {
+  const value = await text({ message: 'Git repository URL', placeholder: 'https://github.com/example/button.git' });
+  if (isCancel(value)) throw new Error('Operation cancelled.');
+  if (!value.trim()) throw new Error('A Git repository URL is required.');
+  return value.trim();
+}
+
+/** Confirms a potentially destructive action and handles cancellation. */
 export async function confirmAction(message: string): Promise<boolean> {
   const choice = await confirm({ message, initialValue: false });
   if (isCancel(choice)) throw new Error('Operation cancelled.');
