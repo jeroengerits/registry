@@ -72,6 +72,15 @@ describe('help', () => {
     const result = await capture(() => run(['hooks']));
     expect(result).toEqual({ code: 0, stdout: expect.stringContaining('No hooks configured yet.'), stderr: '' });
   });
+  it('initializes a project state file once', async () => {
+    const directory = await tempDirectory();
+    const initialized = await capture(() => run(['init'], directory));
+    expect(initialized.code).toBe(0);
+    expect(initialized.stdout).toContain('UI project initialized.');
+    expect(JSON.parse(await readFile(path.join(directory, 'ui.json'), 'utf8'))).toEqual({ components: {} });
+    const duplicate = await capture(() => run(['init'], directory));
+    expect(duplicate).toEqual({ code: 1, stdout: 'This project is already initialized. ui.json already exists.\n', stderr: '' });
+  });
   it('shows component namespace commands without a TTY', async () => {
     const result = await capture(() => run(['component']));
     expect(result.code).toBe(0);

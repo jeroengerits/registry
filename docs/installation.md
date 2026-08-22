@@ -98,6 +98,12 @@ namespaces, while `./ui components` lists installed components. Commands that
 inspect, enable, disable, update, or remove a component require its explicit
 name. Only version selection and destructive confirmation may prompt.
 
+Initialize a project before installing components:
+
+```sh
+./ui init
+```
+
 Add an exact component version with `--version`:
 
 ```sh

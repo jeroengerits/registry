@@ -8,3 +8,4 @@ export { selfUpdate } from './self-update.js';
 export { toggleComponent } from './component/toggle.js';
 export { updateComponent } from './component/update.js';
 export { help } from './help.js';
+export { initProject } from './init.js';

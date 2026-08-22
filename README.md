@@ -17,6 +17,7 @@ configuration and troubleshooting.
 
 ```sh
 ./ui
+./ui init
 ./ui components
 ./ui hooks
 ./ui component list [--json] [--available-versions]

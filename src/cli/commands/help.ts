@@ -16,6 +16,9 @@ ${colors.info('Commands:')}
   ${colors.info('ui help')}
     Show this help.
 
+  ${colors.info('ui init [--json]')}
+    Initialize a new project with an empty component registry.
+
   ${colors.info('ui self-update')}
     Update the installed UI Registry CLI.
 

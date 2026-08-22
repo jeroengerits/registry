@@ -1,6 +1,6 @@
 import process from 'node:process';
 import { Command, CommanderError } from 'commander';
-import { addComponent, componentHelp, help, infoComponent, listComponent, removeComponent, selfUpdate, toggleComponent, updateComponent } from './commands/index.js';
+import { addComponent, componentHelp, help, infoComponent, initProject, listComponent, removeComponent, selfUpdate, toggleComponent, updateComponent } from './commands/index.js';
 import type { CommandResult } from '../types.js';
 import { colors, frame, outcome } from './ui.js';
 
@@ -21,6 +21,7 @@ export async function run(args: string[], cwd = process.cwd()): Promise<number> 
     .configureOutput({ writeOut: () => undefined, writeErr: () => undefined });
 
   program.command('help').description('Show command help.').action(() => { result = help(); });
+  program.command('init').description('Initialize a new UI project.').option('--json', 'Print machine-readable JSON.').action(async (options: { json?: boolean }) => { result = await initProject(cwd, Boolean(options.json)); });
   program.command('self-update').description('Update the installed UI Registry CLI.').action(async () => { result = await selfUpdate(); });
   program.command('components').description('List installed components.').action(async () => { result = await listComponent(cwd, false); });
   program.command('hooks').description('Manage project hooks.').action(() => { result = { output: frame('hooks', outcome('No hooks configured yet.', 'warning'), 'Next: ui components'), exitCode: 0 }; });
