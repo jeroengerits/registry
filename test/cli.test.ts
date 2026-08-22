@@ -41,6 +41,27 @@ describe('help', () => {
     expect(result.stdout).toContain('components.json must be in the repository root');
     expect(result.stdout).toContain('stable semver Git tag');
   });
+  it('shows help with no arguments', async () => {
+    const result = await capture(() => run([]));
+    expect(result.code).toBe(0);
+    expect(result.stdout).toContain('UI Registry');
+  });
+  it('rejects unknown commands with a useful usage message', async () => {
+    const result = await capture(() => run(['components', 'remove']));
+    expect(result.code).toBe(1);
+    expect(result.stdout).toBe('Unknown command. Run "ui help" for available commands.\n');
+  });
+  it('reports missing command arguments', async () => {
+    const info = await capture(() => run(['components', 'info']));
+    const add = await capture(() => run(['components', 'add']));
+    expect(info).toEqual({ code: 1, stdout: 'Usage: ui components info <name> [--json]\n', stderr: '' });
+    expect(add).toEqual({ code: 1, stdout: 'Usage: ui components add <github-url> [--dry-run] [--yes] [--json]\n', stderr: '' });
+  });
+  it('requires --yes before an add can modify the project', async () => {
+    const directory = await tempDirectory();
+    const result = await capture(() => run(['components', 'add', 'https://github.com/example/button.git'], directory));
+    expect(result).toEqual({ code: 1, stdout: 'Refusing to modify files without --yes (or use --dry-run).\n', stderr: '' });
+  });
 });
 
 describe('validation', () => {
