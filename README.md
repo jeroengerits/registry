@@ -1,8 +1,8 @@
 # UI Registry CLI
 
-Install and manage Git-based components described by `component.json`.
+Install and manage reusable UI components from Git repositories or local directories.
 
-Current release: [v0.0.14](https://github.com/jeroengerits/registry/releases/tag/v0.0.14)
+Latest release: [v0.0.14](https://github.com/jeroengerits/registry/releases/tag/v0.0.14)
 
 ## Install
 
@@ -10,48 +10,75 @@ Current release: [v0.0.14](https://github.com/jeroengerits/registry/releases/tag
 curl -fsSL https://raw.githubusercontent.com/jeroengerits/registry/main/install.sh | sh
 ```
 
-This installs `./ui`. See [docs/installation.md](docs/installation.md) for
-configuration and troubleshooting.
+This installs the `ui` launcher in the current directory.
+
+## Quick Start
+
+```sh
+./ui init
+./ui component add owner/button
+./ui component list
+```
+
+The project state is stored in `ui.json`.
 
 ## Commands
 
-```sh
-./ui
-./ui init
-./ui update
-./ui doctor
-./ui component list [--json] [--versions]
-./ui component add <repository> [--version <version>] [--dry-run] [--force] [--json]
-./ui component remove [name] [--json]
-./ui component info <name> [--json]
-./ui component update [name] [--json]
-./ui component outdated [--json]
-./ui component versions <name> [--json]
+```text
+ui init                              Initialize the current project
+ui update                            Update the UI Registry CLI
+ui doctor                            Check project and component files
+
+ui component list                    List installed components
+ui component info <name>             Show component details
+ui component add <source>            Add a Git or local component
+ui component remove <name>           Remove a component and its files
+ui component update [name]           Update one or all components
+ui component outdated                Show compatible component updates
+ui component versions <name>         List stable versions
+ui component revert                  Undo the last component update
 ```
 
-`component update` updates every installed component when no name is given, or
-one named component. `--force` overwrites an already installed component. Add
-components with a GitHub URL or shorthand such as `owner/repository`.
-`component versions` lists stable versions for one installed component.
+Use `ui help <command>` for focused help. Add `--json` to commands that support machine-readable output.
 
-Every command performs one operation and returns. `./ui component list` lists
-components. Details and removal require an explicit name.
+### Component Sources
 
-Disabled components remain installed and can still be inspected, updated, or
-removed. Existing `ui.json` files treat components without an `enabled` field
-as enabled.
+GitHub shorthand and URLs:
 
-Human-readable output shows relaxed tables and progress feedback; JSON and CI
-output remain plain and script-friendly. Run `ui help <command>` for focused
-command help.
+```sh
+./ui component add owner/button
+./ui component add https://github.com/owner/button.git
+./ui component add owner/button --version 1.2.3
+```
 
-The CLI uses Commander.js for parsing, Zod for manifest and state validation,
-Execa for Git and package-manager processes, Clack for interactive prompts,
-Ora for slow-operation spinners, and Picocolors for semantic terminal output.
+Local component directories:
+
+```sh
+./ui component add ./components/button
+./ui component add /absolute/path/to/button
+./ui component add file:///absolute/path/to/button
+```
+
+Use `--dry-run` to preview changes and `--force` to replace an installed component.
+
+### Updating Components
+
+```sh
+# Update every installed component
+./ui component update
+
+# Update one component
+./ui component update button
+
+# Undo the last component update
+./ui component revert
+```
+
+Update output shows the current version, new version, status, and the available undo command. Component updates preserve a one-step rollback of tracked files and `ui.json`.
 
 ## Component Manifest
 
-Every component repository needs a root `component.json`:
+Each component directory must contain a root `component.json`:
 
 ```json
 {
@@ -65,13 +92,24 @@ Every component repository needs a root `component.json`:
 }
 ```
 
-Component versions come from stable Git tags such as `v1.2.3`. Component
-dependencies may use exact, `^major`, or `^major.minor` constraints.
+- `schemaVersion` must be `1`.
+- `name` must be lowercase kebab-case.
+- `files` maps component files to safe project-relative targets.
+- `dependencies` contains package-manager dependencies.
+- `components` contains other component repositories and optional version constraints.
+
+Git component versions come from stable tags such as `v1.2.3`. Local directories without Git tags use the version `local`.
+
+## Output
+
+Interactive terminals use Clack prompts, Ora spinners, semantic Picocolors, and tables. Piped, CI, and `--json` output stays script-friendly and avoids interactive prompts.
 
 ## Development
 
 ```sh
 npm install
 npm test
+npm run typecheck
+npm run lint
 npm run build
 ```
