@@ -38,7 +38,7 @@ describe('help', () => {
     const result = await capture(() => run(['help']));
     expect(result.code).toBe(0);
     expect(result.stdout).toContain('ui component add <github-url> --yes');
-    expect(result.stdout).toContain('ui update');
+    expect(result.stdout).toContain('ui self-update');
     expect(result.stdout).toContain('component.json must be in the repository root');
     expect(result.stdout).toContain('stable semver Git tag');
   });
@@ -69,7 +69,7 @@ describe('help', () => {
     delete process.env.UI_INSTALL_DIR;
     delete process.env.UI_CACHE_DIR;
     try {
-      const result = await capture(() => run(['update']));
+      const result = await capture(() => run(['self-update']));
       expect(result).toEqual({ code: 1, stdout: 'Self-update is only available through an installed ui launcher.\n', stderr: '' });
     } finally {
       if (installDirectory === undefined) delete process.env.UI_INSTALL_DIR; else process.env.UI_INSTALL_DIR = installDirectory;

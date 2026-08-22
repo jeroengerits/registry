@@ -8,7 +8,7 @@ import { errorResult } from './shared.js';
 
 const exec = promisify(execFile);
 
-export async function updateCli(): Promise<CommandResult> {
+export async function selfUpdate(): Promise<CommandResult> {
   const installDirectory = process.env.UI_INSTALL_DIR;
   const cacheDirectory = process.env.UI_CACHE_DIR;
   if (!installDirectory || !cacheDirectory) return errorResult('Self-update is only available through an installed ui launcher.');

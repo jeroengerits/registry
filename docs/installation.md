@@ -43,7 +43,7 @@ curl -fsSL https://raw.githubusercontent.com/jeroengerits/registry/main/install.
 Run the installed CLI to download and build the latest version:
 
 ```sh
-./ui update
+./ui self-update
 ```
 
 This preserves the launcher and replaces the cached build only after the
