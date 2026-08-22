@@ -53,9 +53,11 @@ export async function createComponent(cwd: string, name: string | undefined, jso
   }
   await mkdir(path.join(directory, 'src'), { recursive: true });
   await writeFile(path.join(directory, 'package.json'), `${JSON.stringify({ name, version: '0.1.0', private: true, type: 'module' }, null, 2)}\n`, 'utf8');
-  await writeFile(path.join(directory, 'components.json'), `${JSON.stringify({ schemaVersion: 1, name, files: [], dependencies: {}, components: [] }, null, 2)}\n`, 'utf8');
-  await writeFile(path.join(directory, 'src', '.gitkeep'), '', 'utf8');
-  const result = { name, directory: path.relative(cwd, directory), files: ['package.json', 'components.json', 'src/.gitkeep'] };
+  const componentName = name.split('-').map((part) => part[0].toUpperCase() + part.slice(1)).join('');
+  const source = `import type { ReactNode } from 'react';\n\nexport interface ${componentName}Props {\n  children?: ReactNode;\n}\n\nexport function ${componentName}({ children }: ${componentName}Props) {\n  return <div>{children}</div>;\n}\n`;
+  await writeFile(path.join(directory, 'components.json'), `${JSON.stringify({ schemaVersion: 1, name, files: [{ source: `src/${name}.tsx`, target: `components/${name}.tsx` }], dependencies: {}, components: [] }, null, 2)}\n`, 'utf8');
+  await writeFile(path.join(directory, 'src', `${name}.tsx`), source, 'utf8');
+  const result = { name, directory: path.relative(cwd, directory), files: ['package.json', 'components.json', `src/${name}.tsx`] };
   return { output: json ? `${JSON.stringify(result, null, 2)}\n` : `Created ${result.directory}\n`, exitCode: 0 };
 }
 

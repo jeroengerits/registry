@@ -56,7 +56,7 @@ When `ui.json` is absent, list prints `No installed components.` and exits succe
 
 `components.json` uses `schemaVersion: 1`, a name, optional description, file mappings, npm dependency ranges as an object, and component repository references as `{ "repository": "...", "version": "..." }` objects. `add` recursively installs component dependencies, validates every repository, source, and target before changing the project, and detects cycles. Tags must be stable `x.y.z` versions; exact, `^major`, and `^major.minor` constraints are supported. HTTPS, SSH, and local filesystem Git references are accepted.
 
-Create a new empty component package with `npm run ui:components:create -- <name>`. It creates `components/<name>/package.json`, an editable `components.json`, and `src/.gitkeep`; it never overwrites an existing component directory.
+Create a starter React component package with `npm run ui:components:create -- <name>`. It creates `components/<name>/package.json`, an editable `components.json`, and `src/<name>.tsx` mapped to `components/<name>.tsx`; it never overwrites an existing component directory.
 
 `remove` and `update` refuse to overwrite locally changed files when hashes are available; `--overwrite` explicitly bypasses that protection. The CLI never uninstalls npm packages. `manifest generate <repository-directory> [output]` infers a manifest from `package.json` and tracked TypeScript source files; `manifest check` validates the JSON and confirms all declared source files exist. `ui update` updates all installed components, while `ui update <name>` updates one installed component.
 

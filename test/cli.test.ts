@@ -38,13 +38,14 @@ describe('components list', () => {
     const result = await capture(() => run(['hooks', 'list'], directory));
     expect(result).toEqual({ code: 0, stdout: 'button@1.0.0 (components/button)\n', stderr: '' });
   });
-  it('creates an empty component package', async () => {
+  it('creates a usable React component package', async () => {
     const directory = await tempDirectory();
     const result = await capture(() => run(['components', 'create', 'date-picker'], directory));
     expect(result).toEqual({ code: 0, stdout: 'Created components/date-picker\n', stderr: '' });
-    expect(JSON.parse(await readFile(path.join(directory, 'components/date-picker', 'components.json'), 'utf8'))).toEqual({ schemaVersion: 1, name: 'date-picker', files: [], dependencies: {}, components: [] });
+    expect(JSON.parse(await readFile(path.join(directory, 'components/date-picker', 'components.json'), 'utf8'))).toEqual({ schemaVersion: 1, name: 'date-picker', files: [{ source: 'src/date-picker.tsx', target: 'components/date-picker.tsx' }], dependencies: {}, components: [] });
     expect(JSON.parse(await readFile(path.join(directory, 'components/date-picker', 'package.json'), 'utf8'))).toEqual({ name: 'date-picker', version: '0.1.0', private: true, type: 'module' });
-    await expect(stat(path.join(directory, 'components/date-picker', 'src'))).resolves.toBeDefined();
+    await expect(stat(path.join(directory, 'components/date-picker', 'src/date-picker.tsx'))).resolves.toBeDefined();
+    expect(await readFile(path.join(directory, 'components/date-picker', 'src/date-picker.tsx'), 'utf8')).toContain('export function DatePicker');
   });
   it('rejects invalid names and existing component packages', async () => {
     const directory = await tempDirectory();
@@ -63,6 +64,10 @@ describe('validation', () => {
   });
   it('validates manifests', async () => {
     expect(validateManifest({ schemaVersion: 1, name: 'button', files: [], dependencies: {}, components: [] })).toEqual({ schemaVersion: 1, name: 'button', files: [], dependencies: {}, components: [] });
+    expect(() => validateManifest({ schemaVersion: 1, name: 'Button', files: [], dependencies: {}, components: [] })).toThrow(/lowercase kebab-case/);
+    expect(() => validateManifest({ schemaVersion: 1, name: 'button', files: [{ source: '../button.tsx', target: 'components/button.tsx' }], dependencies: {}, components: [] })).toThrow(/stay within the project/);
+    expect(() => validateManifest({ schemaVersion: 1, name: 'button', files: [], dependencies: { react: '' }, components: [] })).toThrow(/non-empty ranges/);
+    expect(() => validateManifest({ schemaVersion: 1, name: 'button', files: [{ source: 'src/button.tsx', target: 'components/button.tsx' }, { source: 'src/other.tsx', target: 'components/button.tsx' }], dependencies: {}, components: [] })).toThrow(/duplicate target/);
     const directory = await tempDirectory();
     const result = await capture(() => run(['manifest', 'validate', 'missing.json'], directory));
     expect(result.code).toBe(1);
