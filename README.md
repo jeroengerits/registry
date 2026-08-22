@@ -4,24 +4,43 @@ A local-first registry manager for installing components described by `component
 
 ## Usage
 
-Install dependencies and build the CLI:
+Install the CLI directly from GitHub:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/jeroengerits/registry/main/install.sh | sh
+```
+
+The installer requires Node.js 22 or newer, builds the CLI in
+`~/.cache/ui-registry`, and installs `ui` in `~/.local/bin`. Add that directory
+to `PATH` if it is not already available. To install and run a command in one
+step:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/jeroengerits/registry/main/install.sh | sh -s -- add https://github.com/example/button.git --yes
+```
+
+To refresh the installed CLI, run the installer again. The repository and
+branch can be overridden with `UI_REGISTRY_REPOSITORY` and `UI_REGISTRY_BRANCH`.
+
+For local development, install dependencies and build the CLI:
 
 ```sh
 npm install
 npm run build
 ```
 
-List installed components with the required script:
+Use the installed CLI to inspect and manage the current project:
 
 ```sh
-npm run ui:components:list
-npm run ui:components:list -- --json
-npm run ui:hooks:list
-npm run ui:hooks:list -- --json
-npm run ui:components:create -- date-picker
+ui components list
+ui components list --json
+ui components info button
+ui add https://github.com/example/button.git --yes
+ui update button --overwrite
+ui remove button
 ```
 
-The CLI also supports:
+The same commands can be run directly from a local checkout during development:
 
 ```sh
 node bin/ui.js components list [--json]
@@ -38,6 +57,9 @@ node bin/ui.js update <git-url-or-path>[#version] --overwrite
 node bin/ui.js remove <name> [--overwrite]
 node bin/ui.js manifest generate components.json [output]
 ```
+
+See [docs/installation.md](docs/installation.md) for installer behavior,
+configuration, and troubleshooting.
 
 When `ui.json` is absent, list prints `No installed components.` and exits successfully. A state file has this shape:
 
