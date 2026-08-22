@@ -87,7 +87,8 @@ Add an exact component version with `--version`:
 ```
 
 If `--version` is omitted, the latest stable tag is selected and the available
-versions are shown.
+versions are shown. In an interactive terminal, you can choose another tag;
+the latest tag is preselected.
 
 Show all available stable versions for installed components:
 

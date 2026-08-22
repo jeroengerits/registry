@@ -21,6 +21,7 @@
     "vitest": "^3.0.8"
   },
   "dependencies": {
+    "@clack/prompts": "^1.7.0",
     "commander": "^15.0.0",
     "execa": "^10.0.1",
     "ora": "^9.4.1",

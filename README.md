@@ -24,7 +24,9 @@ configuration and troubleshooting.
 
 `component update` selects the newest compatible Git tag. `--force` overwrites
 an already installed component. Add a specific tag with `--version`; without
-it, the latest stable tag is selected and available versions are shown.
+it, interactive terminals let you choose a stable tag with the latest tag
+preselected. Non-interactive runs select the latest automatically and show the
+available versions.
 `--available-versions` shows all stable tags for each installed component.
 
 Interactive terminals show colored status and progress feedback; JSON and CI

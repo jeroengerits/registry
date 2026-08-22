@@ -1,21 +1,28 @@
 import type { CommandResult } from '../../types.js';
 import { readRootVersion, readState } from '../../state.js';
-import { parseGitReference } from '../../git.js';
+import { availableVersions, parseGitReference } from '../../git.js';
 import { applyPlans, aggregateDependencies, errorResult, planFiles, resolveReferences } from './shared.js';
-import { withSpinner } from '../ui.js';
+import { chooseVersion, interactive, withSpinner } from '../ui.js';
 import { colors } from '../ui.js';
 
 export async function addComponent(cwd: string, references: string[], options: { dryRun: boolean; force: boolean; update: boolean; version?: string; json: boolean }): Promise<CommandResult> {
   if (!references.length) return errorResult('Usage: ui component add <github-url> [--version <x.y.z>] [--dry-run] [--force] [--json]');
   if (options.version && !/^v?\d+\.\d+\.\d+$/.test(options.version)) return errorResult('The --version value must be a stable semver version such as 1.2.3.');
-  const resolved = await withSpinner('Resolving component versions...', () => resolveReferences(references.map((reference) => {
-    const parsed = parseGitReference(reference);
-    if (options.version) {
-      if (parsed.version) throw new Error('Specify the component version either in the URL or with --version, not both.');
-      parsed.version = options.version;
+  const referencesWithVersion = references.map(parseGitReference);
+  if (options.version) {
+    for (const reference of referencesWithVersion) {
+      if (reference.version) throw new Error('Specify the component version either in the URL or with --version, not both.');
+      reference.version = options.version;
     }
-    return parsed;
-  })), (value) => `Resolved ${value.length} component${value.length === 1 ? '' : 's'}`, !options.json);
+  } else if (interactive()) {
+    for (const reference of referencesWithVersion) {
+      if (reference.version) continue;
+      const versions = await availableVersions(reference.repository);
+      if (!versions.length) throw new Error(`Repository ${reference.repository} has no stable semver tag.`);
+      reference.version = await chooseVersion(reference.repository, versions);
+    }
+  }
+  const resolved = await withSpinner('Resolving component versions...', () => resolveReferences(referencesWithVersion), (value) => `Resolved ${value.length} component${value.length === 1 ? '' : 's'}`, !options.json);
   try {
     const names = new Set<string>();
     for (const item of resolved) { if (names.has(item.manifest.name)) throw new Error(`Duplicate component ${item.manifest.name}.`); names.add(item.manifest.name); }
