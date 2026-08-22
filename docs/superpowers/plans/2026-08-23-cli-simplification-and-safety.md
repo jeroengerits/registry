@@ -82,5 +82,5 @@
 - [x] Run `npm run build` and restore launcher permissions if needed.
 - [x] Run `npm run test`.
 - [x] Inspect `git diff --check`, status, and staged diff.
-- [ ] Commit all changes with a concise refactor message.
-- [ ] Push `main` to `origin` and verify a clean worktree.
+- [x] Commit all changes with a concise refactor message.
+- [x] Push `main` to `origin` and verify a clean worktree.
