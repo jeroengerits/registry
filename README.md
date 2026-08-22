@@ -16,7 +16,7 @@ as `./ui`, or add the current directory to `PATH`. To install and run a command
 in one step:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/jeroengerits/registry/main/install.sh | sh -s -- components add https://github.com/example/button.git --yes
+curl -fsSL https://raw.githubusercontent.com/jeroengerits/registry/main/install.sh | sh -s -- component add https://github.com/example/button.git --yes
 ```
 
 To refresh the installed CLI, run the installer again. The repository and
@@ -32,19 +32,19 @@ npm run build
 Use the installed CLI to inspect and manage the current project:
 
 ```sh
-./ui components list
-./ui components list --json
-./ui components info button
-./ui components add https://github.com/example/button.git --yes
+./ui component list
+./ui component list --json
+./ui component info button
+./ui component add https://github.com/example/button.git --yes
 ./ui help
 ```
 
 The same commands can be run directly from a local checkout during development:
 
 ```sh
-node bin/ui.js components list [--json]
-node bin/ui.js components info <name> [--json]
-node bin/ui.js components add <github-url> --yes
+node bin/ui.js component list [--json]
+node bin/ui.js component info <name> [--json]
+node bin/ui.js component add <github-url> --yes
 node bin/ui.js help
 ```
 
@@ -66,7 +66,7 @@ When `ui.json` is absent, list prints `No installed components.` and exits succe
 }
 ```
 
-`components.json` must be at the repository root and uses `schemaVersion: 1`, a name, optional description, file mappings, npm dependency ranges as an object, and component repository references as `{ "repository": "...", "version": "..." }` objects. `components add` recursively installs component dependencies, validates every repository, source, and target before changing the project, and detects cycles. Tags must be stable `x.y.z` versions; exact, `^major`, and `^major.minor` constraints are supported. HTTPS, SSH, and local filesystem Git references are accepted.
+`components.json` must be at the repository root and uses `schemaVersion: 1`, a name, optional description, file mappings, npm dependency ranges as an object, and component repository references as `{ "repository": "...", "version": "..." }` objects. `component add` recursively installs component dependencies, validates every repository, source, and target before changing the project, and detects cycles. Tags must be stable `x.y.z` versions; exact, `^major`, and `^major.minor` constraints are supported. HTTPS, SSH, and local filesystem Git references are accepted.
 
 Example manifest:
 

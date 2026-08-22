@@ -10,8 +10,7 @@
     "build": "tsc",
     "lint": "eslint src test",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "ui:components:list": "node bin/ui.js components list"
+    "test": "vitest run"
   },
   "devDependencies": {
     "@eslint/js": "^9.22.0",

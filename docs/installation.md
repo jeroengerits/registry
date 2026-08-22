@@ -19,7 +19,7 @@ It writes the launcher to `./ui` and the built CLI to `./.ui-registry`, relative
 to the directory where the installer is run. Run the launcher explicitly:
 
 ```sh
-./ui components list
+./ui component list
 ```
 
 Or add the current directory to `PATH` when necessary:
@@ -35,7 +35,7 @@ and the first registry operation can happen in one command:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/jeroengerits/registry/main/install.sh \
-  | sh -s -- add https://github.com/example/button.git --yes
+  | sh -s -- component add https://github.com/example/button.git --yes
 ```
 
 ## Update
@@ -70,9 +70,9 @@ UI_INSTALL_DIR="$HOME/bin" UI_CACHE_DIR="$HOME/.cache/acme-ui" \
 
 ```sh
 ./ui help
-./ui components list
+./ui component list
 ```
 
 `ui` operates on the current working directory. The launcher and its cache are
 local to the installation directory, while it stores installed component
-state in `ui.json` and installs declared npm dependencies during `components add`.
+state in `ui.json` and installs declared npm dependencies during `component add`.

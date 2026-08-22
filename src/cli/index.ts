@@ -1,13 +1,13 @@
 import process from 'node:process';
-import { addComponents, help, infoComponent, listComponents } from './commands.js';
+import { addComponent, help, infoComponent, listComponent } from './commands.js';
 
 export async function run(args: string[], cwd = process.cwd()): Promise<number> {
   const json = args.includes('--json'); const positional = args.filter((arg) => !arg.startsWith('--')); let result;
   try {
     if (positional[0] === 'help' || positional.length === 0) result = help();
-    else if (positional[0] === 'components' && positional[1] === 'list') result = await listComponents(cwd, json);
-    else if (positional[0] === 'components' && positional[1] === 'info') result = await infoComponent(cwd, positional[2], json);
-    else if (positional[0] === 'components' && positional[1] === 'add') result = await addComponents(cwd, positional.slice(2), { dryRun: args.includes('--dry-run'), yes: args.includes('--yes'), json });
+    else if (positional[0] === 'component' && positional[1] === 'list') result = await listComponent(cwd, json);
+    else if (positional[0] === 'component' && positional[1] === 'info') result = await infoComponent(cwd, positional[2], json);
+    else if (positional[0] === 'component' && positional[1] === 'add') result = await addComponent(cwd, positional.slice(2), { dryRun: args.includes('--dry-run'), yes: args.includes('--yes'), json });
     else result = { output: 'Unknown command. Run "ui help" for available commands.\n', exitCode: 1 };
     process.stdout.write(result.output); return result.exitCode;
   } catch (error) { process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`); return 1; }

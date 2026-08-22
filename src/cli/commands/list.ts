@@ -1,7 +1,7 @@
 import type { CommandResult } from '../../types.js';
 import { readState } from '../../state.js';
 
-export async function listComponents(cwd: string, json: boolean): Promise<CommandResult> {
+export async function listComponent(cwd: string, json: boolean): Promise<CommandResult> {
   const state = await readState(cwd);
   if (!state) return { output: json ? '[]\n' : 'No installed components.\n', exitCode: 0 };
   const components = Object.entries(state.components).sort(([a], [b]) => a.localeCompare(b)).map(([name, details]) => ({ name, ...details }));

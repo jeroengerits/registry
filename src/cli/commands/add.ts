@@ -3,8 +3,8 @@ import { readState } from '../../state.js';
 import { parseGitReference } from '../../git.js';
 import { applyPlans, aggregateDependencies, errorResult, planFiles, resolveReferences } from './shared.js';
 
-export async function addComponents(cwd: string, references: string[], options: { dryRun: boolean; yes: boolean; json: boolean }): Promise<CommandResult> {
-  if (!references.length) return errorResult('Usage: ui components add <github-url> [--dry-run] [--yes] [--json]');
+export async function addComponent(cwd: string, references: string[], options: { dryRun: boolean; yes: boolean; json: boolean }): Promise<CommandResult> {
+  if (!references.length) return errorResult('Usage: ui component add <github-url> [--dry-run] [--yes] [--json]');
   if (!options.yes && !options.dryRun) return errorResult('Refusing to modify files without --yes (or use --dry-run).');
   const resolved = await resolveReferences(references.map(parseGitReference));
   try {
