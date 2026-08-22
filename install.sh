@@ -4,8 +4,8 @@ set -eu
 
 repository="${UI_REGISTRY_REPOSITORY:-https://github.com/jeroengerits/registry}"
 branch="${UI_REGISTRY_BRANCH:-main}"
-install_dir="${UI_INSTALL_DIR:-$HOME/.local/bin}"
-cache_dir="${UI_CACHE_DIR:-$HOME/.cache/ui-registry}"
+install_dir="${UI_INSTALL_DIR:-$PWD}"
+cache_dir="${UI_CACHE_DIR:-$PWD/.ui-registry}"
 archive_url="$repository/archive/refs/heads/$branch.tar.gz"
 temporary_dir="$(mktemp -d "${TMPDIR:-/tmp}/ui-registry.XXXXXX")"
 

@@ -15,11 +15,17 @@ The installer requires:
 - `curl` or `wget`;
 - `tar`.
 
-It writes the launcher to `~/.local/bin/ui` and the built CLI to
-`~/.cache/ui-registry`. Add `~/.local/bin` to `PATH` when necessary:
+It writes the launcher to `./ui` and the built CLI to `./.ui-registry`, relative
+to the directory where the installer is run. Run the launcher explicitly:
 
 ```sh
-export PATH="$HOME/.local/bin:$PATH"
+./ui components list
+```
+
+Or add the current directory to `PATH` when necessary:
+
+```sh
+export PATH="$(pwd):$PATH"
 ```
 
 ## One-Shot Commands
@@ -63,10 +69,11 @@ UI_INSTALL_DIR="$HOME/bin" UI_CACHE_DIR="$HOME/.cache/acme-ui" \
 ## Verify
 
 ```sh
-ui doctor
-ui components list
+./ui doctor
+./ui components list
 ```
 
-`ui` operates on the current working directory. It stores installed component
+`ui` operates on the current working directory. The launcher and its cache are
+local to the installation directory, while it stores installed component
 state in `ui.json` and never installs npm packages until an `add` or `update`
 operation requires them.

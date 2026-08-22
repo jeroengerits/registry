@@ -11,9 +11,9 @@ curl -fsSL https://raw.githubusercontent.com/jeroengerits/registry/main/install.
 ```
 
 The installer requires Node.js 22 or newer, builds the CLI in
-`~/.cache/ui-registry`, and installs `ui` in `~/.local/bin`. Add that directory
-to `PATH` if it is not already available. To install and run a command in one
-step:
+`./.ui-registry`, and installs `./ui` in the current working directory. Run it
+as `./ui`, or add the current directory to `PATH`. To install and run a command
+in one step:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/jeroengerits/registry/main/install.sh | sh -s -- add https://github.com/example/button.git --yes
@@ -32,12 +32,12 @@ npm run build
 Use the installed CLI to inspect and manage the current project:
 
 ```sh
-ui components list
-ui components list --json
-ui components info button
-ui add https://github.com/example/button.git --yes
-ui update button --overwrite
-ui remove button
+./ui components list
+./ui components list --json
+./ui components info button
+./ui add https://github.com/example/button.git --yes
+./ui update button --overwrite
+./ui remove button
 ```
 
 The same commands can be run directly from a local checkout during development:
