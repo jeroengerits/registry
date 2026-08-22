@@ -16,7 +16,7 @@ as `./ui`, or add the current directory to `PATH`. To install and run a command
 in one step:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/jeroengerits/registry/main/install.sh | sh -s -- add https://github.com/example/button.git --yes
+curl -fsSL https://raw.githubusercontent.com/jeroengerits/registry/main/install.sh | sh -s -- components add https://github.com/example/button.git --yes
 ```
 
 To refresh the installed CLI, run the installer again. The repository and
@@ -35,9 +35,8 @@ Use the installed CLI to inspect and manage the current project:
 ./ui components list
 ./ui components list --json
 ./ui components info button
-./ui add https://github.com/example/button.git --yes
-./ui update button --overwrite
-./ui remove button
+./ui components add https://github.com/example/button.git --yes
+./ui help
 ```
 
 After installation, the installer prints this complete command list:
@@ -45,23 +44,17 @@ After installation, the installer prints this complete command list:
 ```text
 ./ui components list [--json]
 ./ui components info <name> [--json]
+./ui components add <github-url> --yes
+./ui help
 ```
 
 The same commands can be run directly from a local checkout during development:
 
 ```sh
 node bin/ui.js components list [--json]
-node bin/ui.js hooks list [--json]
 node bin/ui.js components info <name> [--json]
-node bin/ui.js manifest validate <file>
-node bin/ui.js manifest check <file>
-node bin/ui.js doctor
-node bin/ui.js add <component>
-node bin/ui.js add <git-url-or-path>[#version] --yes
-node bin/ui.js add <git-url-or-path>[#version] --dry-run --json
-node bin/ui.js update <git-url-or-path>[#version] --overwrite
-node bin/ui.js remove <name> [--overwrite]
-node bin/ui.js manifest generate components.json [output]
+node bin/ui.js components add <github-url> --yes
+node bin/ui.js help
 ```
 
 See [docs/installation.md](docs/installation.md) for installer behavior,
@@ -82,9 +75,7 @@ When `ui.json` is absent, list prints `No installed components.` and exits succe
 }
 ```
 
-`components.json` uses `schemaVersion: 1`, a name, optional description, file mappings, npm dependency ranges as an object, and component repository references as `{ "repository": "...", "version": "..." }` objects. `add` recursively installs component dependencies, validates every repository, source, and target before changing the project, and detects cycles. Tags must be stable `x.y.z` versions; exact, `^major`, and `^major.minor` constraints are supported. HTTPS, SSH, and local filesystem Git references are accepted.
-
-`remove` and `update` refuse to overwrite locally changed files when hashes are available; `--overwrite` explicitly bypasses that protection. The CLI never uninstalls npm packages. `manifest generate <repository-directory> [output]` infers a manifest from `package.json` and tracked TypeScript source files; `manifest check` validates the JSON and confirms all declared source files exist. `ui update` updates all installed components, while `ui update <name>` updates one installed component.
+`components.json` must be at the repository root and uses `schemaVersion: 1`, a name, optional description, file mappings, npm dependency ranges as an object, and component repository references as `{ "repository": "...", "version": "..." }` objects. `components add` recursively installs component dependencies, validates every repository, source, and target before changing the project, and detects cycles. Tags must be stable `x.y.z` versions; exact, `^major`, and `^major.minor` constraints are supported. HTTPS, SSH, and local filesystem Git references are accepted.
 
 Example manifest:
 

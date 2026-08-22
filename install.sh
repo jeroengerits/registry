@@ -54,9 +54,12 @@ chmod 755 "$launcher"
 
 printf 'Installed ui to %s\n' "$launcher"
 printf '\nWelcome to UI Registry.\n\n'
+printf 'Run %s help for full command information.\n\n' "$launcher"
 printf 'Available commands:\n'
+printf '  %s help\n' "$launcher"
 printf '  %s components list [--json]\n' "$launcher"
 printf '  %s components info <name> [--json]\n' "$launcher"
+printf '  %s components add <github-url> --yes\n' "$launcher"
 
 if [ "$#" -gt 0 ]; then
   exec "$launcher" "$@"

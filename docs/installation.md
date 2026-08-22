@@ -69,7 +69,7 @@ UI_INSTALL_DIR="$HOME/bin" UI_CACHE_DIR="$HOME/.cache/acme-ui" \
 ## Verify
 
 ```sh
-./ui doctor
+./ui help
 ./ui components list
 ```
 
@@ -79,9 +79,10 @@ installation:
 ```text
 ./ui components list [--json]
 ./ui components info <name> [--json]
+./ui components add <github-url> --yes
+./ui help
 ```
 
 `ui` operates on the current working directory. The launcher and its cache are
 local to the installation directory, while it stores installed component
-state in `ui.json` and never installs npm packages until an `add` or `update`
-operation requires them.
+state in `ui.json` and installs declared npm dependencies during `components add`.
