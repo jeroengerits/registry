@@ -37,8 +37,8 @@ fi
 tar -xzf "$temporary_dir/source.tar.gz" -C "$temporary_dir"
 source_dir="$temporary_dir/registry-$branch"
 
-(cd "$source_dir" && npm install --ignore-scripts --no-package-lock --no-audit --no-fund >/dev/null)
-(cd "$source_dir" && npm run build >/dev/null)
+(cd "$source_dir" && npm_config_loglevel=error npm install --ignore-scripts --no-package-lock --no-audit --no-fund >/dev/null)
+(cd "$source_dir" && npm_config_loglevel=error npm run build >/dev/null)
 
 rm -rf "$cache_dir"
 mkdir -p "$(dirname "$cache_dir")"
@@ -53,7 +53,19 @@ EOF
 chmod 755 "$launcher"
 
 printf 'Installed ui to %s\n' "$launcher"
-printf 'Run: %s components list\n' "$launcher"
+printf '\nWelcome to UI Registry.\n\n'
+printf 'Available commands:\n'
+printf '  %s components list [--json]\n' "$launcher"
+printf '  %s components create <name> [--json]\n' "$launcher"
+printf '  %s components info <name> [--json]\n' "$launcher"
+printf '  %s hooks list [--json]\n' "$launcher"
+printf '  %s add <git-reference> --yes\n' "$launcher"
+printf '  %s add <git-reference> --dry-run [--json]\n' "$launcher"
+printf '  %s update [<name>] [--overwrite]\n' "$launcher"
+printf '  %s remove <name> [--overwrite]\n' "$launcher"
+printf '  %s doctor\n' "$launcher"
+printf '  %s manifest validate <file>\n' "$launcher"
+printf '  %s manifest generate <directory> [output]\n' "$launcher"
 
 if [ "$#" -gt 0 ]; then
   exec "$launcher" "$@"

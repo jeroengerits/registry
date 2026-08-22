@@ -40,6 +40,22 @@ Use the installed CLI to inspect and manage the current project:
 ./ui remove button
 ```
 
+After installation, the installer prints this complete command list:
+
+```text
+./ui components list [--json]
+./ui components create <name> [--json]
+./ui components info <name> [--json]
+./ui hooks list [--json]
+./ui add <git-reference> --yes
+./ui add <git-reference> --dry-run [--json]
+./ui update [<name>] [--overwrite]
+./ui remove <name> [--overwrite]
+./ui doctor
+./ui manifest validate <file>
+./ui manifest generate <directory> [output]
+```
+
 The same commands can be run directly from a local checkout during development:
 
 ```sh
