@@ -28,11 +28,13 @@ export async function withSpinner<T>(message: string, action: () => Promise<T>, 
 }
 
 /** Semantic terminal colors shared by every human-readable command. */
+const color = process.env.CI || process.env.NO_COLOR ? (value: string): string => value : undefined;
 export const colors = {
-  info: pc.cyan,
-  muted: pc.dim,
-  success: pc.green,
-  error: pc.red,
+  info: color ?? pc.cyan,
+  muted: color ?? pc.dim,
+  success: color ?? pc.green,
+  warning: color ?? pc.yellow,
+  error: color ?? pc.red,
 };
 
 /** Wraps command content in the shared relaxed CLI layout. */
@@ -58,8 +60,8 @@ export function status(enabled: boolean): string {
 /** Renders a semantic success, warning, or error outcome. */
 export function outcome(message: string, kind: 'success' | 'warning' | 'error' = 'success'): string {
   const symbol = kind === 'success' ? '✓' : kind === 'warning' ? '!' : '×';
-  const color = kind === 'success' ? colors.success : kind === 'warning' ? pc.yellow : colors.error;
-  return color(`${symbol} ${message}`);
+  const paint = kind === 'success' ? colors.success : kind === 'warning' ? colors.warning : colors.error;
+  return paint(`${symbol} ${message}`);
 }
 
 /** Lets an interactive user select a stable component version. */
