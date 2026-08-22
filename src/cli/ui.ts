@@ -1,5 +1,6 @@
 import ora from 'ora';
 import pc from 'picocolors';
+import Table from 'cli-table3';
 import { confirm, isCancel, select, text } from '@clack/prompts';
 
 /** Returns true when interactive prompts and terminal styling are safe. */
@@ -38,6 +39,13 @@ export function frame(command: string, body: string, footer?: string): string {
   const lines = [colors.info(`UI Registry  /  ${command}`), '', body.trimEnd()];
   if (footer) lines.push('', colors.muted(footer));
   return `${lines.join('\n')}\n`;
+}
+
+/** Renders aligned terminal data while preserving colored cell content. */
+export function table(headers: string[], rows: string[][]): string {
+  const result = new Table({ head: headers.map(colors.muted), style: { head: [], border: [] } });
+  result.push(...rows);
+  return result.toString();
 }
 
 /** Renders enabled state with both a symbol and a text label. */

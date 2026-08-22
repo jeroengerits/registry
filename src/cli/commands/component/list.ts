@@ -1,7 +1,7 @@
 import type { CommandResult } from '../../../types.js';
 import { readState } from '../../../state.js';
 import { availableVersions } from '../../../git.js';
-import { colors, frame, outcome, status, withSpinner } from '../../ui.js';
+import { colors, frame, outcome, status, table, withSpinner } from '../../ui.js';
 
 /** Lists installed components in table form or as machine-readable JSON. */
 export async function listComponent(cwd: string, json: boolean, showAvailableVersions = false): Promise<CommandResult> {
@@ -20,11 +20,10 @@ export async function listComponent(cwd: string, json: boolean, showAvailableVer
   // Calculate the summary counts once for the compact header.
   const enabled = components.filter((component) => component.enabled).length;
   // Build a stable table body before applying the shared command frame.
-  const lines = [`${components.length} components`, `${enabled} enabled  ·  ${components.length - enabled} disabled${state.version ? `  ·  app v${state.version}` : ''}`, '', 'COMPONENT     VERSION    STATE       LOCATION'];
-  // Add one primary row and optional metadata rows per component.
+  const lines = [`${components.length} components`, `${enabled} enabled  ·  ${components.length - enabled} disabled${state.version ? `  ·  app v${state.version}` : ''}`, '', table(['Component', 'Version', 'State', 'Location'], components.map((component) => [component.name, `v${component.version}`, status(component.enabled), component.path]))];
+  // Add optional metadata below the primary table.
   for (const component of components) {
-    lines.push(`${component.name.padEnd(13)} v${component.version.padEnd(9)} ${status(component.enabled)}  ${component.path}`);
-    if (component.repository) lines.push(`             ${colors.muted(component.repository)}`);
+    if (component.repository) lines.push('', `${component.name}: ${colors.muted(component.repository)}`);
     if (showAvailableVersions) lines.push(`             ${colors.muted(`Available: ${(component.availableVersions ?? []).join(', ') || 'none'}`)}`);
   }
   // Keep the status legend and next action visible without extra prompts.

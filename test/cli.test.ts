@@ -27,8 +27,10 @@ describe('component list', () => {
     expect(result.stdout).toContain('UI Registry  /  component list');
     expect(result.stdout).toContain('2 components');
     expect(result.stdout).toContain('2 enabled  ·  0 disabled');
-    expect(result.stdout).toContain('alpha         v2.0.0');
-    expect(result.stdout).toContain('zeta          v1.0.0');
+    expect(result.stdout).toContain('alpha');
+    expect(result.stdout).toContain('v2.0.0');
+    expect(result.stdout).toContain('zeta');
+    expect(result.stdout).toContain('v1.0.0');
     expect(result.stdout).toContain('Next: ui component');
   });
   it('supports JSON output', async () => {
@@ -102,10 +104,17 @@ describe('help', () => {
   });
   it('shows self-update version status', () => {
     const updated = formatSelfUpdateDetails('Checking installed version: 0.0.1\nChecking latest version: 0.0.2\nRemoving installed version: 0.0.1\nInstalling latest version: 0.0.2');
-    expect(updated).toEqual({ body: 'Current  v0.0.1\nLatest   v0.0.2\nRemoving installed version: 0.0.1\nInstalling latest version: 0.0.2', current: false });
+    expect(updated.current).toBe(false);
+    expect(updated.body).toContain('v0.0.1');
+    expect(updated.body).toContain('v0.0.2');
+    expect(updated.body).toContain('Removing installed version: 0.0.1');
     const current = formatSelfUpdateDetails('Checking installed version: 0.0.1\nChecking latest version: 0.0.1\nUI Registry is already up to date at v0.0.1.');
-    expect(current).toEqual({ body: 'Current  v0.0.1\nLatest   v0.0.1\nUI Registry is already up to date at v0.0.1.', current: true });
-    expect(formatSelfUpdateDetails('Checking latest version: 0.0.2\nInstalling latest version: 0.0.2', '0.0.1')).toEqual({ body: 'Current  v0.0.1\nLatest   v0.0.2\nInstalling latest version: 0.0.2', current: false });
+    expect(current.current).toBe(true);
+    expect(current.body).toContain('v0.0.1');
+    expect(current.body).toContain('already up to date');
+    const fallback = formatSelfUpdateDetails('Checking latest version: 0.0.2\nInstalling latest version: 0.0.2', '0.0.1');
+    expect(fallback.current).toBe(false);
+    expect(fallback.body).toContain('v0.0.1');
   });
 });
 

@@ -4,7 +4,7 @@ import path from 'node:path';
 import { execa } from 'execa';
 import type { CommandResult } from '../../types.js';
 import { errorResult } from './shared.js';
-import { frame, outcome, withSpinner } from '../ui.js';
+import { frame, outcome, table, withSpinner } from '../ui.js';
 
 /** Converts installer progress into a compact version comparison and stage list. */
 export function formatSelfUpdateDetails(details: string, currentVersion?: string): { body: string; current: boolean } {
@@ -12,8 +12,8 @@ export function formatSelfUpdateDetails(details: string, currentVersion?: string
   const installed = lines.find((line) => line.startsWith('Checking installed version:'))?.replace('Checking installed version:', '').trim() ?? currentVersion;
   const latest = lines.find((line) => line.startsWith('Checking latest version:'))?.replace('Checking latest version:', '').trim();
   const stages = lines.filter((line) => /^(Removing installed version:|Installing latest version:|UI Registry is already up to date)/.test(line));
-  const versions = [`Current  ${installed ? `v${installed}` : 'unknown'}`, `Latest   ${latest ? `v${latest}` : 'unknown'}`];
-  return { body: [...versions, ...stages].join('\n'), current: /already up to date/i.test(details) };
+  const versions = table(['Current', 'Latest'], [[installed ? `v${installed}` : 'unknown', latest ? `v${latest}` : 'unknown']]);
+  return { body: [versions, ...stages].join('\n\n'), current: /already up to date/i.test(details) };
 }
 
 /** Re-runs the installed launcher installer using a temporary copy. */

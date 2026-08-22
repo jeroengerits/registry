@@ -1,0 +1,14 @@
+{
+  "components": {
+    "example-component": {
+      "enabled": true,
+      "repository": "https://github.com/jeroengerits/example-component-for-registry.git",
+      "constraint": "1.0.1",
+      "version": "1.0.1",
+      "path": "",
+      "files": [],
+      "dependencies": []
+    }
+  },
+  "version": "0.0.4"
+}
