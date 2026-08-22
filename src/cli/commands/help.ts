@@ -13,13 +13,13 @@ Commands:
   ui self-update
     Update the installed UI Registry CLI.
 
-  ui component list [--json]
+  ui component list [--json] [--available-versions]
     List components installed in the current directory.
 
   ui component info <name> [--json]
     Show details for an installed component.
 
-  ui component add <github-url> [--dry-run] [--force] [--json]
+  ui component add <github-url> [--version <x.y.z>] [--dry-run] [--force] [--json]
     Validate root component.json and install the component locally.
     Use --force to overwrite an already installed component.
     Use --dry-run to preview changes and --json for machine-readable output.

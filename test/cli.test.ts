@@ -37,7 +37,7 @@ describe('help', () => {
   it('shows the supported commands and requirements', async () => {
     const result = await capture(() => run(['help']));
     expect(result.code).toBe(0);
-    expect(result.stdout).toContain('ui component add <github-url> [--dry-run] [--force] [--json]');
+    expect(result.stdout).toContain('ui component add <github-url> [--version <x.y.z>] [--dry-run] [--force] [--json]');
     expect(result.stdout).toContain('ui self-update');
     expect(result.stdout).toContain('ui component remove <name> [--json]');
     expect(result.stdout).toContain('ui component update <name> [--json]');
@@ -60,7 +60,7 @@ describe('help', () => {
     const remove = await capture(() => run(['component', 'remove']));
     const update = await capture(() => run(['component', 'update']));
     expect(info).toEqual({ code: 1, stdout: 'Usage: ui component info <name> [--json]\n', stderr: '' });
-    expect(add).toEqual({ code: 1, stdout: 'Usage: ui component add <github-url> [--dry-run] [--force] [--json]\n', stderr: '' });
+    expect(add).toEqual({ code: 1, stdout: 'Usage: ui component add <github-url> [--version <x.y.z>] [--dry-run] [--force] [--json]\n', stderr: '' });
     expect(remove).toEqual({ code: 1, stdout: 'Usage: ui component remove <name> [--json]\n', stderr: '' });
     expect(update).toEqual({ code: 1, stdout: 'Usage: ui component update <name> [--json]\n', stderr: '' });
   });
@@ -103,12 +103,14 @@ describe('local Git installation', () => {
     const dryRun = await capture(() => run(['component', 'add', repository, '--dry-run', '--json'], project));
     expect(dryRun.code, dryRun.stderr).toBe(0);
     expect(JSON.parse(dryRun.stdout).components[0].name).toBe('button');
-    const added = await capture(() => run(['component', 'add', `${repository}#1.2.3`], project));
+    const added = await capture(() => run(['component', 'add', repository, '--version', '1.2.3'], project));
     expect(added.code).toBe(0);
     expect(await readFile(path.join(project, 'components/button.tsx'), 'utf8')).toContain('Button');
-    const duplicate = await capture(() => run(['component', 'add', `${repository}#1.2.3`], project));
+    const available = await capture(() => run(['component', 'list', '--available-versions'], project));
+    expect(available.stdout).toContain('available: 1.2.3');
+    const duplicate = await capture(() => run(['component', 'add', repository], project));
     expect(duplicate).toEqual({ code: 1, stdout: '', stderr: 'Component "button" is already installed. Use --force to overwrite it.\n' });
-    const forced = await capture(() => run(['component', 'add', `${repository}#1.2.3`, '--force'], project));
+    const forced = await capture(() => run(['component', 'add', repository, '--force'], project));
     expect(forced.code).toBe(0);
     const removed = await capture(() => run(['component', 'remove', 'button'], project));
     expect(removed).toEqual({ code: 0, stdout: 'Removed component "button".\n', stderr: '' });

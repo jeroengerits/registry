@@ -14,16 +14,17 @@ configuration and troubleshooting.
 ## Commands
 
 ```sh
-./ui component list [--json]
+./ui component list [--json] [--available-versions]
 ./ui component info <name> [--json]
-./ui component add <github-url> [--dry-run] [--force] [--json]
+./ui component add <github-url> [--version <x.y.z>] [--dry-run] [--force] [--json]
 ./ui component remove <name> [--json]
 ./ui component update <name> [--json]
 ./ui self-update
 ```
 
 `component update` selects the newest compatible Git tag. `--force` overwrites
-an already installed component.
+an already installed component. `--available-versions` shows all stable tags
+for each installed component.
 
 ## Component Manifest
 

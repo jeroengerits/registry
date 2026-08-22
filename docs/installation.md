@@ -80,6 +80,18 @@ UI_INSTALL_DIR="$HOME/bin" UI_CACHE_DIR="$HOME/.cache/acme-ui" \
 ./ui component update <name>
 ```
 
+Add an exact component version with `--version`:
+
+```sh
+./ui component add https://github.com/example/button.git --version 1.2.3
+```
+
+Show all available stable versions for installed components:
+
+```sh
+./ui component list --available-versions
+```
+
 `ui` operates on the current working directory. The launcher and its cache are
 local to the installation directory, while it stores installed component
 state in `ui.json` and installs declared npm dependencies during `component add`.

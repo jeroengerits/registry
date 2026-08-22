@@ -51,3 +51,16 @@ export async function checkoutGit(reference: GitReference): Promise<GitCheckout>
     return { directory, version, commit, cleanup: () => rm(directory, { recursive: true, force: true }) };
   } catch (error) { await rm(directory, { recursive: true, force: true }); throw new Error(`Unable to prepare Git repository: ${error instanceof Error ? error.message : String(error)}`); }
 }
+
+export async function availableVersions(repository: string): Promise<string[]> {
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'ui-registry-tags-'));
+  try {
+    await runGit('git', ['clone', '--quiet', repository, directory]);
+    return (await runGit('git', ['tag', '--list'], { cwd: directory })).stdout
+      .split(/\r?\n/)
+      .filter(Boolean)
+      .map((tag) => tag.replace(/^v/, ''))
+      .filter((version) => semver(version))
+      .sort(compare);
+  } finally { await rm(directory, { recursive: true, force: true }); }
+}

@@ -3,9 +3,17 @@ import { readRootVersion, readState } from '../../state.js';
 import { parseGitReference } from '../../git.js';
 import { applyPlans, aggregateDependencies, errorResult, planFiles, resolveReferences } from './shared.js';
 
-export async function addComponent(cwd: string, references: string[], options: { dryRun: boolean; force: boolean; update: boolean; json: boolean }): Promise<CommandResult> {
-  if (!references.length) return errorResult('Usage: ui component add <github-url> [--dry-run] [--force] [--json]');
-  const resolved = await resolveReferences(references.map(parseGitReference));
+export async function addComponent(cwd: string, references: string[], options: { dryRun: boolean; force: boolean; update: boolean; version?: string; json: boolean }): Promise<CommandResult> {
+  if (!references.length) return errorResult('Usage: ui component add <github-url> [--version <x.y.z>] [--dry-run] [--force] [--json]');
+  if (options.version && !/^v?\d+\.\d+\.\d+$/.test(options.version)) return errorResult('The --version value must be a stable semver version such as 1.2.3.');
+  const resolved = await resolveReferences(references.map((reference) => {
+    const parsed = parseGitReference(reference);
+    if (options.version) {
+      if (parsed.version) throw new Error('Specify the component version either in the URL or with --version, not both.');
+      parsed.version = options.version;
+    }
+    return parsed;
+  }));
   try {
     const names = new Set<string>();
     for (const item of resolved) { if (names.has(item.manifest.name)) throw new Error(`Duplicate component ${item.manifest.name}.`); names.add(item.manifest.name); }
