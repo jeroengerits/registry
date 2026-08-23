@@ -203,3 +203,5 @@ npm run typecheck
 npm run lint
 npm run build
 ```
+
+Before every version release, add the user-facing changes to the matching version under `## Changelog`, update the version, and verify the release entry describes the shipped behavior. Changes after a release belong under `Unreleased` until the next version is cut.

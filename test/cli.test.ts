@@ -159,6 +159,8 @@ describe('help', () => {
     try {
       const result = await capture(() => run(['self-update']));
       expect(result).toEqual({ code: 1, stdout: '', stderr: 'Self-update is only available through an installed ui launcher.\n' });
+      const json = await capture(() => run(['self-update', '--json']));
+      expect(JSON.parse(json.stdout)).toMatchObject({ ok: false, error: { message: 'Self-update is only available through an installed ui launcher.' } });
     } finally {
       if (installDirectory === undefined) delete process.env.UI_INSTALL_DIR; else process.env.UI_INSTALL_DIR = installDirectory;
       if (cacheDirectory === undefined) delete process.env.UI_CACHE_DIR; else process.env.UI_CACHE_DIR = cacheDirectory;

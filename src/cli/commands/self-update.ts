@@ -7,6 +7,7 @@ import { isRecord, errorMessage } from '../../shared.js';
 import { errorResult } from './shared.js';
 import { frame, outcome, withSpinner } from '../ui.js';
 import { renderUpdateReport } from '../update-flow.js';
+import { present } from '../presentation.js';
 
 /** Extracts a version only when the cached package JSON has the expected shape. */
 function versionFromPackage(value: unknown): string | undefined {
@@ -33,17 +34,17 @@ export function formatSelfUpdateDetails(details: string, currentVersion?: string
 }
 
 /** Re-runs the installed launcher installer using a temporary copy. */
-export async function selfUpdate(): Promise<CommandResult> {
+export async function selfUpdate(json = false): Promise<CommandResult> {
   // The launcher supplies these locations; direct source runs do not.
   const installDirectory = process.env.UI_INSTALL_DIR;
   const cacheDirectory = process.env.UI_CACHE_DIR;
   // Keep self-update unavailable when no installed launcher is active.
-  if (!installDirectory || !cacheDirectory) return errorResult('Self-update is only available through an installed ui launcher.');
+  if (!installDirectory || !cacheDirectory) return errorResult('Self-update is only available through an installed ui launcher.', json);
 
   // Locate the cached installer before creating temporary work.
   const installer = path.join(cacheDirectory, 'install.sh');
   // Report a recoverable installation problem without invoking a subprocess.
-  try { await access(installer); } catch { return errorResult('Unable to find the installer in the current ui installation.'); }
+  try { await access(installer); } catch { return errorResult('Unable to find the installer in the current ui installation.', json); }
 
   // Copy the installer so an update cannot modify the file it is executing.
   const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), 'ui-update-'));
@@ -62,7 +63,7 @@ export async function selfUpdate(): Promise<CommandResult> {
     const details = result.stdout.trim() || 'Installer and cached CLI refreshed.';
     const formatted = formatSelfUpdateDetails(details, currentVersion);
     const message = formatted.current ? 'UI Registry is already up to date.' : 'UI Registry updated.';
-    return { output: frame('update', `${formatted.body}\n\n${outcome(message)}`, 'Next: ui help'), exitCode: 0 };
+      return present(json, { updated: !formatted.current, currentVersion, latestVersion: formatted.current ? currentVersion : undefined }, frame('update', `${formatted.body}\n\n${outcome(message)}`, 'Next: ui help'));
   } catch (error) {
     // Normalize subprocess diagnostics into one actionable thrown error.
     throw new Error(subprocessMessage(error));
