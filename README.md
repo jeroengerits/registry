@@ -50,6 +50,7 @@ ui -C ./packages/app list
 ui --project ./packages/app update --dry-run
 ui list --quiet
 ui remove button --yes --no-input
+ui list --color=never
 ```
 
 Successful output is written to stdout. Progress, prompts, warnings, and errors are written to stderr. Piped and CI runs do not prompt or emit terminal styling. Set `NO_COLOR=1` to disable colors explicitly.

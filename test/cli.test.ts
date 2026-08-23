@@ -62,6 +62,14 @@ describe('help', () => {
     expect(quiet.stdout).toBe('');
   });
 
+  it('accepts explicit color policy options', async () => {
+    const plain = await capture(() => run(['--color=never', 'help']));
+    expect(plain.stdout.includes(`${String.fromCharCode(27)}[`)).toBe(false);
+    const invalid = await capture(() => run(['--color=invalid', 'help']));
+    expect(invalid.code).toBe(2);
+    expect(invalid.stderr).toContain('--color must be auto, always, or never.');
+  });
+
   it('supports the short Unix-first command names', async () => {
     const directory = await tempDirectory();
     const initialized = await capture(() => run(['init'], directory));

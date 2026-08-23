@@ -6,7 +6,7 @@ import { errorMessage } from '../shared.js';
 import { colors } from './ui.js';
 import { registerCommands } from './commands/registry.js';
 
-interface RuntimeOptions { args: string[]; cwd: string; quiet: boolean; noInput: boolean; }
+interface RuntimeOptions { args: string[]; cwd: string; quiet: boolean; noInput: boolean; color?: 'auto' | 'always' | 'never'; }
 
 /** Extracts process-wide Unix options before Commander sees command-specific flags. */
 function runtimeOptions(args: string[], cwd: string): RuntimeOptions {
@@ -14,6 +14,7 @@ function runtimeOptions(args: string[], cwd: string): RuntimeOptions {
   let project = cwd;
   let quiet = false;
   let noInput = false;
+  let color: RuntimeOptions['color'];
   for (let index = 0; index < args.length; index += 1) {
     const argument = args[index];
     if (argument === '-C' || argument === '--project') {
@@ -26,11 +27,15 @@ function runtimeOptions(args: string[], cwd: string): RuntimeOptions {
       quiet = true;
     } else if (argument === '--no-input') {
       noInput = true;
+    } else if (argument.startsWith('--color=')) {
+      const value = argument.slice('--color='.length);
+      if (value !== 'auto' && value !== 'always' && value !== 'never') throw new Error('--color must be auto, always, or never.');
+      color = value;
     } else {
       remaining.push(argument);
     }
   }
-  return { args: remaining, cwd: path.resolve(cwd, project), quiet, noInput };
+  return { args: remaining, cwd: path.resolve(cwd, project), quiet, noInput, color };
 }
 
 /** Converts Commander unknown-command failures into the CLI's stable message. */
@@ -54,7 +59,11 @@ export async function run(args: string[], cwd = process.cwd()): Promise<number> 
   registerCommands(program, options.cwd, (commandResult) => { result = commandResult; });
 
   const previousNoInput = process.env.UI_NO_INPUT;
+  const previousNoColor = process.env.NO_COLOR;
+  const previousForceColor = process.env.FORCE_COLOR;
   if (options.noInput) process.env.UI_NO_INPUT = '1';
+  if (options.color === 'never') process.env.NO_COLOR = '1';
+  if (options.color === 'always') { delete process.env.NO_COLOR; process.env.FORCE_COLOR = '1'; }
   try {
     await program.parseAsync(commandArgs, { from: 'user' });
   } catch (error) {
@@ -66,6 +75,8 @@ export async function run(args: string[], cwd = process.cwd()): Promise<number> 
         if (previousNoInput === undefined) delete process.env.UI_NO_INPUT;
         else process.env.UI_NO_INPUT = previousNoInput;
       }
+      if (previousNoColor === undefined) delete process.env.NO_COLOR; else process.env.NO_COLOR = previousNoColor;
+      if (previousForceColor === undefined) delete process.env.FORCE_COLOR; else process.env.FORCE_COLOR = previousForceColor;
       return 1;
     }
   }
@@ -76,6 +87,8 @@ export async function run(args: string[], cwd = process.cwd()): Promise<number> 
     if (previousNoInput === undefined) delete process.env.UI_NO_INPUT;
     else process.env.UI_NO_INPUT = previousNoInput;
   }
+  if (previousNoColor === undefined) delete process.env.NO_COLOR; else process.env.NO_COLOR = previousNoColor;
+  if (previousForceColor === undefined) delete process.env.FORCE_COLOR; else process.env.FORCE_COLOR = previousForceColor;
   return output.exitCode;
 }
 
