@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { execa } from 'execa';
 import type { ComponentManifest, UiState } from '../../types.js';
@@ -7,7 +7,7 @@ import { checkoutGit, parseGitReference, satisfies, type GitReference } from '..
 import { readComponentManifest } from '../../registry.js';
 import { safeJoin, safeRelativePath } from '../../paths.js';
 import { copySafeFile, projectFileExists, removeSafePath, safeFilePath, sha256File } from '../../filesystem.js';
-import { isErrnoError } from '../../shared.js';
+import { errorMessage, isErrnoError } from '../../shared.js';
 import { failure } from '../presentation.js';
 
 /** Creates the standard failed-command result without throwing. */
@@ -26,6 +26,26 @@ export async function installDependencies(cwd: string, dependencies: Record<stri
   if (!names.length) return;
   const manager = await packageManager(cwd);
   await execa(manager === 'npm' ? 'npm' : manager, manager === 'npm' ? ['install', '--save', ...names] : ['add', ...names], { cwd });
+}
+
+interface PackageFileSnapshot { file: string; contents: Buffer | null; }
+
+/** Captures package metadata before a package manager is allowed to mutate it. */
+async function snapshotPackageFiles(cwd: string): Promise<PackageFileSnapshot[]> {
+  const files = ['package.json', 'package-lock.json', 'pnpm-lock.yaml', 'yarn.lock', 'bun.lockb'];
+  return Promise.all(files.map(async (file) => {
+    try { return { file, contents: await readFile(path.join(cwd, file)) }; }
+    catch (error) { if (isErrnoError(error) && error.code === 'ENOENT') return { file, contents: null }; throw error; }
+  }));
+}
+
+/** Restores package metadata exactly as it existed before dependency installation. */
+async function restorePackageFiles(cwd: string, snapshots: PackageFileSnapshot[]): Promise<void> {
+  for (const snapshot of snapshots) {
+    const file = path.join(cwd, snapshot.file);
+    if (snapshot.contents === null) await rm(file, { force: true });
+    else await writeFile(file, snapshot.contents);
+  }
 }
 
 /** A component checkout plus manifest and cleanup data needed by planning. */
@@ -112,6 +132,7 @@ export function aggregateDependencies(resolved: Resolved[]): Record<string, stri
 
 /** Applies staged files, state, and dependencies with rollback on failure. */
 export async function applyPlans(cwd: string, state: UiState, plans: FilePlan[], dependencies: Record<string, string>, obsolete: string[] = [], previousState: UiState | null = state): Promise<void> {
+  const packageFiles = await snapshotPackageFiles(cwd);
   const stage = await stageFiles(cwd, plans);
   const created: string[] = [];
   const overwritten: { destination: string; backup: string }[] = [];
@@ -147,13 +168,16 @@ export async function applyPlans(cwd: string, state: UiState, plans: FilePlan[],
     await writeState(cwd, state);
     await installDependencies(cwd, dependencies);
   } catch (error) {
+    const rollbackFailures: string[] = [];
     for (const file of created) await removeSafePath(file, 'rollback file').catch(() => undefined);
     for (const { destination, backup } of overwritten) await copySafeFile(backup, destination, 'rollback file').catch(() => undefined);
     for (const { destination, backup } of removed) await copySafeFile(backup, destination, 'rollback file').catch(() => undefined);
     try {
       if (previousState) await writeState(cwd, previousState);
       else await rm(path.join(cwd, 'ui.json'), { force: true });
-    } catch { /* Preserve the original failure while making a best-effort rollback. */ }
+    } catch { rollbackFailures.push('ui.json'); }
+    try { await restorePackageFiles(cwd, packageFiles); } catch { rollbackFailures.push('package metadata'); }
+    if (rollbackFailures.length) throw new Error(`${errorMessage(error)} Rollback incomplete: ${rollbackFailures.join(', ')} could not be restored.`);
     throw error;
   } finally {
     await rm(stage.directory, { recursive: true, force: true });
