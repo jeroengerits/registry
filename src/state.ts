@@ -11,6 +11,7 @@ export const STATE_FILE = 'ui.json';
 const installedFileSchema = z.object({
   // Hashes are retained for doctor integrity checks after installation.
   path: z.string(),
+  sourcePath: z.string().optional(),
   sha256: z.string(),
 }).strict();
 
@@ -25,6 +26,7 @@ const componentStateSchema = z.object({
   version: z.string(),
   constraint: z.string().optional(),
   path: z.string(),
+  sourcePath: z.string().optional(),
   repository: z.string().optional(),
   files: z.array(installedFileSchema).optional(),
   dependencies: z.array(componentReferenceSchema).optional(),

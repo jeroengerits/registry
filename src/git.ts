@@ -1,4 +1,5 @@
-import { mkdtemp, rm, stat } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, stat } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -69,10 +70,16 @@ export function updateConstraint(version: string, requested?: string): string {
 function compare(a: string, b: string): number { const av = semver(a) ?? [0, 0, 0]; const bv = semver(b) ?? [0, 0, 0]; return bv[0] - av[0] || bv[1] - av[1] || bv[2] - av[2] || b.localeCompare(a); }
 
 /** Clones a repository, selects a stable tag, and returns cleanup metadata. */
-export async function checkoutGit(reference: GitReference): Promise<GitCheckout> {
+export async function checkoutGit(reference: GitReference, cacheRoot?: string): Promise<GitCheckout> {
   if (path.isAbsolute(reference.repository)) return checkoutLocal(reference);
-  const directory = await mkdtemp(path.join(os.tmpdir(), 'ui-registry-git-'));
+  const temporaryDirectory = cacheRoot ? undefined : await mkdtemp(path.join(os.tmpdir(), 'ui-registry-git-'));
+  const cacheKey = createHash('sha256').update(reference.repository).digest('hex').slice(0, 16);
+  const directory = cacheRoot ? path.join(cacheRoot, `${cacheKey}-${reference.version ?? 'latest'}`) : temporaryDirectory!;
   try {
+    if (cacheRoot) {
+      await mkdir(cacheRoot, { recursive: true });
+      await rm(directory, { recursive: true, force: true });
+    }
     await runGit('git', ['clone', '--quiet', reference.repository, directory]);
     // Keep the original tag spelling so checkout works for both v1.2.3 and 1.2.3.
     const rawTags = (await runGit('git', ['tag', '--list', '--sort=-version:refname'], { cwd: directory })).stdout.split(/\r?\n/).filter(Boolean);
@@ -85,7 +92,7 @@ export async function checkoutGit(reference: GitReference): Promise<GitCheckout>
     if (!tag) throw new Error(`Version ${reference.version} was not found in ${reference.repository}.`);
     await runGit('git', ['checkout', '--quiet', tag.tag], { cwd: directory });
     const commit = (await runGit('git', ['rev-parse', 'HEAD'], { cwd: directory })).stdout.trim();
-    return { directory, version, versions, commit, cleanup: () => rm(directory, { recursive: true, force: true }) };
+    return { directory, version, versions, commit, cleanup: cacheRoot ? async () => undefined : () => rm(directory, { recursive: true, force: true }) };
   } catch (error) { await rm(directory, { recursive: true, force: true }); throw new Error(`Unable to prepare Git repository: ${errorMessage(error)}`); }
 }
 

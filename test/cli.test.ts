@@ -6,7 +6,7 @@ import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { run } from '../src/cli/index.js';
 import { initializeState, validateState } from '../src/state.js';
-import { availableVersions, parseGitReference, satisfies, updateConstraint } from '../src/git.js';
+import { availableVersions, checkoutGit, parseGitReference, satisfies, updateConstraint } from '../src/git.js';
 import { formatSelfUpdateDetails, parseSelfUpdateDetails } from '../src/cli/commands/self-update.js';
 import { errorMessage, isErrnoError, isRecord } from '../src/shared.js';
 import { copySafeFile, safeFilePath } from '../src/filesystem.js';
@@ -287,6 +287,22 @@ describe('local Git installation', () => {
     await exec('git', ['-C', repository, 'tag', '1.10.0']);
     await exec('git', ['-C', repository, 'tag', 'next']);
     expect(await availableVersions(repository)).toEqual(['1.10.0', '1.2.3']);
+  });
+
+  it('persists remote checkouts in the project source cache', async () => {
+    const repository = await tempDirectory();
+    await writeFile(path.join(repository, 'component.json'), '{}');
+    await exec('git', ['init', '-q', repository]);
+    await exec('git', ['-C', repository, 'config', 'user.email', 'test@example.invalid']);
+    await exec('git', ['-C', repository, 'config', 'user.name', 'Test']);
+    await exec('git', ['-C', repository, 'add', '.']);
+    await exec('git', ['-C', repository, 'commit', '-qm', 'fixture']);
+    await exec('git', ['-C', repository, 'tag', '1.0.0']);
+    const sourceCache = await tempDirectory();
+    const checkout = await checkoutGit({ repository: `file://${repository}`, version: '1.0.0' }, sourceCache);
+    await expect(access(checkout.directory)).resolves.toBeUndefined();
+    await checkout.cleanup();
+    await expect(access(checkout.directory)).resolves.toBeUndefined();
   });
 
   it('normalizes references and installs a tagged fixture without network access', async () => {

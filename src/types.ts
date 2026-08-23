@@ -34,6 +34,8 @@ export interface ComponentState {
   version: string;
   constraint?: string;
   path: string;
+  /** Persistent local checkout used as the installed component source. */
+  sourcePath?: string;
   repository?: string;
   files?: InstalledFile[];
   dependencies?: ComponentReference[];

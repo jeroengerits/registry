@@ -91,6 +91,8 @@ Local component directories:
 
 Use `--dry-run` to preview changes and `--force` to replace an installed component.
 
+Remote component repositories are cloned into the project-local `.ui-sources/` cache and remain available after the command exits. The path is recorded as `sourcePath` in `ui.json`.
+
 Use `ui remove button --dry-run` to preview tracked files before removal. Use `ui undo --list` to check whether a rollback point is available without changing files.
 
 ### Updating Components

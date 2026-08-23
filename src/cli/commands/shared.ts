@@ -38,7 +38,7 @@ function canonical(repository: string): string {
 }
 
 /** Resolves root and recursive component references with cycle detection. */
-export async function resolveReferences(references: GitReference[]): Promise<Resolved[]> {
+export async function resolveReferences(references: GitReference[], sourceRoot?: string): Promise<Resolved[]> {
   const selected = new Map<string, Resolved>();
   const visiting = new Set<string>();
   const visit = async (reference: GitReference): Promise<void> => {
@@ -50,7 +50,7 @@ export async function resolveReferences(references: GitReference[]): Promise<Res
       return;
     }
     visiting.add(key);
-    const checkout = await checkoutGit(reference);
+    const checkout = await checkoutGit(reference, sourceRoot);
     let manifest: ComponentManifest;
     try { manifest = await readComponentManifest(checkout.directory); } catch (error) { await checkout.cleanup(); throw error; }
     // Register before walking dependencies so cycles are visible through `visiting`.

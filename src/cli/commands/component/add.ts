@@ -1,3 +1,4 @@
+import path from 'node:path';
 // Return the shared command result shape used by the CLI runner.
 import type { CommandResult } from '../../../types.js';
 // Read the project state and the application version before planning changes.
@@ -83,7 +84,7 @@ export async function addComponent(
   // Resolve the complete dependency graph before entering the mutation phase.
   const resolved = await withSpinner(
     'Resolving component versions...',
-    () => resolveReferences(referencesWithVersion),
+    () => resolveReferences(referencesWithVersion, path.join(cwd, '.ui-sources')),
     (value) => `Resolved ${value.length} component${value.length === 1 ? '' : 's'}`,
     !options.json,
   );
@@ -235,6 +236,7 @@ export async function addComponent(
         constraint: updateConstraint(item.version, item.reference.version),
         version: item.version,
         path: item.manifest.files[0]?.target ?? '',
+        sourcePath: item.directory,
         files: item.manifest.files.map((file) => ({ path: file.target, sha256: '' })),
         dependencies: item.manifest.components,
       };
