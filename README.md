@@ -39,10 +39,19 @@ ui update [name]                     Update one or all components
  ui versions <name>                   List stable versions
 ui undo                              Undo the last component update
  ui enable <name>                     Enable a component
- ui disable <name>                    Disable a component
+ui disable <name>                    Disable a component
+ui completion <shell>                Print Bash, Zsh, or Fish completions
 ```
 
 Use `ui help <command>` for focused help. Add `--json` to commands that support machine-readable output.
+
+Install shell completion by evaluating the generated script:
+
+```sh
+eval "$(ui completion bash)"
+eval "$(ui completion zsh)"
+ui completion fish | source
+```
 
 Global Unix-style options can be placed before or after the command:
 

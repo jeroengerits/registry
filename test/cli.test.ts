@@ -53,6 +53,17 @@ describe('component list', () => {
 });
 
 describe('help', () => {
+  it('prints shell completion scripts', async () => {
+    const bash = await capture(() => run(['completion', 'bash']));
+    expect(bash.code).toBe(0);
+    expect(bash.stdout).toContain('complete -F _ui_completion ui');
+    const fish = await capture(() => run(['completion', 'fish']));
+    expect(fish.stdout).toContain('complete -c ui');
+    const invalid = await capture(() => run(['completion', 'powershell']));
+    expect(invalid.code).toBe(2);
+    expect(invalid.stderr).toContain('Usage: ui completion <bash|zsh|fish>');
+  });
+
   it('expands newline-delimited stdin component sources', async () => {
     await expect(expandSources(['-', 'owner/direct'], async () => 'owner/button\n\nowner/modal\n')).resolves.toEqual(['owner/button', 'owner/modal', 'owner/direct']);
   });

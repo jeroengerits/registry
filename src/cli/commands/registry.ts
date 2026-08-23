@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import type { Command } from 'commander';
 import type { CommandResult } from '../../types.js';
-import { addComponent, componentHelp, componentVersions, doctor, help, infoComponent, initProject, listComponent, outdatedComponents, removeComponent, revertComponent, rollbackStatus, selfUpdate, setComponentEnabled, toggleComponent, updateComponent } from './index.js';
+import { addComponent, componentHelp, componentVersions, completion, doctor, help, infoComponent, initProject, listComponent, outdatedComponents, removeComponent, revertComponent, rollbackStatus, selfUpdate, setComponentEnabled, toggleComponent, updateComponent } from './index.js';
 
 export interface CommandOption { flags: string; description: string; }
 
@@ -48,6 +48,7 @@ export const commandDefinitions: CommandDefinition[] = [
   { path: 'init', usage: '[--json]', description: 'Initialize a new UI project.', options: [jsonOption], register: (program, cwd, setResult) => { const command = program.command('init').description('Initialize a new UI project.'); command.option(jsonOption.flags, jsonOption.description).action(async (options: { json?: boolean }) => setResult(await initProject(cwd, Boolean(options.json)))); } },
   { path: 'self-update', usage: '[--json]', description: 'Update the UI Registry CLI.', options: [jsonOption], register: (program, _cwd, setResult) => { const command = program.command('self-update').description('Update the UI Registry CLI.'); command.option(jsonOption.flags, jsonOption.description).action(async (options: { json?: boolean }) => setResult(await selfUpdate(Boolean(options.json)))); } },
   { path: 'doctor', usage: '[--json]', description: 'Check project configuration.', options: [jsonOption], register: (program, cwd, setResult) => { const command = program.command('doctor').description('Check project configuration.'); command.option(jsonOption.flags, jsonOption.description).action(async (options: { json?: boolean }) => setResult(await doctor(cwd, Boolean(options.json)))); } },
+  { path: 'completion', usage: '<bash|zsh|fish>', description: 'Print shell completion scripts.', register: (program, _cwd, setResult) => { program.command('completion <shell>').description('Print shell completion scripts.').action((shell: string) => setResult(completion(shell))); } },
   ...componentDefinitions,
 ];
 

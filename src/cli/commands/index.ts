@@ -13,3 +13,4 @@ export { initProject } from './init.js';
 export { componentVersions } from './component/versions.js';
 export { outdatedComponents } from './component/outdated.js';
 export { doctor } from './doctor.js';
+export { completion } from './completion.js';
