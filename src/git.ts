@@ -5,6 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execa } from 'execa';
 import { errorMessage } from './shared.js';
+import { safeJoin } from './paths.js';
 
 /** Executes Git commands through Execa so failures retain useful context. */
 const runGit = execa;
@@ -74,7 +75,8 @@ export async function checkoutGit(reference: GitReference, cacheRoot?: string): 
   if (path.isAbsolute(reference.repository)) return checkoutLocal(reference);
   const temporaryDirectory = cacheRoot ? undefined : await mkdtemp(path.join(os.tmpdir(), 'ui-registry-git-'));
   const cacheKey = createHash('sha256').update(reference.repository).digest('hex').slice(0, 16);
-  const directory = cacheRoot ? path.join(cacheRoot, `${cacheKey}-${reference.version ?? 'latest'}`) : temporaryDirectory!;
+  const versionKey = createHash('sha256').update(reference.version ?? 'latest').digest('hex').slice(0, 16);
+  const directory = cacheRoot ? safeJoin(cacheRoot, `${cacheKey}-${versionKey}`, 'Git source cache') : temporaryDirectory!;
   try {
     if (cacheRoot) {
       await mkdir(cacheRoot, { recursive: true });

@@ -260,6 +260,8 @@ describe('validation', () => {
     expect(() => validateState({ components: { button: { version: '1', path: 'button', files: [{ path: 'button', sha256: 'not-a-hash' }] } } })).toThrow(/invalid file hashes/);
     expect(() => validateState({ components: { button: { version: '1', path: 'button', files: [{ path: 'button', sourcePath: '/tmp/source', sha256: '' }] } } })).toThrow(/invalid file hashes/);
     expect(() => validateState({ components: { 'Invalid Name': { version: '1', path: 'button' } } })).toThrow(/must contain string "version" and "path"/);
+    expect(() => validateState({ components: { button: { version: '1', path: '../outside' } } })).toThrow(/safe relative path|stay within/);
+    expect(() => validateState({ components: { button: { version: '1', path: 'button', files: [{ path: '/outside', sha256: '' }] } } })).toThrow(/safe relative path/);
   });
 
   it('validates manifest strings and duplicate targets', () => {
