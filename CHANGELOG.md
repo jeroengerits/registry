@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.0.35
+
+- Initialize the target project automatically after npm installation when `ui.json` is absent.
+
 ## v0.0.34
 
 - Automatically initialize project state for stateful CLI commands.
