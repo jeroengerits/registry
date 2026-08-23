@@ -12,3 +12,10 @@ export function failure(json: boolean, message: string, code = 'command_failed',
     ? { output: `${JSON.stringify(data, null, 2)}\n`, exitCode, data }
     : { output: '', error: message, exitCode, data };
 }
+
+/** Returns a successful, non-mutating cancellation result for declined updates. */
+export function cancelled(json: boolean): CommandResult {
+  const data = { updated: false, cancelled: true };
+  const human = 'Update cancelled.\nNo changes were made.\n';
+  return { output: json ? `${JSON.stringify(data, null, 2)}\n` : human, exitCode: 0, data };
+}

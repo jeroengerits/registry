@@ -20,7 +20,12 @@ const statusLabel: Record<UpdateStatus, string> = {
 
 /** Describes the intended version transitions before work starts. */
 export function renderUpdateIntent(items: UpdateItem[]): string {
-  return `${colors.info('update plan')}\n\n${table(['Name', 'Current', 'Next', 'Status'], items.map((item) => [item.name, item.current, item.next, statusLabel.pending]))}`;
+  return `${colors.info('Update available')}\n\n${table(['Name', 'Current', 'Next'], items.map((item) => [item.name, item.current, item.next]))}`;
+}
+
+/** Renders the shared final success block for every update command. */
+export function renderUpdateSuccess(items: UpdateItem[]): string {
+  return `${colors.success('Updated successfully')}\n\n${items.map((item) => `  ${item.current} -> ${item.next}${items.length > 1 ? `  ${item.name}` : ''}`).join('\n')}\n`;
 }
 
 /** Reports per-item outcomes and exposes the supplied undo action. */

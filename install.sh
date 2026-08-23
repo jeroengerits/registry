@@ -54,6 +54,10 @@ if [ "$current_version" = "$latest_version" ]; then
   exit 0
 fi
 
+if [ "${UI_CHECK_ONLY:-0}" = '1' ]; then
+  exit 0
+fi
+
 printf 'Removing installed version: %s\n' "$current_version"
 rm -rf "$cache_dir"
 mkdir -p "$(dirname "$cache_dir")"

@@ -90,8 +90,8 @@ export async function chooseVersion(component: string, versions: string[]): Prom
 }
 
 /** Confirms a potentially destructive action and handles cancellation. */
-export async function confirmAction(message: string): Promise<boolean> {
-  const choice = await confirm({ message, initialValue: false });
+export async function confirmAction(message: string, initialValue = false): Promise<boolean> {
+  const choice = await confirm({ message, initialValue });
   if (isCancel(choice)) throw new Error('Operation cancelled.');
   return choice;
 }

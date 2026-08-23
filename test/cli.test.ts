@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { run } from '../src/cli/index.js';
 import { initializeState, validateState } from '../src/state.js';
 import { availableVersions, parseGitReference, satisfies, updateConstraint } from '../src/git.js';
-import { formatSelfUpdateDetails } from '../src/cli/commands/self-update.js';
+import { formatSelfUpdateDetails, parseSelfUpdateDetails } from '../src/cli/commands/self-update.js';
 import { errorMessage, isErrnoError, isRecord } from '../src/shared.js';
 import { copySafeFile, safeFilePath } from '../src/filesystem.js';
 import { expandSources } from '../src/cli/commands/registry.js';
@@ -198,6 +198,8 @@ describe('help', () => {
     }
   });
   it('shows self-update version status', () => {
+    expect(parseSelfUpdateDetails('Checking installed version: 1.2.0\nChecking latest version: 1.3.0')).toEqual({ current: '1.2.0', latest: '1.3.0' });
+    expect(parseSelfUpdateDetails('Checking latest version: 1.3.0', '1.2.0')).toEqual({ current: '1.2.0', latest: '1.3.0' });
     const updated = formatSelfUpdateDetails('Checking installed version: 0.0.1\nChecking latest version: 0.0.2\nRemoving installed version: 0.0.1\nInstalling latest version: 0.0.2');
     expect(updated.current).toBe(false);
     expect(updated.body).toContain('v0.0.1');
@@ -411,7 +413,8 @@ describe('local Git installation', () => {
     expect(JSON.parse(await readFile(path.join(project, 'ui.json'))).components.button.version).toBe('1.0.0');
     const updated = await capture(() => run(['component', 'update', 'button', '--version', '1.1.0'], project));
     expect(updated.code).toBe(0);
-    expect(updated.stdout).toContain('updated button 1.0.0 -> 1.1.0');
+    expect(updated.stdout).toContain('Updated successfully');
+    expect(updated.stdout).toContain('v1.0.0 -> v1.1.0');
     expect(await readFile(path.join(project, 'components/button.tsx'), 'utf8')).toContain('Button = 2');
     expect(JSON.parse(await readFile(path.join(project, 'ui.json'), 'utf8')).components.button.enabled).toBe(true);
     const undoStatus = await capture(() => run(['undo', '--list', '--json'], project));

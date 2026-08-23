@@ -9,11 +9,11 @@ import { applyPlans, aggregateDependencies, errorResult, planFiles, resolveRefer
 // Use the shared terminal interaction, formatting, and progress behavior.
 import { chooseVersion, confirmAction, frame, interactive, withSpinner } from '../../ui.js';
 // Render human output or clean machine-readable JSON from the same payload.
-import { present } from '../../presentation.js';
+import { cancelled, present } from '../../presentation.js';
 // Save the prior state before an update so the operation can be undone.
 import { saveRollback } from './revert.js';
 // Render update plans and progress using the shared update vocabulary.
-import { renderUpdateIntent, updateProgress, type UpdateItem } from '../../update-flow.js';
+import { renderUpdateIntent, renderUpdateSuccess, updateProgress, type UpdateItem } from '../../update-flow.js';
 
 /**
  * Resolves, validates, stages, and installs one or more components.
@@ -190,7 +190,7 @@ export async function addComponent(
       process.stdout.write(`${renderUpdateIntent(changes)}\n\n`);
 
       // Stop before rollback or file mutation when the user declines.
-      if (!(await confirmAction('Apply this update plan?'))) return errorResult('Update cancelled.');
+      if (!(await confirmAction('Update now?', true))) return cancelled(options.json);
     }
 
     // Save the previous state only when a real update can be reverted.
@@ -263,7 +263,8 @@ export async function addComponent(
     });
 
     // Return the mutation result in either human or machine-readable form.
-    return present(options.json, result, frame(options.command ?? `component ${options.update ? 'update' : 'add'}`, messages.join('\n'), 'Next: ui component'));
+    const human = options.update ? renderUpdateSuccess(changes) : frame(options.command ?? 'component add', messages.join('\n'), 'Next: ui component');
+    return present(options.json, result, human);
   } finally {
     // Always clean temporary checkouts after success, preview, or failure.
     await Promise.all(resolved.map((item) => item.cleanup()));
