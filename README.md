@@ -2,7 +2,7 @@
 
 Install and manage reusable UI components from Git repositories or local directories.
 
-Latest release: [v0.0.19](https://github.com/jeroengerits/registry/releases/tag/v0.0.19)
+Latest release: [v0.0.20](https://github.com/jeroengerits/registry/releases/tag/v0.0.20)
 
 ## Install
 
@@ -113,6 +113,11 @@ Update output shows the current version, new version, status, and the available 
 ### Unreleased
 
 Future changes will be listed here before the next release.
+
+### v0.0.20
+
+- Added `ui completion <bash|zsh|fish>` for dependency-free shell completion scripts.
+- Documented completion installation examples in the README.
 
 ### v0.0.19
 
