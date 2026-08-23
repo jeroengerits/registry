@@ -49,7 +49,12 @@ export async function run(args: string[], cwd = process.cwd()): Promise<number> 
     });
   } catch (error) {
     if (error instanceof CommanderError) {
-      result = error.code === 'commander.unknownCommand' || error.code === 'commander.excessArguments' ? unknownCommand() : { output: '', error: error.message, exitCode: 2 };
+      const commandError = error.code === 'commander.unknownCommand' || error.code === 'commander.excessArguments' ? unknownCommand() : { output: '', error: error.message, exitCode: 2 };
+      if (jsonRequested) {
+        process.stdout.write(`${JSON.stringify({ ok: false, error: { code: 'invalid_usage', message: commandError.error } }, null, 2)}\n`);
+        return 2;
+      }
+      result = commandError;
     } else {
       const message = errorMessage(error);
       if (jsonRequested) process.stdout.write(`${JSON.stringify({ ok: false, error: { code: 'command_failed', message } }, null, 2)}\n`);

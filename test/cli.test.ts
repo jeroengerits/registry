@@ -199,6 +199,13 @@ describe('help', () => {
     expect(result.stderr).toBe('Unknown command. Run "ui help" for available commands.\n');
   });
 
+  it('keeps Commander failures machine-readable with --json', async () => {
+    const result = await capture(() => run(['show', '--json']));
+    expect(result.code).toBe(2);
+    expect(result.stderr).toBe('');
+    expect(JSON.parse(result.stdout)).toMatchObject({ ok: false, error: { code: 'invalid_usage' } });
+  });
+
   it('requires explicit confirmation for non-interactive removal', async () => {
     const directory = await tempDirectory();
     await writeFile(path.join(directory, 'ui.json'), JSON.stringify({ components: { button: { version: '1.0.0', path: 'components/button' } } }));
