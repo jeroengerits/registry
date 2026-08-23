@@ -5,7 +5,7 @@ import { addComponent } from './add.js';
 import { errorResult } from '../shared.js';
 
 /** Updates one or all components, optionally pinning this operation to one version. */
-export async function updateComponent(cwd: string, name?: string, json = false, version?: string): Promise<CommandResult> {
+export async function updateComponent(cwd: string, name?: string, json = false, version?: string, dryRun = false): Promise<CommandResult> {
   if (version && !/^v?\d+\.\d+\.\d+$/.test(version)) return errorResult('The --version value must be a stable semver version such as 1.2.3.', json);
   if (!name) {
     const state = await readState(cwd);
@@ -15,7 +15,7 @@ export async function updateComponent(cwd: string, name?: string, json = false, 
       const component = state?.components[componentName];
       return `${component?.repository}#${version ?? updateConstraint(component?.version ?? '0.0.0', component?.constraint)}`;
     });
-    return addComponent(cwd, references, { dryRun: false, force: true, update: true, json, command: 'component update' });
+    return addComponent(cwd, references, { dryRun, force: true, update: true, json, command: 'component update' });
   }
   // Read the stored repository and version constraint for the update request.
   const component = (await readState(cwd))?.components[name];
@@ -24,5 +24,5 @@ export async function updateComponent(cwd: string, name?: string, json = false, 
   // Preserve the existing major-version compatibility policy.
   const constraint = version ?? updateConstraint(component.version, component.constraint);
   // Reuse the transactional add pipeline with update-specific presentation.
-  return addComponent(cwd, [`${component.repository}#${constraint}`], { dryRun: false, force: true, update: true, json, command: `component update  ·  ${name}` });
+  return addComponent(cwd, [`${component.repository}#${constraint}`], { dryRun, force: true, update: true, json, command: `component update  ·  ${name}` });
 }

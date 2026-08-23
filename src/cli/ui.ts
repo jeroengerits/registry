@@ -27,14 +27,19 @@ export async function withSpinner<T>(message: string, action: () => Promise<T>, 
   }
 }
 
+/** Applies color only when the current output policy allows terminal styling. */
+function paint(format: (value: string) => string, value: string): string {
+  if (process.env.CI || process.env.NO_COLOR || process.env.FORCE_COLOR === '0' || (!process.stdout.isTTY && process.env.FORCE_COLOR !== '1')) return value;
+  return format(value);
+}
+
 /** Semantic terminal colors shared by every human-readable command. */
-const color = process.env.CI || process.env.NO_COLOR || process.env.FORCE_COLOR === '0' ? (value: string): string => value : undefined;
 export const colors = {
-  info: color ?? pc.cyan,
-  muted: color ?? pc.dim,
-  success: color ?? pc.green,
-  warning: color ?? pc.yellow,
-  error: color ?? pc.red,
+  info: (value: string) => paint(pc.cyan, value),
+  muted: (value: string) => paint(pc.dim, value),
+  success: (value: string) => paint(pc.green, value),
+  warning: (value: string) => paint(pc.yellow, value),
+  error: (value: string) => paint(pc.red, value),
 };
 
 /** Wraps command content in the shared relaxed CLI layout. */

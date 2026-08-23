@@ -53,11 +53,11 @@ export async function addComponent(cwd: string, references: string[], options: {
       return (state.components[item.manifest.name]?.files ?? []).map((file) => file.path).filter((file) => !current.has(file));
     });
     const changes: UpdateItem[] = selected.map((item) => ({ name: item.manifest.name, current: `v${loadedState?.components[item.manifest.name]?.version ?? 'new'}`, next: `v${item.version}`, status: 'updated' }));
-    if (options.update && !options.json && interactive()) {
+    if (options.update && !options.dryRun && !options.json && interactive()) {
       process.stdout.write(`${renderUpdateIntent(changes)}\n\n`);
       if (!(await confirmAction('Apply this update plan?'))) return errorResult('Update cancelled.');
     }
-    if (options.update && loadedState) await saveRollback(cwd, loadedState);
+    if (options.update && !options.dryRun && loadedState) await saveRollback(cwd, loadedState);
     const result = { components: selected.map((item) => ({ name: item.manifest.name, version: item.version, availableVersions: item.availableVersions, commit: item.commit, files: item.manifest.files.map((file) => file.target), dependencies })), updates: changes };
     if (options.dryRun) {
       const preview = [`${selected.length} component${selected.length === 1 ? '' : 's'} would be changed`, '', ...selected.map((item) => `  ${item.manifest.name.padEnd(16)} v${item.version}`), '', outcome('Dry run complete. No files changed.', 'warning')];

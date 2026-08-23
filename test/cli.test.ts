@@ -52,6 +52,16 @@ describe('component list', () => {
 });
 
 describe('help', () => {
+  it('supports project roots and quiet output for shell scripts', async () => {
+    const directory = await tempDirectory();
+    const initialized = await capture(() => run(['-C', directory, 'init']));
+    expect(initialized.code).toBe(0);
+    expect(await access(path.join(directory, 'ui.json'))).toBeUndefined();
+    const quiet = await capture(() => run(['--project', directory, '--quiet', 'list']));
+    expect(quiet.code).toBe(0);
+    expect(quiet.stdout).toBe('');
+  });
+
   it('supports the short Unix-first command names', async () => {
     const directory = await tempDirectory();
     const initialized = await capture(() => run(['init'], directory));
@@ -112,7 +122,7 @@ describe('help', () => {
     const result = await capture(() => run(['component']));
     expect(result.code).toBe(0);
     expect(result.stdout).toContain('Component commands');
-    expect(result.stdout).toContain('ui component update [name] [--version <version>] [--json]');
+    expect(result.stdout).toContain('ui component update [name] [--version <version>] [--dry-run] [--json]');
   });
   it('rejects unknown commands with a useful usage message', async () => {
     const result = await capture(() => run(['component', 'unknown']));
@@ -361,6 +371,10 @@ describe('local Git installation', () => {
     await exec('git', ['-C', repository, 'add', '.']);
     await exec('git', ['-C', repository, 'commit', '-qm', 'v1.1.0']);
     await exec('git', ['-C', repository, 'tag', '1.1.0']);
+    const preview = await capture(() => run(['update', 'button', '--version', '1.1.0', '--dry-run', '--json'], project));
+    expect(preview.code).toBe(0);
+    expect(JSON.parse(preview.stdout).updates[0]).toMatchObject({ name: 'button', next: 'v1.1.0' });
+    expect(JSON.parse(await readFile(path.join(project, 'ui.json'))).components.button.version).toBe('1.0.0');
     const updated = await capture(() => run(['component', 'update', 'button', '--version', '1.1.0'], project));
     expect(updated.code).toBe(0);
     expect(updated.stdout).toContain('Updated button@1.1.0');

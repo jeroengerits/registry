@@ -43,6 +43,17 @@ ui init                              Initialize the current project
 
 Use `ui help <command>` for focused help. Add `--json` to commands that support machine-readable output.
 
+Global Unix-style options can be placed before or after the command:
+
+```sh
+ui -C ./packages/app list
+ui --project ./packages/app update --dry-run
+ui list --quiet
+ui remove button --yes --no-input
+```
+
+Successful output is written to stdout. Progress, prompts, warnings, and errors are written to stderr. Piped and CI runs do not prompt or emit terminal styling. Set `NO_COLOR=1` to disable colors explicitly.
+
 ### Component Sources
 
 GitHub shorthand and URLs:
