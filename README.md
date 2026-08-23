@@ -2,7 +2,7 @@
 
 Install and manage reusable UI components from Git repositories or local directories.
 
-Latest release: [v0.0.29](https://github.com/jeroengerits/registry/releases/tag/v0.0.29)
+Latest release: [v0.0.30](https://github.com/jeroengerits/registry/releases/tag/v0.0.30)
 
 ## Install
 
@@ -121,6 +121,10 @@ Update output shows the current version, new version, status, and the available 
 ### Unreleased
 
 Future changes will be listed here before the next release.
+
+### v0.0.30
+
+- Improve framed command output with consistent titles, next-step guidance, and semantic status symbols.
 
 ### v0.0.29
 

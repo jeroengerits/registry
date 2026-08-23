@@ -35,7 +35,7 @@ describe('component list', () => {
     expect(result.stdout).toContain('2.0.0');
     expect(result.stdout).toContain('zeta');
     expect(result.stdout).toContain('1.0.0');
-    expect(result.stdout).not.toContain('Next: ui component');
+    expect(result.stdout).toContain('Next: ui component');
   });
   it('supports JSON output', async () => {
     const directory = await tempDirectory();
@@ -57,7 +57,7 @@ describe('help', () => {
   it('prints the installed CLI version', async () => {
     const result = await capture(() => run(['--version']));
     expect(result.code).toBe(0);
-    expect(result.stdout.trim()).toBe('0.0.29');
+    expect(result.stdout.trim()).toBe('0.0.30');
     expect(result.stderr).toBe('');
   });
 

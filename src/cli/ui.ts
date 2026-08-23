@@ -42,11 +42,11 @@ export const colors = {
   error: (value: string) => paint(pc.red, value),
 };
 
-/** Wraps command content in the shared relaxed CLI layout. */
-export function frame(_command: string, body: string, _footer?: string): string {
-  // Normal output is deliberately data-first; help remains the place for branding and guidance.
-  void _footer;
-  return `${body.trimEnd()}\n`;
+/** Wraps command content in the shared title, body, and next-step layout. */
+export function frame(command: string, body: string, footer?: string): string {
+  const title = colors.info(`ui ${command}`);
+  const next = footer ? `\n\n${colors.muted(footer)}` : '';
+  return `${title}\n\n${body.trimEnd()}${next}\n`;
 }
 
 /** Renders aligned terminal data while preserving colored cell content. */
@@ -59,7 +59,7 @@ export function table(headers: string[], rows: string[][]): string {
 
 /** Renders the canonical enabled state label used by every command. */
 export function status(enabled: boolean): string {
-  return enabled ? colors.success('enabled') : colors.muted('disabled');
+  return enabled ? colors.success('enabled ●') : colors.muted('disabled ○');
 }
 
 /** Renders a short, verb-first result line shared by mutations and checks. */
