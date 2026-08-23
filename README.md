@@ -2,7 +2,7 @@
 
 Install and manage reusable UI components from Git repositories or local directories.
 
-Latest release: [v0.0.20](https://github.com/jeroengerits/registry/releases/tag/v0.0.20)
+Latest release: [v0.0.21](https://github.com/jeroengerits/registry/releases/tag/v0.0.21)
 
 ## Install
 
@@ -114,6 +114,11 @@ Update output shows the current version, new version, status, and the available 
 ### Unreleased
 
 Future changes will be listed here before the next release.
+
+### v0.0.21
+
+- Added `ui --version` and `ui -V` with version data read from the package metadata.
+- Documented global runtime options in root help.
 
 ### v0.0.20
 
