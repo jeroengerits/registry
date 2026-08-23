@@ -2,7 +2,7 @@
 
 Install and manage reusable UI components from Git repositories or local directories.
 
-Latest release: [v0.0.28](https://github.com/jeroengerits/registry/releases/tag/v0.0.28)
+Latest release: [v0.0.29](https://github.com/jeroengerits/registry/releases/tag/v0.0.29)
 
 ## Install
 
@@ -121,6 +121,11 @@ Update output shows the current version, new version, status, and the available 
 ### Unreleased
 
 Future changes will be listed here before the next release.
+
+### v0.0.29
+
+- Rename the component manifest schema to `schemas/ui.schema.json`.
+- Align it with the example component `ui.json` and validate safe relative file paths.
 
 ### v0.0.28
 

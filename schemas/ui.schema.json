@@ -1,17 +1,52 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/jeroengerits/registry/schemas/ui.schema.json",
-  "title": "UI Registry project state",
-  "description": "The schema for the project-local ui.json file written by the UI Registry CLI.",
+  "title": "UI component manifest",
+  "description": "The schema for the root ui.json file in a component repository.",
+  "examples": [
+    {
+      "schemaVersion": 1,
+      "name": "example-component",
+      "description": "Example registry component fixture for testing manifest versioning.",
+      "files": [],
+      "dependencies": {},
+      "components": []
+    }
+  ],
   "type": "object",
-  "required": ["components"],
+  "required": ["schemaVersion", "name", "files", "dependencies", "components"],
   "properties": {
-    "$schema": { "type": "string" },
-    "version": { "$ref": "#/$defs/nonBlankString" },
-    "components": {
+    "schemaVersion": { "const": 1 },
+    "name": { "type": "string", "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$" },
+    "description": { "type": "string", "minLength": 1, "pattern": ".*\\S.*" },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["source", "target"],
+        "properties": {
+          "source": { "$ref": "#/$defs/relativePath" },
+          "target": { "$ref": "#/$defs/relativePath" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "dependencies": {
       "type": "object",
-      "propertyNames": { "$ref": "#/$defs/componentName" },
-      "additionalProperties": { "$ref": "#/$defs/componentState" }
+      "propertyNames": { "$ref": "#/$defs/nonBlankString" },
+      "additionalProperties": { "$ref": "#/$defs/nonBlankString" }
+    },
+    "components": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["repository"],
+        "properties": {
+          "repository": { "$ref": "#/$defs/nonBlankString" },
+          "version": { "$ref": "#/$defs/nonBlankString" }
+        },
+        "additionalProperties": false
+      }
     }
   },
   "$defs": {
@@ -20,42 +55,10 @@
       "minLength": 1,
       "pattern": ".*\\S.*"
     },
-    "componentName": {
+    "relativePath": {
       "type": "string",
-      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
-    },
-    "componentReference": {
-      "type": "object",
-      "required": ["repository"],
-      "properties": {
-        "repository": { "$ref": "#/$defs/nonBlankString" },
-        "version": { "$ref": "#/$defs/nonBlankString" }
-      },
-      "additionalProperties": false
-    },
-    "installedFile": {
-      "type": "object",
-      "required": ["path", "sha256"],
-      "properties": {
-        "path": { "type": "string" },
-        "sha256": { "type": "string", "pattern": "^(?:[a-f0-9]{64})?$" }
-      },
-      "additionalProperties": false
-    },
-    "componentState": {
-      "type": "object",
-      "required": ["version", "path"],
-      "properties": {
-        "enabled": { "type": "boolean", "default": true },
-        "version": { "$ref": "#/$defs/nonBlankString" },
-        "constraint": { "$ref": "#/$defs/nonBlankString" },
-        "path": { "type": "string" },
-        "sourcePath": { "$ref": "#/$defs/nonBlankString" },
-        "repository": { "$ref": "#/$defs/nonBlankString" },
-        "files": { "type": "array", "items": { "$ref": "#/$defs/installedFile" } },
-        "dependencies": { "type": "array", "items": { "$ref": "#/$defs/componentReference" } }
-      },
-      "additionalProperties": false
+      "minLength": 1,
+      "pattern": "^(?!/)(?![A-Za-z]:[\\\\/])(?!.*(?:^|[/\\\\])\\.\\.(?:[/\\\\]|$)).+\\S.*$"
     }
   },
   "additionalProperties": false

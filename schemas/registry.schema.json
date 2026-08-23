@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jeroengerits/registry/schemas/registry.schema.json",
+  "title": "UI Registry project state",
+  "description": "The schema for the project-local ui.json file written by the UI Registry CLI.",
+  "type": "object",
+  "required": ["components"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "$ref": "#/$defs/nonBlankString" },
+    "components": {
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/componentName" },
+      "additionalProperties": { "$ref": "#/$defs/componentState" }
+    }
+  },
+  "$defs": {
+    "nonBlankString": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": ".*\\S.*"
+    },
+    "componentName": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+    },
+    "componentReference": {
+      "type": "object",
+      "required": ["repository"],
+      "properties": {
+        "repository": { "$ref": "#/$defs/nonBlankString" },
+        "version": { "$ref": "#/$defs/nonBlankString" }
+      },
+      "additionalProperties": false
+    },
+    "installedFile": {
+      "type": "object",
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": { "type": "string" },
+        "sha256": { "type": "string", "pattern": "^(?:[a-f0-9]{64})?$" }
+      },
+      "additionalProperties": false
+    },
+    "componentState": {
+      "type": "object",
+      "required": ["version", "path"],
+      "properties": {
+        "enabled": { "type": "boolean", "default": true },
+        "version": { "$ref": "#/$defs/nonBlankString" },
+        "constraint": { "$ref": "#/$defs/nonBlankString" },
+        "path": { "type": "string" },
+        "sourcePath": { "$ref": "#/$defs/nonBlankString" },
+        "repository": { "$ref": "#/$defs/nonBlankString" },
+        "files": { "type": "array", "items": { "$ref": "#/$defs/installedFile" } },
+        "dependencies": { "type": "array", "items": { "$ref": "#/$defs/componentReference" } }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

@@ -57,7 +57,7 @@ describe('help', () => {
   it('prints the installed CLI version', async () => {
     const result = await capture(() => run(['--version']));
     expect(result.code).toBe(0);
-    expect(result.stdout.trim()).toBe('0.0.28');
+    expect(result.stdout.trim()).toBe('0.0.29');
     expect(result.stderr).toBe('');
   });
 
@@ -243,9 +243,11 @@ describe('validation', () => {
   });
 
   it('keeps published JSON schemas aligned with the ui.json contracts', async () => {
-    const componentSchema = JSON.parse(await readFile(path.join(process.cwd(), 'schemas/component.schema.json'), 'utf8'));
-    const stateSchema = JSON.parse(await readFile(path.join(process.cwd(), 'schemas/ui.schema.json'), 'utf8'));
+    const componentSchema = JSON.parse(await readFile(path.join(process.cwd(), 'schemas/ui.schema.json'), 'utf8'));
+    const stateSchema = JSON.parse(await readFile(path.join(process.cwd(), 'schemas/registry.schema.json'), 'utf8'));
     expect(componentSchema.properties.name.pattern).toBe('^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$');
+    expect(componentSchema.description).toContain('root ui.json');
+    expect(componentSchema.required).toEqual(['schemaVersion', 'name', 'files', 'dependencies', 'components']);
     expect(componentSchema.properties.files.items.additionalProperties).toBe(false);
     expect(stateSchema.properties.components.propertyNames.$ref).toBe('#/$defs/componentName');
     expect(stateSchema.$defs.installedFile.properties.sha256.pattern).toBe('^(?:[a-f0-9]{64})?$');
