@@ -2,7 +2,7 @@
 
 Install and manage reusable UI components from Git repositories or local directories.
 
-Latest release: [v0.0.22](https://github.com/jeroengerits/registry/releases/tag/v0.0.22)
+Latest release: [v0.0.23](https://github.com/jeroengerits/registry/releases/tag/v0.0.23)
 
 ## Install
 
@@ -116,6 +116,12 @@ Update output shows the current version, new version, status, and the available 
 ### Unreleased
 
 Future changes will be listed here before the next release.
+
+### v0.0.23
+
+- Refactored component and CLI self-update commands into a shared status, decision, progress, verification, and result flow.
+- Added non-mutating installer checks before self-update confirmation.
+- Standardized update availability, cancellation, success, and failure output.
 
 ### v0.0.22
 
