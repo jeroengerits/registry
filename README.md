@@ -2,7 +2,7 @@
 
 Install and manage reusable UI components from Git repositories or local directories.
 
-Latest release: [v0.0.16](https://github.com/jeroengerits/registry/releases/tag/v0.0.16)
+Latest release: [v0.0.17](https://github.com/jeroengerits/registry/releases/tag/v0.0.17)
 
 ## Install
 
@@ -97,10 +97,16 @@ Update output shows the current version, new version, status, and the available 
 
 ### Unreleased
 
+Future changes will be listed here before the next release.
+
+### v0.0.17
+
 - Added Unix-first output behavior: successful results go to stdout, diagnostics go to stderr, and non-interactive runs never prompt.
 - Added short top-level component commands such as `ui add`, `ui list`, `ui update`, and `ui undo` while retaining `ui component ...` compatibility commands.
 - Added idempotent `ui enable` and `ui disable` commands.
 - Added explicit `--yes` confirmation for non-interactive component removal.
+- Added `-C`/`--project`, `--quiet`, `--no-input`, and explicit color policy options.
+- Added update dry runs, JSON-compatible self-update and rollback responses, and invalid-usage exit code `2`.
 
 ### v0.0.16
 
