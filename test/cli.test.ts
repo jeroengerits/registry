@@ -57,7 +57,7 @@ describe('help', () => {
   it('prints the installed CLI version', async () => {
     const result = await capture(() => run(['--version']));
     expect(result.code).toBe(0);
-    expect(result.stdout.trim()).toBe('0.0.26');
+    expect(result.stdout.trim()).toBe('0.0.27');
     expect(result.stderr).toBe('');
   });
 
@@ -346,6 +346,9 @@ describe('local Git installation', () => {
     expect(added.code).toBe(0);
     expect(added.stdout).toContain('added button@1.2.3');
     expect(await readFile(path.join(project, 'components/button.tsx'), 'utf8')).toContain('Button');
+    const unchangedUpdate = await capture(() => run(['component', 'update'], project));
+    expect(unchangedUpdate.code).toBe(0);
+    expect(unchangedUpdate.stdout).toContain('unchanged');
     const available = await capture(() => run(['component', 'list', '--available-versions'], project));
     expect(available.stdout).toContain('Available: 1.2.3');
     const toggled = await capture(() => run(['component', 'toggle', 'button'], project));
@@ -450,8 +453,9 @@ describe('local Git installation', () => {
     expect(JSON.parse(await readFile(path.join(project, 'ui.json'))).components.button.version).toBe('1.0.0');
     const updated = await capture(() => run(['component', 'update', 'button', '--version', '1.1.0'], project));
     expect(updated.code).toBe(0);
-    expect(updated.stdout).toContain('Updated successfully');
-    expect(updated.stdout).toContain('v1.0.0 -> v1.1.0');
+    expect(updated.stdout).toContain('update results');
+    expect(updated.stdout).toContain('v1.0.0');
+    expect(updated.stdout).toContain('v1.1.0');
     expect(await readFile(path.join(project, 'components/button.tsx'), 'utf8')).toContain('Button = 2');
     expect(JSON.parse(await readFile(path.join(project, 'ui.json'), 'utf8')).components.button.enabled).toBe(true);
     const undoStatus = await capture(() => run(['undo', '--list', '--json'], project));

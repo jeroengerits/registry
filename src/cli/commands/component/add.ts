@@ -14,7 +14,7 @@ import { cancelled, present } from '../../presentation.js';
 // Save the prior state before an update so the operation can be undone.
 import { saveRollback } from './revert.js';
 // Render update plans and progress using the shared update vocabulary.
-import { renderUpdateIntent, renderUpdateSuccess, updateProgress, type UpdateItem } from '../../update-flow.js';
+import { renderUpdateIntent, renderUpdateReport, updateProgress, type UpdateItem } from '../../update-flow.js';
 
 /**
  * Resolves, validates, stages, and installs one or more components.
@@ -125,19 +125,14 @@ export async function addComponent(
     // Keep root results separate from recursively resolved dependencies.
     const roots = resolved.filter((item) => rootRepositories.has(item.reference.repository));
 
-    // Detect an update request that would not change any root component.
+    // Keep already-current components in the report without blocking other updates.
     const unchangedRoots = options.update
       ? roots.filter((item) => item.version === state.components[item.manifest.name]?.version)
       : [];
 
-    // Report unchanged roots before staging any files or rollback data.
-    if (unchangedRoots.length) {
-      throw new Error(unchangedRoots.map((item) => `Component "${item.manifest.name}" is already at the latest compatible version (${item.version}).`).join('\n'));
-    }
-
     // For updates, select roots and only dependencies whose versions changed.
     const selected = options.update
-      ? resolved.filter((item) => rootRepositories.has(item.reference.repository) || item.version !== state.components[item.manifest.name]?.version)
+      ? resolved.filter((item) => item.version !== state.components[item.manifest.name]?.version)
       : resolved;
 
     // Find components that would be overwritten by this operation.
@@ -184,6 +179,18 @@ export async function addComponent(
       next: `v${item.version}`,
       status: 'updated',
     }));
+    const unchanged = unchangedRoots.map((item) => ({
+      name: item.manifest.name,
+      current: `v${item.version}`,
+      next: `v${item.version}`,
+      status: 'unchanged' as const,
+    }));
+    const updateItems = [...changes, ...unchanged];
+
+    // Report a no-op update consistently instead of entering the mutation path.
+    if (options.update && !selected.length) {
+      return present(options.json, { components: [], updates: unchanged }, renderUpdateReport(unchanged));
+    }
 
     // Show and confirm an interactive update plan only for real mutations.
     if (options.update && !options.dryRun && !options.json && interactive()) {
@@ -209,7 +216,7 @@ export async function addComponent(
         files: item.manifest.files.map((file) => file.target),
         dependencies,
       })),
-      updates: changes,
+      updates: updateItems,
     };
 
     // Return a complete preview without writing files when requested.
@@ -224,7 +231,7 @@ export async function addComponent(
       ];
 
       // Reuse the same payload for JSON and the same text frame for humans.
-      return present(options.json, result, frame(options.command ?? 'component add', preview.join('\n'), 'Next: remove --dry-run to apply'));
+      return present(options.json, result, options.update ? renderUpdateReport(updateItems) : frame(options.command ?? 'component add', preview.join('\n'), 'Next: remove --dry-run to apply'));
     }
 
     // Replace each selected component record with the newly resolved metadata.
@@ -265,7 +272,9 @@ export async function addComponent(
     });
 
     // Return the mutation result in either human or machine-readable form.
-    const human = options.update ? renderUpdateSuccess(changes) : frame(options.command ?? 'component add', messages.join('\n'), 'Next: ui component');
+    const human = options.update
+      ? renderUpdateReport(updateItems, 'ui undo')
+      : frame(options.command ?? 'component add', messages.join('\n'), 'Next: ui component');
     return present(options.json, result, human);
   } finally {
     // Always clean temporary checkouts after success, preview, or failure.
