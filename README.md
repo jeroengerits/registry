@@ -2,7 +2,7 @@
 
 Install and manage reusable UI components from Git repositories or local directories.
 
-Latest release: [v0.0.33](https://github.com/jeroengerits/registry/releases/tag/v0.0.33)
+Latest release: [v0.0.36](https://github.com/jeroengerits/registry/releases/tag/v0.0.36)
 
 ## Install
 
@@ -15,12 +15,11 @@ This installs the `ui` launcher in the current directory.
 ## Quick Start
 
 ```sh
-./ui init
 ./ui add owner/button
 ./ui list
 ```
 
-The project state is stored in `ui.json`.
+The project state is stored in `ui.json`. `ui add` updates an existing state file transactionally and creates one after a successful first install when needed. Installing the CLI through npm also initializes the npm project in `INIT_CWD` when `ui.json` is absent.
 
 ## Commands
 

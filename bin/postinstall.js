@@ -3,10 +3,14 @@
 import { access } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
+import { fileURLToPath } from 'node:url';
 
 const project = path.resolve(process.env.INIT_CWD ?? process.cwd());
+const packageRoot = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const stateFile = path.join(project, 'ui.json');
 const cli = new URL('../dist/cli/index.js', import.meta.url);
+
+if (project === packageRoot) process.exit(0);
 
 try {
   await access(stateFile);

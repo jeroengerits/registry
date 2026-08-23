@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.0.36
+
+- Harden persisted state paths and cached Git source paths.
+- Make component removal, undo, and dependency installation rollback-safe.
+- Simplify CLI runtime handling and consolidate root command aliases.
+- Add focused runtime and JSON error coverage.
+
 ## v0.0.35
 
 - Initialize the target project automatically after npm installation when `ui.json` is absent.
