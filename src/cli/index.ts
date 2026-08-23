@@ -1,5 +1,6 @@
 import process from 'node:process';
 import path from 'node:path';
+import { readFile } from 'node:fs/promises';
 import { Command, CommanderError } from 'commander';
 import type { CommandResult } from '../types.js';
 import { errorMessage } from '../shared.js';
@@ -49,6 +50,12 @@ export async function run(args: string[], cwd = process.cwd()): Promise<number> 
   try { options = runtimeOptions(args, cwd); } catch (error) { process.stderr.write(`${errorMessage(error)}\n`); return 2; }
   const commandArgs = options.args.length ? options.args : ['help'];
   const jsonRequested = commandArgs.includes('--json');
+  if (commandArgs.length === 1 && (commandArgs[0] === '--version' || commandArgs[0] === '-V')) {
+    const packageUrl = new URL('../../package.json', import.meta.url);
+    const packageData = JSON.parse(await readFile(packageUrl, 'utf8')) as { version: string };
+    process.stdout.write(`${packageData.version}\n`);
+    return 0;
+  }
   let result: CommandResult | undefined;
   const program = new Command()
     .name('ui')

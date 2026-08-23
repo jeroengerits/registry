@@ -26,6 +26,7 @@ The project state is stored in `ui.json`.
 
 ```text
 ui init                              Initialize the current project
+ ui --version                         Print the CLI version
  ui self-update                       Update the UI Registry CLI
  ui doctor                            Check project and component files
 

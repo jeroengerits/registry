@@ -33,6 +33,12 @@ ${colors.info('Examples:')}
   ui update button
 
 Run "ui help <command>" for more information.
+
+Global options: -C, --project <path>  select project root
+                 --quiet              suppress successful output
+                 --no-input            never prompt
+                 --color <mode>        auto, always, or never
+                 --version             print the CLI version
 `,
     exitCode: 0,
   };
