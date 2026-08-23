@@ -10,6 +10,7 @@ import { availableVersions, parseGitReference, satisfies, updateConstraint } fro
 import { formatSelfUpdateDetails } from '../src/cli/commands/self-update.js';
 import { errorMessage, isErrnoError, isRecord } from '../src/shared.js';
 import { copySafeFile, safeFilePath } from '../src/filesystem.js';
+import { expandSources } from '../src/cli/commands/registry.js';
 
 const temporaryDirectories: string[] = [];
 const exec = promisify(execFile);
@@ -52,6 +53,10 @@ describe('component list', () => {
 });
 
 describe('help', () => {
+  it('expands newline-delimited stdin component sources', async () => {
+    await expect(expandSources(['-', 'owner/direct'], async () => 'owner/button\n\nowner/modal\n')).resolves.toEqual(['owner/button', 'owner/modal', 'owner/direct']);
+  });
+
   it('supports project roots and quiet output for shell scripts', async () => {
     const directory = await tempDirectory();
     const initialized = await capture(() => run(['-C', directory, 'init']));
@@ -456,6 +461,9 @@ describe('local Git installation', () => {
     const project = await tempDirectory();
     const result = await capture(() => run(['component', 'add', repository], project));
     expect(result).toEqual({ code: 1, stdout: '', stderr: 'component.json requires schemaVersion 1, a lowercase kebab-case name, files, dependencies, and components.\n' });
+    const jsonResult = await capture(() => run(['component', 'add', repository, '--json'], project));
+    expect(JSON.parse(jsonResult.stdout)).toMatchObject({ ok: false, error: { code: 'command_failed' } });
+    expect(jsonResult.stderr).toBe('');
     await expect(access(path.join(project, 'ui.json'))).rejects.toThrow();
   });
 });

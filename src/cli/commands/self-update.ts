@@ -58,7 +58,7 @@ export async function selfUpdate(json = false): Promise<CommandResult> {
     await copyFile(installer, temporaryInstaller);
     // Run the installer through Execa and surface its output in the result.
     const currentLabel = currentVersion ? `v${currentVersion}` : 'unknown';
-    const result = await withSpinner(`Current version: ${currentLabel}\nChecking for UI Registry updates...`, () => execa('sh', [temporaryInstaller], { cwd: installDirectory, env: { ...process.env, UI_SELF_UPDATE: '1' } }), () => 'Version check complete');
+    const result = await withSpinner(`Current version: ${currentLabel}\nChecking for UI Registry updates...`, () => execa('sh', [temporaryInstaller], { cwd: installDirectory, env: { ...process.env, UI_SELF_UPDATE: '1' } }), () => 'Version check complete', !json);
     // Prefer installer output while keeping success useful if it is silent.
     const details = result.stdout.trim() || 'Installer and cached CLI refreshed.';
     const formatted = formatSelfUpdateDetails(details, currentVersion);
