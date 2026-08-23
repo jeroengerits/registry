@@ -56,7 +56,7 @@ describe('help', () => {
   it('prints the installed CLI version', async () => {
     const result = await capture(() => run(['--version']));
     expect(result.code).toBe(0);
-    expect(result.stdout.trim()).toBe('0.0.21');
+    expect(result.stdout.trim()).toBe('0.0.22');
     expect(result.stderr).toBe('');
   });
 

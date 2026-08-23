@@ -2,7 +2,7 @@
 
 Install and manage reusable UI components from Git repositories or local directories.
 
-Latest release: [v0.0.21](https://github.com/jeroengerits/registry/releases/tag/v0.0.21)
+Latest release: [v0.0.22](https://github.com/jeroengerits/registry/releases/tag/v0.0.22)
 
 ## Install
 
@@ -116,6 +116,12 @@ Update output shows the current version, new version, status, and the available 
 ### Unreleased
 
 Future changes will be listed here before the next release.
+
+### v0.0.22
+
+- Unified human-readable output across all commands with one verb-first design language.
+- Standardized status labels, table columns, empty states, update plans, and mutation results.
+- Removed redundant symbols, command-specific success messages, and decorative follow-up text.
 
 ### v0.0.21
 
