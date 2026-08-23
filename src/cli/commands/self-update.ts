@@ -5,7 +5,7 @@ import { execa } from 'execa';
 import type { CommandResult } from '../../types.js';
 import { isRecord, errorMessage } from '../../shared.js';
 import { errorResult } from './shared.js';
-import { frame, outcome, withSpinner } from '../ui.js';
+import { resultLine, withSpinner } from '../ui.js';
 import { renderUpdateReport } from '../update-flow.js';
 import { present } from '../presentation.js';
 
@@ -62,8 +62,8 @@ export async function selfUpdate(json = false): Promise<CommandResult> {
     // Prefer installer output while keeping success useful if it is silent.
     const details = result.stdout.trim() || 'Installer and cached CLI refreshed.';
     const formatted = formatSelfUpdateDetails(details, currentVersion);
-    const message = formatted.current ? 'UI Registry is already up to date.' : 'UI Registry updated.';
-      return present(json, { updated: !formatted.current, currentVersion, latestVersion: formatted.current ? currentVersion : undefined }, frame('update', `${formatted.body}\n\n${outcome(message)}`, 'Next: ui help'));
+      const message = formatted.current ? `ui-registry ${currentVersion ? `v${currentVersion} ` : ''}up to date` : `ui-registry ${currentVersion ? `v${currentVersion} ` : ''}updated`;
+      return present(json, { updated: !formatted.current, currentVersion, latestVersion: formatted.current ? currentVersion : undefined }, resultLine(formatted.current ? 'up to date' : 'updated', message.replace(/^(up to date|updated) /, '')));
   } catch (error) {
     // Normalize subprocess diagnostics into one actionable thrown error.
     throw new Error(subprocessMessage(error));

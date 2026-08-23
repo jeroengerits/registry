@@ -57,16 +57,25 @@ export function table(headers: string[], rows: string[][]): string {
   return result.toString();
 }
 
-/** Renders enabled state with both a symbol and a text label. */
+/** Renders the canonical enabled state label used by every command. */
 export function status(enabled: boolean): string {
-  return enabled ? colors.success('● enabled') : colors.muted('○ disabled');
+  return enabled ? colors.success('enabled') : colors.muted('disabled');
 }
 
-/** Renders a semantic success, warning, or error outcome. */
+/** Renders a short, verb-first result line shared by mutations and checks. */
+export function resultLine(action: string, detail: string): string {
+  return `${colors.success(action)} ${detail}\n`;
+}
+
+/** Renders a quiet informational line for empty or unchanged results. */
+export function infoLine(message: string): string {
+  return `${colors.muted(message)}\n`;
+}
+
+/** Renders a semantic outcome for compatibility with composed command output. */
 export function outcome(message: string, kind: 'success' | 'warning' | 'error' = 'success'): string {
-  const symbol = kind === 'success' ? '✓' : kind === 'warning' ? '!' : '×';
   const paint = kind === 'success' ? colors.success : kind === 'warning' ? colors.warning : colors.error;
-  return paint(`${symbol} ${message}`);
+  return paint(message);
 }
 
 /** Lets an interactive user select a stable component version. */

@@ -21,7 +21,7 @@ describe('component list', () => {
   it('handles missing state', async () => {
     const directory = await tempDirectory();
     const result = await capture(() => run(['component', 'list'], directory));
-    expect(result).toEqual({ code: 0, stdout: '! No installed components.\n', stderr: '' });
+    expect(result).toEqual({ code: 0, stdout: 'no components installed\n', stderr: '' });
   });
   it('lists sorted state', async () => {
     const directory = await tempDirectory();
@@ -29,11 +29,11 @@ describe('component list', () => {
     const result = await capture(() => run(['component', 'list'], directory));
     expect(result.stdout).not.toContain('UI Registry  /  component list');
     expect(result.stdout).toContain('2 components');
-    expect(result.stdout).toContain('2 enabled  ·  0 disabled');
+    expect(result.stdout).toContain('2 components · 2 enabled · 0 disabled');
     expect(result.stdout).toContain('alpha');
-    expect(result.stdout).toContain('v2.0.0');
+    expect(result.stdout).toContain('2.0.0');
     expect(result.stdout).toContain('zeta');
-    expect(result.stdout).toContain('v1.0.0');
+    expect(result.stdout).toContain('1.0.0');
     expect(result.stdout).not.toContain('Next: ui component');
   });
   it('supports JSON output', async () => {
@@ -47,7 +47,7 @@ describe('component list', () => {
     await writeFile(path.join(directory, 'ui.json'), JSON.stringify({ components: { button: { enabled: false, version: '1.0.0', path: 'components/button', files: [{ path: 'components/button', sha256: '' }] } } }));
     const result = await capture(() => run(['component', 'info', 'button'], directory));
     expect(result.code).toBe(0);
-    expect(result.stdout).toContain('button  ○ disabled');
+    expect(result.stdout).toContain('button  disabled');
     expect(result.stdout).not.toContain('UI Registry  /  component details  /  button');
   });
 });
@@ -99,7 +99,7 @@ describe('help', () => {
     expect(initialized.code).toBe(0);
     const listed = await capture(() => run(['list'], directory));
     expect(listed.code).toBe(0);
-    expect(listed.stdout).toContain('No installed components.');
+    expect(listed.stdout).toContain('no components installed');
     expect((await capture(() => run(['show'], directory))).stderr).toBe('Usage: ui show <name> [--json]\n');
   });
 
@@ -143,7 +143,7 @@ describe('help', () => {
     const directory = await tempDirectory();
     const initialized = await capture(() => run(['init'], directory));
     expect(initialized.code).toBe(0);
-    expect(initialized.stdout).toContain('Project ready.');
+    expect(initialized.stdout).toContain('initialized ui.json');
     expect(JSON.parse(await readFile(path.join(directory, 'ui.json'), 'utf8'))).toEqual({ components: {} });
     const duplicate = await capture(() => run(['init'], directory));
     expect(duplicate.code).toBe(0);
@@ -260,7 +260,7 @@ describe('local Git installation', () => {
     await writeFile(path.join(component, 'component.json'), JSON.stringify({ schemaVersion: 1, name: 'local-badge', files: [{ source: 'src/badge.ts', target: 'components/badge.ts' }], dependencies: {}, components: [] }));
     const result = await capture(() => run(['component', 'add', './local-component'], project));
     expect(result.code).toBe(0);
-    expect(result.stdout).toContain('Added local-badge@local');
+    expect(result.stdout).toContain('added local-badge@local');
     expect(await readFile(path.join(project, 'components/badge.ts'), 'utf8')).toContain('Badge');
   });
 
@@ -305,15 +305,13 @@ describe('local Git installation', () => {
     expect(JSON.parse(dryRun.stdout).components[0].name).toBe('button');
     const added = await capture(() => run(['component', 'add', repository, '--version=1.2.3'], project));
     expect(added.code).toBe(0);
-    expect(added.stdout).toContain('Added button@1.2.3');
-    expect(added.stdout).toContain('1 component added');
+    expect(added.stdout).toContain('added button@1.2.3');
     expect(await readFile(path.join(project, 'components/button.tsx'), 'utf8')).toContain('Button');
     const available = await capture(() => run(['component', 'list', '--available-versions'], project));
     expect(available.stdout).toContain('Available: 1.2.3');
     const toggled = await capture(() => run(['component', 'toggle', 'button'], project));
     expect(toggled.code).toBe(0);
-    expect(toggled.stdout).toContain('● enabled  →  ○ disabled');
-    expect(toggled.stdout).toContain('button is disabled');
+    expect(toggled.stdout).toContain('disabled button');
     expect(JSON.parse(await readFile(path.join(project, 'ui.json'), 'utf8')).components.button.enabled).toBe(false);
     const toggledJson = await capture(() => run(['component', 'toggle', 'button', '--json'], project));
     expect(JSON.parse(toggledJson.stdout)).toMatchObject({ name: 'button', previousStatus: 'disabled', status: 'enabled', component: { enabled: true } });
@@ -326,8 +324,8 @@ describe('local Git installation', () => {
     expect(await access(path.join(project, 'components/button.tsx'))).toBeUndefined();
     const removed = await capture(() => run(['component', 'remove', 'button', '--yes'], project));
     expect(removed.code).toBe(0);
-    expect(removed.stdout).toContain('Removed button.');
-    expect(removed.stdout).toContain('files removed');
+    expect(removed.stdout).toContain('removed button');
+    expect(removed.stdout).toContain('file');
     await expect(access(path.join(project, 'components/button.tsx'))).rejects.toThrow();
     const missing = await capture(() => run(['component', 'remove', 'button', '--yes'], project));
     expect(missing).toEqual({ code: 1, stdout: '', stderr: 'Component "button" is not installed.\n' });
@@ -413,12 +411,7 @@ describe('local Git installation', () => {
     expect(JSON.parse(await readFile(path.join(project, 'ui.json'))).components.button.version).toBe('1.0.0');
     const updated = await capture(() => run(['component', 'update', 'button', '--version', '1.1.0'], project));
     expect(updated.code).toBe(0);
-    expect(updated.stdout).toContain('Updated button@1.1.0');
-    expect(updated.stdout).toContain('1 component updated');
-    expect(updated.stdout).toContain('Current');
-    expect(updated.stdout).toContain('v1.0.0');
-    expect(updated.stdout).toContain('v1.1.0');
-    expect(updated.stdout).toContain('ui component revert');
+    expect(updated.stdout).toContain('updated button 1.0.0 -> 1.1.0');
     expect(await readFile(path.join(project, 'components/button.tsx'), 'utf8')).toContain('Button = 2');
     expect(JSON.parse(await readFile(path.join(project, 'ui.json'), 'utf8')).components.button.enabled).toBe(true);
     const undoStatus = await capture(() => run(['undo', '--list', '--json'], project));

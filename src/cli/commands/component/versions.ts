@@ -13,5 +13,5 @@ export async function componentVersions(cwd: string, name?: string, json = false
   const versions = await createVersionLookup()(component.repository);
   if (json) return present(true, { name, installed: component.version, versions }, '');
   const rows = versions.map((version) => [version, version === versions[0] ? colors.success('latest') : version === component.version ? colors.info('installed') : '']);
-  return { output: frame(`component versions  /  ${name}`, table(['Version', 'Status'], rows), 'Next: ui component update'), exitCode: 0 };
+  return { output: frame(`component versions  /  ${name}`, table(['Version', 'Status'], rows)), exitCode: 0 };
 }

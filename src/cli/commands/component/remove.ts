@@ -2,7 +2,7 @@ import type { CommandResult } from '../../../types.js';
 import { readState, writeState } from '../../../state.js';
 import { removeSafeFile } from '../../../filesystem.js';
 import { errorResult } from '../shared.js';
-import { confirmAction, frame, interactive, outcome, withSpinner } from '../../ui.js';
+import { confirmAction, frame, resultLine, interactive, withSpinner } from '../../ui.js';
 import { failure, present } from '../../presentation.js';
 
 /** Removes a component's tracked files and persisted state. */
@@ -37,5 +37,5 @@ export async function removeComponent(cwd: string, name?: string, json = false, 
   // Count the tracked paths for a useful human-readable result.
   const removedFiles = files.size;
   // Keep JSON minimal while giving human output context and a next step.
-  return present(json, { name }, frame('component remove', `${name}\n\n${removedFiles} files removed\n\n${outcome(`Removed ${name}.`)}`, 'Next: ui component'));
+  return present(json, { name, files: removedFiles }, resultLine('removed', `${name} (${removedFiles} file${removedFiles === 1 ? '' : 's'})`));
 }

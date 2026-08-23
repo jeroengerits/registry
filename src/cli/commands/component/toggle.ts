@@ -1,6 +1,6 @@
 import type { CommandResult } from '../../../types.js';
 import { readState, writeState } from '../../../state.js';
-import { frame, outcome, status } from '../../ui.js';
+import { resultLine } from '../../ui.js';
 import { errorResult } from '../shared.js';
 import { present } from '../../presentation.js';
 
@@ -27,7 +27,7 @@ export async function toggleComponent(cwd: string, name?: string, json = false):
   // Keep JSON output stable and free from prompts or terminal control codes.
   if (json) return present(true, { name, previousStatus, status: nextStatus, component: { name, ...component } }, '');
   // Show the transition and make the non-destructive behavior explicit.
-  return { output: frame('component status', `${name}\n\n${status(previousStatus === 'enabled')}  →  ${status(component.enabled)}\n\n${outcome(`${name} is ${nextStatus}.`)}`, 'Next: ui component'), exitCode: 0 };
+  return { output: resultLine(nextStatus, name), exitCode: 0 };
 }
 
 /** Sets a component's enabled state idempotently for script-friendly commands. */
@@ -41,5 +41,5 @@ export async function setComponentEnabled(cwd: string, name: string | undefined,
   const nextStatus = enabled ? 'enabled' : 'disabled';
   await writeState(cwd, state);
   if (json) return present(true, { name, previousStatus, status: nextStatus, component: { name, ...component } }, '');
-  return { output: frame(`component ${enabled ? 'enable' : 'disable'}`, `${name}\n\n${outcome(`${name} is ${nextStatus}.`)}`, 'Next: ui component list'), exitCode: 0 };
+  return { output: resultLine(nextStatus, name), exitCode: 0 };
 }

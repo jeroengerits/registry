@@ -12,21 +12,21 @@ export interface UpdateItem {
 }
 
 const statusLabel: Record<UpdateStatus, string> = {
-  pending: colors.info('○ pending'),
-  updated: colors.success('✓ updated'),
-  unchanged: colors.muted('= unchanged'),
-  failed: colors.error('× failed'),
+  pending: colors.info('pending'),
+  updated: colors.success('updated'),
+  unchanged: colors.muted('unchanged'),
+  failed: colors.error('failed'),
 };
 
 /** Describes the intended version transitions before work starts. */
 export function renderUpdateIntent(items: UpdateItem[]): string {
-  return `${colors.info('Update plan')}\n\n${table(['Component', 'Current', 'New', 'Status'], items.map((item) => [item.name, item.current, item.next, statusLabel.pending]))}`;
+  return `${colors.info('update plan')}\n\n${table(['Name', 'Current', 'Next', 'Status'], items.map((item) => [item.name, item.current, item.next, statusLabel.pending]))}`;
 }
 
 /** Reports per-item outcomes and exposes the supplied undo action. */
 export function renderUpdateReport(items: UpdateItem[], undo?: string): string {
-  const report = `${colors.info('Update results')}\n\n${table(['Component', 'Current', 'New', 'Status'], items.map((item) => [item.name, item.current, item.next, statusLabel[item.status ?? 'updated']]))}`;
-  return undo ? `${report}\n\n${colors.muted(`Undo: ${undo}`)}` : report;
+  const report = `${colors.info('update results')}\n\n${table(['Name', 'Current', 'Next', 'Status'], items.map((item) => [item.name, item.current, item.next, statusLabel[item.status ?? 'updated']]))}`;
+  return undo ? `${report}\n\n${colors.muted(`undo: ${undo}`)}` : report;
 }
 
 /** Produces concise progress text for interactive spinners. */

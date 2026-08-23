@@ -2,7 +2,7 @@ import type { CommandResult } from '../../../types.js';
 import { readState } from '../../../state.js';
 import { errorResult } from '../shared.js';
 import { present } from '../../presentation.js';
-import { frame, outcome, status, table } from '../../ui.js';
+import { frame, status, table } from '../../ui.js';
 
 /** Shows one component's persisted metadata and enabled state. */
 export async function infoComponent(cwd: string, name?: string, json = false): Promise<CommandResult> {
@@ -28,8 +28,7 @@ export async function infoComponent(cwd: string, name?: string, json = false): P
       ['Dependencies', String(component.dependencies?.length ?? 0)],
     ]),
     '',
-    outcome('Details loaded.'),
   ];
   // Apply the shared frame and expose the next useful action.
-  return { output: frame(`component details  /  ${name}`, lines.join('\n'), 'Next: ui component'), exitCode: 0 };
+  return { output: frame(`component details  /  ${name}`, lines.join('\n')), exitCode: 0 };
 }

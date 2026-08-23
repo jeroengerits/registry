@@ -2,10 +2,10 @@ import type { CommandResult } from '../../../types.js';
 import { readRootVersion, readState } from '../../../state.js';
 import { availableVersions, parseGitReference, updateConstraint } from '../../../git.js';
 import { applyPlans, aggregateDependencies, errorResult, planFiles, resolveReferences } from '../shared.js';
-import { chooseVersion, confirmAction, frame, interactive, outcome, withSpinner } from '../../ui.js';
+import { chooseVersion, confirmAction, frame, interactive, withSpinner } from '../../ui.js';
 import { present } from '../../presentation.js';
 import { saveRollback } from './revert.js';
-import { renderUpdateIntent, renderUpdateReport, updateProgress, type UpdateItem } from '../../update-flow.js';
+import { renderUpdateIntent, updateProgress, type UpdateItem } from '../../update-flow.js';
 
 /** Resolves, validates, stages, and installs one or more components. */
 export async function addComponent(cwd: string, references: string[], options: { dryRun: boolean; force: boolean; update: boolean; version?: string; json: boolean; command?: string }): Promise<CommandResult> {
@@ -60,13 +60,16 @@ export async function addComponent(cwd: string, references: string[], options: {
     if (options.update && !options.dryRun && loadedState) await saveRollback(cwd, loadedState);
     const result = { components: selected.map((item) => ({ name: item.manifest.name, version: item.version, availableVersions: item.availableVersions, commit: item.commit, files: item.manifest.files.map((file) => file.target), dependencies })), updates: changes };
     if (options.dryRun) {
-      const preview = [`${selected.length} component${selected.length === 1 ? '' : 's'} would be changed`, '', ...selected.map((item) => `  ${item.manifest.name.padEnd(16)} v${item.version}`), '', outcome('Dry run complete. No files changed.', 'warning')];
+      const preview = [`would ${options.update ? 'update' : 'add'} ${selected.length} component${selected.length === 1 ? '' : 's'}`, '', ...selected.map((item) => `  ${item.manifest.name} ${item.version}`), '', 'no files changed'];
       return present(options.json, result, frame(options.command ?? 'component add', preview.join('\n'), 'Next: remove --dry-run to apply'));
     }
     for (const item of selected) state.components[item.manifest.name] = { enabled: state.components[item.manifest.name]?.enabled ?? true, repository: item.reference.repository, constraint: updateConstraint(item.version, item.reference.version), version: item.version, path: item.manifest.files[0]?.target ?? '', files: item.manifest.files.map((file) => ({ path: file.target, sha256: '' })), dependencies: item.manifest.components };
     await withSpinner(options.update ? updateProgress(changes) : 'Installing component files...', () => applyPlans(cwd, state, plans, dependencies, obsolete, previousState), () => 'Component files installed', !options.json);
-    const action = options.update ? 'Updated' : 'Added';
-    const messages = [`${selected.length} component${selected.length === 1 ? '' : 's'} ${options.update ? 'updated' : 'added'}`, ...(options.update ? ['', renderUpdateIntent(changes), '', renderUpdateReport(changes, 'ui component revert')] : []), '', ...selected.flatMap((item) => [outcome(`${action} ${item.manifest.name}@${item.version}`), ...(showAvailableVersions ? [`  Available: ${item.availableVersions.join(', ') || 'none'}`] : [])])];
+    const messages = selected.flatMap((item) => {
+      const previous = changes.find((change) => change.name === item.manifest.name)?.current.replace(/^v/, '') ?? 'new';
+      const change = options.update ? `updated ${item.manifest.name} ${previous} -> ${item.version}` : `added ${item.manifest.name}@${item.version}`;
+      return [change, ...(showAvailableVersions ? [`  available: ${item.availableVersions.join(', ') || 'none'}`] : [])];
+    });
      return present(options.json, result, frame(options.command ?? `component ${options.update ? 'update' : 'add'}`, messages.join('\n'), 'Next: ui component'));
   } finally { await Promise.all(resolved.map((item) => item.cleanup())); }
 }

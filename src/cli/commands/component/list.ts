@@ -2,7 +2,7 @@ import type { CommandResult } from '../../../types.js';
 import { readState } from '../../../state.js';
 import { createVersionLookup } from '../../../git.js';
 import { mapConcurrent } from '../../../shared.js';
-import { colors, frame, outcome, status, table, withSpinner } from '../../ui.js';
+import { colors, frame, infoLine, status, table, withSpinner } from '../../ui.js';
 import { present } from '../../presentation.js';
 
 /** Lists installed components in table form or as machine-readable JSON. */
@@ -10,7 +10,7 @@ export async function listComponent(cwd: string, json: boolean, showAvailableVer
   // Read the normalized state so legacy records already have enabled=true.
   const state = await readState(cwd);
   // Keep missing state useful for both scripts and human users.
-  if (!state) return { output: json ? '[]\n' : `${outcome('No installed components.', 'warning')}\n`, exitCode: 0 };
+  if (!state) return { output: json ? '[]\n' : infoLine('no components installed'), exitCode: 0 };
   // Sort names for stable output and predictable automation.
   const installed = Object.entries(state.components).sort(([a], [b]) => a.localeCompare(b)).map(([name, details]) => ({ name, ...details }));
   // Fetch remote tags only when the caller explicitly asks for them.
@@ -21,11 +21,11 @@ export async function listComponent(cwd: string, json: boolean, showAvailableVer
   // Return structured data before constructing any terminal presentation.
   if (json) return present(true, components, '');
   // Keep an empty registry concise in human-readable mode.
-  if (!components.length) return { output: `${outcome('No installed components.', 'warning')}\n`, exitCode: 0 };
+  if (!components.length) return { output: infoLine('no components installed'), exitCode: 0 };
   // Calculate the summary counts once for the compact header.
   const enabled = components.filter((component) => component.enabled).length;
   // Build a stable table body before applying the shared command frame.
-  const lines = [`${components.length} components`, `${enabled} enabled  ·  ${components.length - enabled} disabled${state.version ? `  ·  app v${state.version}` : ''}`, '', table(['Component', 'Version', 'State', 'Location'], components.map((component) => [component.name, `v${component.version}`, status(component.enabled), component.path]))];
+  const lines = [table(['Name', 'Version', 'Status', 'Location'], components.map((component) => [component.name, component.version, status(component.enabled), component.path])), '', `${components.length} component${components.length === 1 ? '' : 's'} · ${enabled} enabled · ${components.length - enabled} disabled`];
   // Add optional metadata below the primary table.
   for (const component of components) {
     if (component.repository) lines.push('', `${component.name}: ${colors.muted(component.repository)}`);

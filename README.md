@@ -67,6 +67,8 @@ ui list --color=never
 
 Successful output is written to stdout. Progress, prompts, warnings, and errors are written to stderr. Piped and CI runs do not prompt or emit terminal styling. Set `NO_COLOR=1` to disable colors explicitly.
 
+Human output follows one design language: mutations use verb-first lines such as `added button@1.2.3` and `updated button 1.0.0 -> 1.1.0`; read commands use compact tables with `Name`, `Version`, and `Status`; empty and healthy states are lowercase plain-language messages.
+
 Use `ui add -` to install newline-delimited component sources from stdin. Empty lines are ignored, so the command composes naturally with shell pipelines.
 
 ### Component Sources

@@ -5,7 +5,7 @@ import { readState, writeState } from '../../../state.js';
 import { copySafeFile, projectFileExists, removeSafeFile, safeFilePath } from '../../../filesystem.js';
 import { safeJoin } from '../../../paths.js';
 import { errorResult } from '../shared.js';
-import { frame, outcome, withSpinner } from '../../ui.js';
+import { resultLine, withSpinner } from '../../ui.js';
 import { present } from '../../presentation.js';
 
 const ROLLBACK_DIRECTORY = '.ui-rollback';
@@ -60,5 +60,5 @@ export async function revertComponent(cwd: string, json = false): Promise<Comman
     await writeState(cwd, previous);
     await rm(directory, { recursive: true, force: true });
   }, () => 'Component update reverted');
-  return present(json, { reverted: true }, frame('component revert', outcome('The last component update was reverted.'), 'Next: ui component list'));
+  return present(json, { reverted: true }, resultLine('reverted', 'last update'));
 }

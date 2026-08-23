@@ -1,7 +1,7 @@
 import type { CommandResult } from '../../types.js';
 import { readState } from '../../state.js';
 import { checkProjectFile } from '../../filesystem.js';
-import { colors, frame, outcome, table } from '../ui.js';
+import { colors, frame, table } from '../ui.js';
 import { present } from '../presentation.js';
 
 type CheckStatus = 'ok' | 'missing' | 'changed';
@@ -20,5 +20,5 @@ export async function doctor(cwd: string, json = false): Promise<CommandResult> 
   }
   const rows = checks.map((check) => [check.check, check.status === 'ok' ? colors.success('ok') : colors.error(check.status)]);
   const failed = checks.some((check) => check.status !== 'ok');
-  return present(json, { checks }, frame('doctor', `${table(['Check', 'Status'], rows)}\n\n${failed ? outcome('Problems found.', 'error') : outcome('Everything looks good.')}`, 'Next: ui component list'), failed ? 1 : 0);
+  return present(json, { checks }, frame('doctor', `${table(['Check', 'Status'], rows)}\n\n${failed ? 'error: problems found' : 'ok: project healthy'}`), failed ? 1 : 0);
 }
