@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.0.33
+
+- Prompt for a stable component version when running `ui update` interactively.
+- Keep non-interactive updates on the latest compatible version path.
+
 ## v0.0.32
 
 - Add `ui changelog [version]` for full or version-specific release notes.
