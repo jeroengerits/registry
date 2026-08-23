@@ -11,6 +11,17 @@ import { present } from '../../presentation.js';
 const ROLLBACK_DIRECTORY = '.ui-rollback';
 const ROLLBACK_STATE = 'state.json';
 
+/** Reports whether the one-step rollback point is available. */
+export async function rollbackStatus(cwd: string, json = false): Promise<CommandResult> {
+  try {
+    const state = JSON.parse(await readFile(path.join(cwd, ROLLBACK_DIRECTORY, ROLLBACK_STATE), 'utf8')) as UiState;
+    const components = Object.keys(state.components).sort();
+    return present(json, { available: true, components }, json ? '' : `undo available\ncomponents: ${components.join(', ') || 'none'}\n`);
+  } catch {
+    return present(json, { available: false, components: [] }, 'no undo available\n');
+  }
+}
+
 /** Stores the pre-update state and tracked files as a one-step rollback point. */
 export async function saveRollback(cwd: string, state: UiState): Promise<void> {
   const directory = path.join(cwd, ROLLBACK_DIRECTORY);

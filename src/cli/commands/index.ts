@@ -4,7 +4,7 @@ export { addComponent } from './component/add.js';
 export { infoComponent } from './component/info.js';
 export { listComponent } from './component/list.js';
 export { removeComponent } from './component/remove.js';
-export { revertComponent } from './component/revert.js';
+export { revertComponent, rollbackStatus } from './component/revert.js';
 export { selfUpdate } from './self-update.js';
 export { setComponentEnabled, toggleComponent } from './component/toggle.js';
 export { updateComponent } from './component/update.js';

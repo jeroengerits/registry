@@ -10,7 +10,7 @@ export function help(command?: string): CommandResult {
   const commands = [
     ['add', 'Install a component.'], ['list', 'List installed components.'], ['show', 'Show an installed component.'],
     ['remove', 'Remove an installed component.'], ['update', 'Update one or all components.'], ['outdated', 'Show available updates.'],
-    ['versions', 'Show available versions.'], ['undo', 'Undo the last component update.'], ['enable', 'Enable a component.'], ['disable', 'Disable a component.'],
+    ['versions', 'Show available versions.'], ['status', 'Show installed component status.'], ['undo', 'Undo or inspect the last update.'], ['enable', 'Enable a component.'], ['disable', 'Disable a component.'],
   ];
   return {
     output: `${colors.info('UI Registry')}
@@ -41,7 +41,7 @@ Run "ui help <command>" for more information.
 /** Resolves a focused help topic without expanding the root help screen. */
 function commandReference(command: string): CommandResult {
   if (command === 'component') return componentHelp();
-  const aliases: Record<string, string> = { add: 'component add', list: 'component list', show: 'component info', remove: 'component remove', update: 'component update', outdated: 'component outdated', versions: 'component versions', undo: 'component revert' };
+  const aliases: Record<string, string> = { add: 'component add', list: 'component list', status: 'component list', show: 'component info', remove: 'component remove', update: 'component update', outdated: 'component outdated', versions: 'component versions', undo: 'component revert' };
   const definition = focusedDefinition(aliases[command] ?? command);
   if (!definition) return { output: '', error: colors.error(`Unknown help topic: ${command}`), exitCode: 2 };
   const usage = definition.usage ? ` ${definition.usage}` : '';

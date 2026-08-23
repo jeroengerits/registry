@@ -32,11 +32,12 @@ ui init                              Initialize the current project
  ui add <source>                      Add a Git or local component
  ui list                              List installed components
  ui show <name>                       Show component details
- ui remove <name>                     Remove a component and its files
- ui update [name]                     Update one or all components
+ui remove <name>                     Remove a component and its files
+ui status                            Show installed component status
+ui update [name]                     Update one or all components
  ui outdated                          Show compatible component updates
  ui versions <name>                   List stable versions
- ui undo                              Undo the last component update
+ui undo                              Undo the last component update
  ui enable <name>                     Enable a component
  ui disable <name>                    Disable a component
 ```
@@ -77,6 +78,8 @@ Local component directories:
 ```
 
 Use `--dry-run` to preview changes and `--force` to replace an installed component.
+
+Use `ui remove button --dry-run` to preview tracked files before removal. Use `ui undo --list` to check whether a rollback point is available without changing files.
 
 ### Updating Components
 

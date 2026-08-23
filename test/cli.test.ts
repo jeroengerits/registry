@@ -158,7 +158,7 @@ describe('help', () => {
     const toggle = await capture(() => run(['component', 'toggle']));
     expect(info).toEqual({ code: 2, stdout: '', stderr: 'Usage: ui show <name> [--json]\n' });
     expect(add).toEqual({ code: 2, stdout: '', stderr: 'Usage: ui add <repository-or-path> [--version <version>] [--dry-run] [--force] [--json]\n' });
-    expect(remove).toEqual({ code: 2, stdout: '', stderr: 'Usage: ui component remove <name> [--yes] [--json]\n' });
+    expect(remove).toEqual({ code: 2, stdout: '', stderr: 'Usage: ui remove <name> [--dry-run] [--yes] [--json]\n' });
     expect(update.code).toBe(1);
     expect(update.stdout).toBe('');
     expect(update.stderr).toMatch(/No updatable components|already at the latest compatible version/);
@@ -303,6 +303,9 @@ describe('local Git installation', () => {
     expect(duplicate).toEqual({ code: 1, stdout: '', stderr: 'Component "button" is already installed. Use --force to overwrite it.\n' });
     const forced = await capture(() => run(['component', 'add', repository, '--force'], project));
     expect(forced.code).toBe(0);
+    const preview = await capture(() => run(['remove', 'button', '--dry-run', '--json'], project));
+    expect(JSON.parse(preview.stdout)).toMatchObject({ name: 'button', dryRun: true, files: ['components/button.tsx'] });
+    expect(await access(path.join(project, 'components/button.tsx'))).toBeUndefined();
     const removed = await capture(() => run(['component', 'remove', 'button', '--yes'], project));
     expect(removed.code).toBe(0);
     expect(removed.stdout).toContain('Removed button.');
@@ -400,6 +403,8 @@ describe('local Git installation', () => {
     expect(updated.stdout).toContain('ui component revert');
     expect(await readFile(path.join(project, 'components/button.tsx'), 'utf8')).toContain('Button = 2');
     expect(JSON.parse(await readFile(path.join(project, 'ui.json'), 'utf8')).components.button.enabled).toBe(true);
+    const undoStatus = await capture(() => run(['undo', '--list', '--json'], project));
+    expect(JSON.parse(undoStatus.stdout)).toMatchObject({ available: true, components: ['button'] });
     const reverted = await capture(() => run(['component', 'revert'], project));
     expect(reverted.code).toBe(0);
     expect(reverted.stdout).toContain('reverted');
