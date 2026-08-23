@@ -2,7 +2,7 @@
 
 Install and manage reusable UI components from Git repositories or local directories.
 
-Latest release: [v0.0.25](https://github.com/jeroengerits/registry/releases/tag/v0.0.25)
+Latest release: [v0.0.26](https://github.com/jeroengerits/registry/releases/tag/v0.0.26)
 
 ## Install
 
@@ -121,6 +121,11 @@ Update output shows the current version, new version, status, and the available 
 ### Unreleased
 
 Future changes will be listed here before the next release.
+
+### v0.0.26
+
+- Harden manifest and persisted state schemas.
+- Validate rollback snapshots before restoring them.
 
 ### v0.0.25
 
@@ -257,6 +262,7 @@ Each component directory must contain a root `ui.json`:
 
 - `schemaVersion` must be `1`.
 - `name` must be lowercase kebab-case.
+- `description`, file paths, dependency names and versions, and component references must not be blank.
 - `files` maps component files to safe project-relative targets.
 - `dependencies` contains package-manager dependencies.
 - `components` contains other component repositories and optional version constraints.

@@ -6,6 +6,7 @@ import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { run } from '../src/cli/index.js';
 import { initializeState, validateState } from '../src/state.js';
+import { validateComponentManifest } from '../src/registry.js';
 import { availableVersions, checkoutGit, parseGitReference, satisfies, updateConstraint } from '../src/git.js';
 import { formatSelfUpdateDetails, parseSelfUpdateDetails } from '../src/cli/commands/self-update.js';
 import { errorMessage, isErrnoError, isRecord } from '../src/shared.js';
@@ -56,7 +57,7 @@ describe('help', () => {
   it('prints the installed CLI version', async () => {
     const result = await capture(() => run(['--version']));
     expect(result.code).toBe(0);
-    expect(result.stdout.trim()).toBe('0.0.25');
+    expect(result.stdout.trim()).toBe('0.0.26');
     expect(result.stderr).toBe('');
   });
 
@@ -231,6 +232,14 @@ describe('validation', () => {
   it('validates state schema', () => {
     expect(() => validateState({ components: { button: { version: '1', path: 'button' } } })).not.toThrow();
     expect(() => validateState({ components: { button: { version: 1 } } })).toThrow(/version.*path/);
+    expect(() => validateState({ components: { button: { version: '1', path: 'button', files: [{ path: 'button', sha256: 'not-a-hash' }] } } })).toThrow(/invalid file hashes/);
+    expect(() => validateState({ components: { button: { version: '1', path: 'button', files: [{ path: 'button', sourcePath: '/tmp/source', sha256: '' }] } } })).toThrow(/invalid file hashes/);
+    expect(() => validateState({ components: { 'Invalid Name': { version: '1', path: 'button' } } })).toThrow(/must contain string "version" and "path"/);
+  });
+
+  it('validates manifest strings and duplicate targets', () => {
+    expect(() => validateComponentManifest({ schemaVersion: 1, name: 'button', description: '  ', files: [], dependencies: {}, components: [] })).toThrow();
+    expect(() => validateComponentManifest({ schemaVersion: 1, name: 'button', files: [{ source: 'src/a.ts', target: 'components/a.ts' }, { source: 'src/b.ts', target: 'components/a.ts' }], dependencies: {}, components: [] })).toThrow(/duplicate target paths/);
   });
 
   it('uses a compatible update range for selected exact versions', () => {

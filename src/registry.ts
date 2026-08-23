@@ -10,10 +10,10 @@ const manifestSchema = z.object({
   // Keep the schema version literal so future manifest formats fail explicitly.
   schemaVersion: z.literal(1),
   name: z.string().regex(/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/),
-  description: z.string().optional(),
-  files: z.array(z.object({ source: z.string(), target: z.string() }).strict()),
-  dependencies: z.record(z.string().min(1), z.string().min(1)),
-  components: z.array(z.object({ repository: z.string().min(1), version: z.string().min(1).optional() }).strict()),
+  description: z.string().trim().min(1).optional(),
+  files: z.array(z.object({ source: z.string().trim().min(1), target: z.string().trim().min(1) }).strict()),
+  dependencies: z.record(z.string().trim().min(1), z.string().trim().min(1)),
+  components: z.array(z.object({ repository: z.string().trim().min(1), version: z.string().trim().min(1).optional() }).strict()),
 }).strict();
 
 /** Validates a manifest and normalizes every source and target path. */

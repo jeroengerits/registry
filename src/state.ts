@@ -11,32 +11,33 @@ export const STATE_FILE = 'ui.json';
 const installedFileSchema = z.object({
   // Hashes are retained for doctor integrity checks after installation.
   path: z.string(),
-  sourcePath: z.string().optional(),
-  sha256: z.string(),
+  sha256: z.string().regex(/^(?:[a-f0-9]{64})?$/, 'must be an SHA-256 hex digest'),
 }).strict();
 
 const componentReferenceSchema = z.object({
-  repository: z.string(),
-  version: z.string().optional(),
+  repository: z.string().trim().min(1),
+  version: z.string().trim().min(1).optional(),
 }).strict();
 
 const componentStateSchema = z.object({
   // Legacy state omitted enabled; Zod supplies the historical default.
   enabled: z.boolean().default(true),
-  version: z.string(),
-  constraint: z.string().optional(),
+  version: z.string().trim().min(1),
+  constraint: z.string().trim().min(1).optional(),
   path: z.string(),
-  sourcePath: z.string().optional(),
-  repository: z.string().optional(),
+  sourcePath: z.string().trim().min(1).optional(),
+  repository: z.string().trim().min(1).optional(),
   files: z.array(installedFileSchema).optional(),
   dependencies: z.array(componentReferenceSchema).optional(),
 }).strict();
 
+const componentNameSchema = z.string().regex(/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/);
+
 const uiStateSchema = z.object({
   $schema: z.string().optional(),
-  version: z.string().optional(),
+  version: z.string().trim().min(1).optional(),
   // Component names are dynamic keys, while each value has a strict schema.
-  components: z.record(z.string(), componentStateSchema),
+  components: z.record(componentNameSchema, componentStateSchema),
 }).strict();
 
 /** Parses state at the trust boundary and defaults legacy components to enabled. */

@@ -1,7 +1,7 @@
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { CommandResult, UiState } from '../../../types.js';
-import { readState, writeState } from '../../../state.js';
+import { readState, validateState, writeState } from '../../../state.js';
 import { copySafeFile, projectFileExists, removeSafeFile, safeFilePath } from '../../../filesystem.js';
 import { safeJoin } from '../../../paths.js';
 import { errorResult } from '../shared.js';
@@ -14,7 +14,7 @@ const ROLLBACK_STATE = 'state.json';
 /** Reports whether the one-step rollback point is available. */
 export async function rollbackStatus(cwd: string, json = false): Promise<CommandResult> {
   try {
-    const state = JSON.parse(await readFile(path.join(cwd, ROLLBACK_DIRECTORY, ROLLBACK_STATE), 'utf8')) as UiState;
+    const state = validateState(JSON.parse(await readFile(path.join(cwd, ROLLBACK_DIRECTORY, ROLLBACK_STATE), 'utf8')));
     const components = Object.keys(state.components).sort();
     return present(json, { available: true, components }, json ? '' : `undo available\ncomponents: ${components.join(', ') || 'none'}\n`);
   } catch {
@@ -41,7 +41,7 @@ export async function revertComponent(cwd: string, json = false): Promise<Comman
   const directory = path.join(cwd, ROLLBACK_DIRECTORY);
   let previous: UiState;
   try {
-    previous = JSON.parse(await readFile(path.join(directory, ROLLBACK_STATE), 'utf8')) as UiState;
+    previous = validateState(JSON.parse(await readFile(path.join(directory, ROLLBACK_STATE), 'utf8')));
   } catch {
     return errorResult('No component update is available to revert.', json);
   }
