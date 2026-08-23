@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.0.38
+
+- Harden `-C`/`--project` parsing for compact and empty project paths.
+- Make the installed-version test follow the package metadata automatically.
+
 ## v0.0.37
 
 - Accept both `--color=never` and `--color never` forms for global color options.

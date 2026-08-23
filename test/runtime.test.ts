@@ -18,6 +18,13 @@ describe('CLI runtime', () => {
     });
   });
 
+  it('supports compact project paths and rejects empty values', () => {
+    expect(parseRuntimeOptions(['-C=./app', 'list'], '/tmp/project')).toEqual({
+      args: ['list'], cwd: '/tmp/project/app', quiet: false, noInput: false,
+    });
+    expect(() => parseRuntimeOptions(['--project='], '/tmp/project')).toThrow('--project requires a project path.');
+  });
+
   it('accepts the space-separated color option form', () => {
     expect(parseRuntimeOptions(['--color', 'never', 'help'], '/tmp/project')).toEqual({
       args: ['help'], cwd: '/tmp/project', quiet: false, noInput: false, color: 'never',

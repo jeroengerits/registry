@@ -57,8 +57,9 @@ describe('component list', () => {
 describe('help', () => {
   it('prints the installed CLI version', async () => {
     const result = await capture(() => run(['--version']));
+    const packageData = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8')) as { version: string };
     expect(result.code).toBe(0);
-    expect(result.stdout.trim()).toBe('0.0.37');
+    expect(result.stdout.trim()).toBe(packageData.version);
     expect(result.stderr).toBe('');
   });
 

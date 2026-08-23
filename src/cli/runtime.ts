@@ -16,8 +16,11 @@ export function parseRuntimeOptions(args: string[], cwd: string): RuntimeOptions
       const value = args[++index];
       if (!value) throw new Error(`${argument} requires a project path.`);
       project = value;
-    } else if (argument.startsWith('--project=')) {
-      project = argument.slice('--project='.length);
+    } else if (argument.startsWith('--project=') || argument.startsWith('-C=')) {
+      const option = argument.startsWith('--project=') ? '--project' : '-C';
+      const value = argument.slice(`${option}=`.length);
+      if (!value) throw new Error(`${option} requires a project path.`);
+      project = value;
     } else if (argument === '--quiet') {
       quiet = true;
     } else if (argument === '--no-input') {

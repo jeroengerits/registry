@@ -44,7 +44,7 @@ curl -fsSL https://raw.githubusercontent.com/jeroengerits/registry/main/install.
 
 The installer downloads the latest release, installs its dependencies in `.ui-registry/`, and creates a `ui` launcher in the current directory. Add the launcher directory to your `PATH` to run `ui` from anywhere.
 
-The latest release is [v0.0.37](https://github.com/jeroengerits/registry/releases/tag/v0.0.37).
+The latest release is [v0.0.38](https://github.com/jeroengerits/registry/releases/tag/v0.0.38).
 
 Installer environment variables:
 
@@ -251,7 +251,7 @@ See [`CHANGELOG.md`](CHANGELOG.md) for the complete release history. Release not
 
 ```sh
 ui changelog
-ui changelog v0.0.37
+ui changelog v0.0.38
 ```
 
 ## License
