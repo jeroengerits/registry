@@ -9,11 +9,11 @@ export async function infoComponent(cwd: string, name?: string, json = false): P
   // Load state before resolving the requested component.
   const state = await readState(cwd);
   // One-shot commands require the component name explicitly.
-  if (!name) return errorResult('Usage: ui component info <name> [--json]');
+  if (!name) return errorResult('Usage: ui show <name> [--json]', json);
   // Resolve the requested record from the validated state map.
   const component = state?.components[name];
   // Report a useful domain error instead of failing during formatting.
-  if (!component) return errorResult(`Component "${name}" is not installed.`);
+  if (!component) return errorResult(`Component "${name}" is not installed.`, json);
   // JSON consumers receive the complete persisted record without styling.
   if (json) return present(true, { name, ...component }, '');
   // Assemble labeled metadata for the human-readable inspection card.

@@ -52,4 +52,6 @@ export interface CommandResult {
   exitCode: number;
   /** Structured payload used when composing commands and rendering JSON. */
   data?: unknown;
+  /** Human-readable diagnostics that belong on stderr. */
+  error?: string;
 }

@@ -9,8 +9,8 @@ import { renderUpdateIntent, renderUpdateReport, updateProgress, type UpdateItem
 
 /** Resolves, validates, stages, and installs one or more components. */
 export async function addComponent(cwd: string, references: string[], options: { dryRun: boolean; force: boolean; update: boolean; version?: string; json: boolean; command?: string }): Promise<CommandResult> {
-  if (!references.length) return errorResult('Usage: ui component add <repository-or-path> [--version <version>] [--dry-run] [--force] [--json]');
-  if (options.version && !/^v?\d+\.\d+\.\d+$/.test(options.version)) return errorResult('The --version value must be a stable semver version such as 1.2.3.');
+  if (!references.length) return errorResult('Usage: ui add <repository-or-path> [--version <version>] [--dry-run] [--force] [--json]', options.json);
+  if (options.version && !/^v?\d+\.\d+\.\d+$/.test(options.version)) return errorResult('The --version value must be a stable semver version such as 1.2.3.', options.json);
   const referencesWithVersion = references.map((reference) => parseGitReference(reference, cwd));
   const showAvailableVersions = !interactive() && !options.version && referencesWithVersion.some((reference) => !reference.version);
   if (options.version) {

@@ -16,8 +16,8 @@ This installs the `ui` launcher in the current directory.
 
 ```sh
 ./ui init
-./ui component add owner/button
-./ui component list
+./ui add owner/button
+./ui list
 ```
 
 The project state is stored in `ui.json`.
@@ -26,17 +26,19 @@ The project state is stored in `ui.json`.
 
 ```text
 ui init                              Initialize the current project
-ui update                            Update the UI Registry CLI
-ui doctor                            Check project and component files
+ ui self-update                       Update the UI Registry CLI
+ ui doctor                            Check project and component files
 
-ui component list                    List installed components
-ui component info <name>             Show component details
-ui component add <source>            Add a Git or local component
-ui component remove <name>           Remove a component and its files
-ui component update [name]           Update one or all components
-ui component outdated                Show compatible component updates
-ui component versions <name>         List stable versions
-ui component revert                  Undo the last component update
+ ui add <source>                      Add a Git or local component
+ ui list                              List installed components
+ ui show <name>                       Show component details
+ ui remove <name>                     Remove a component and its files
+ ui update [name]                     Update one or all components
+ ui outdated                          Show compatible component updates
+ ui versions <name>                   List stable versions
+ ui undo                              Undo the last component update
+ ui enable <name>                     Enable a component
+ ui disable <name>                    Disable a component
 ```
 
 Use `ui help <command>` for focused help. Add `--json` to commands that support machine-readable output.
@@ -46,17 +48,17 @@ Use `ui help <command>` for focused help. Add `--json` to commands that support 
 GitHub shorthand and URLs:
 
 ```sh
-./ui component add owner/button
-./ui component add https://github.com/owner/button.git
-./ui component add owner/button --version 1.2.3
+./ui add owner/button
+./ui add https://github.com/owner/button.git
+./ui add owner/button --version 1.2.3
 ```
 
 Local component directories:
 
 ```sh
-./ui component add ./components/button
-./ui component add /absolute/path/to/button
-./ui component add file:///absolute/path/to/button
+./ui add ./components/button
+./ui add /absolute/path/to/button
+./ui add file:///absolute/path/to/button
 ```
 
 Use `--dry-run` to preview changes and `--force` to replace an installed component.
@@ -65,19 +67,93 @@ Use `--dry-run` to preview changes and `--force` to replace an installed compone
 
 ```sh
 # Update every installed component
-./ui component update
+./ui update
 
 # Update one component
-./ui component update button
+./ui update button
 
 # Update one component to a specific stable version
-./ui component update button --version 1.2.3
+./ui update button --version 1.2.3
 
 # Undo the last component update
-./ui component revert
+./ui undo
 ```
 
 Update output shows the current version, new version, status, and the available undo command. Component updates preserve a one-step rollback of tracked files and `ui.json`.
+
+## Changelog
+
+### Unreleased
+
+- Added Unix-first output behavior: successful results go to stdout, diagnostics go to stderr, and non-interactive runs never prompt.
+- Added short top-level component commands such as `ui add`, `ui list`, `ui update`, and `ui undo` while retaining `ui component ...` compatibility commands.
+- Added idempotent `ui enable` and `ui disable` commands.
+- Added explicit `--yes` confirmation for non-interactive component removal.
+
+### v0.0.16
+
+- Added targeted component updates with `ui component update <name>`.
+- Added stable `--version` selection for component updates.
+- Improved update planning, rollback reporting, and CI-safe color handling.
+
+### v0.0.15
+
+- Simplified the CLI README and documented local component sources.
+- Removed obsolete component commands and helpers.
+
+### v0.0.14
+
+- Added local component directory support, including relative, absolute, and `file://` paths.
+
+### v0.0.13
+
+- Hardened component update planning and transactional filesystem changes.
+
+### v0.0.11
+
+- Improved update flow UX and component status reporting.
+
+### v0.0.10
+
+- Improved compatible component update resolution.
+
+### v0.0.9
+
+- Centralized CLI helpers and improved command reliability.
+
+### v0.0.8
+
+- Added `ui init` project initialization.
+
+### v0.0.7
+
+- Simplified component commands and added colorized human output.
+
+### v0.1.0
+
+- Added top-level namespace selection and terminal tables.
+
+### v0.0.5
+
+- Added interactive namespace selection and improved component tables.
+
+### v0.0.4
+
+- Redesigned the component command dashboard and improved component status output.
+
+### v0.0.3
+
+- Added the first component command dashboard.
+
+### v0.0.2
+
+- Added release tooling and improved CLI command organization.
+
+### v0.0.1
+
+- Initial component lifecycle CLI with installation, listing, version selection, removal, and self-update support.
+
+Versions `v0.0.6` and `v0.0.12` do not have published releases in the repository history and are intentionally omitted.
 
 ## Component Manifest
 

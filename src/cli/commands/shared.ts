@@ -7,11 +7,11 @@ import { checkoutGit, parseGitReference, satisfies, type GitReference } from '..
 import { readComponentManifest } from '../../registry.js';
 import { safeJoin, safeRelativePath } from '../../paths.js';
 import { copySafeFile, projectFileExists, removeSafePath, safeFilePath, sha256File } from '../../filesystem.js';
-import { colors } from '../ui.js';
 import { isErrnoError } from '../../shared.js';
+import { failure } from '../presentation.js';
 
 /** Creates the standard failed-command result without throwing. */
-export const errorResult = (message: string) => ({ output: `${colors.error(message)}\n`, exitCode: 1 });
+export const errorResult = (message: string, json = false) => failure(json, message);
 /** Detects the package manager from the project's lockfile. */
 async function packageManager(cwd: string): Promise<'npm' | 'pnpm' | 'yarn' | 'bun'> {
   for (const [file, manager] of [['pnpm-lock.yaml', 'pnpm'], ['yarn.lock', 'yarn'], ['bun.lockb', 'bun'], ['package-lock.json', 'npm']] as const) {

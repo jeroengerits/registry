@@ -5,7 +5,7 @@ import { confirm, isCancel, select } from '@clack/prompts';
 
 /** Returns true when interactive prompts and terminal styling are safe. */
 export function interactive(): boolean {
-  return Boolean(process.stdout.isTTY && process.stderr.isTTY && !process.env.CI);
+  return Boolean(process.stdout.isTTY && process.stderr.isTTY && !process.env.CI && !process.env.UI_NO_INPUT);
 }
 
 /** Runs a slow task with a delayed spinner and concise completion message. */
@@ -28,7 +28,7 @@ export async function withSpinner<T>(message: string, action: () => Promise<T>, 
 }
 
 /** Semantic terminal colors shared by every human-readable command. */
-const color = process.env.CI || process.env.NO_COLOR ? (value: string): string => value : undefined;
+const color = process.env.CI || process.env.NO_COLOR || process.env.FORCE_COLOR === '0' ? (value: string): string => value : undefined;
 export const colors = {
   info: color ?? pc.cyan,
   muted: color ?? pc.dim,
@@ -38,10 +38,10 @@ export const colors = {
 };
 
 /** Wraps command content in the shared relaxed CLI layout. */
-export function frame(command: string, body: string, footer?: string): string {
-  const lines = [colors.info(`UI Registry  /  ${command}`), '', body.trimEnd()];
-  if (footer) lines.push('', colors.muted(footer));
-  return `${lines.join('\n')}\n`;
+export function frame(_command: string, body: string, _footer?: string): string {
+  // Normal output is deliberately data-first; help remains the place for branding and guidance.
+  void _footer;
+  return `${body.trimEnd()}\n`;
 }
 
 /** Renders aligned terminal data while preserving colored cell content. */

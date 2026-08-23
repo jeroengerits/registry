@@ -9,11 +9,11 @@ export async function toggleComponent(cwd: string, name?: string, json = false):
   // Read normalized state so missing enabled fields default to true.
   const state = await readState(cwd);
   // One-shot commands require the component name explicitly.
-  if (!name) return errorResult('Usage: ui component toggle <name> [--json]');
+  if (!name) return errorResult('Usage: ui component toggle <name> [--json]', json);
   // Resolve the selected component before mutating state.
   const component = state?.components[name];
   // Never create state implicitly for an unknown component.
-  if (!state || !component) return errorResult(`Component "${name}" is not installed.`);
+  if (!state || !component) return errorResult(`Component "${name}" is not installed.`, json);
 
   // Capture the old label for the transition shown to the user.
   const previousStatus = component.enabled ? 'enabled' : 'disabled';
@@ -33,9 +33,9 @@ export async function toggleComponent(cwd: string, name?: string, json = false):
 /** Sets a component's enabled state idempotently for script-friendly commands. */
 export async function setComponentEnabled(cwd: string, name: string | undefined, enabled: boolean, json = false): Promise<CommandResult> {
   const state = await readState(cwd);
-  if (!name) return errorResult(`Usage: ui component ${enabled ? 'enable' : 'disable'} <name> [--json]`);
+  if (!name) return errorResult(`Usage: ui ${enabled ? 'enable' : 'disable'} <name> [--json]`, json);
   const component = state?.components[name];
-  if (!state || !component) return errorResult(`Component "${name}" is not installed.`);
+  if (!state || !component) return errorResult(`Component "${name}" is not installed.`, json);
   const previousStatus = component.enabled ? 'enabled' : 'disabled';
   component.enabled = enabled;
   const nextStatus = enabled ? 'enabled' : 'disabled';

@@ -6,6 +6,7 @@ import { copySafeFile, projectFileExists, removeSafeFile, safeFilePath } from '.
 import { safeJoin } from '../../../paths.js';
 import { errorResult } from '../shared.js';
 import { frame, outcome, withSpinner } from '../../ui.js';
+import { present } from '../../presentation.js';
 
 const ROLLBACK_DIRECTORY = '.ui-rollback';
 const ROLLBACK_STATE = 'state.json';
@@ -25,16 +26,16 @@ export async function saveRollback(cwd: string, state: UiState): Promise<void> {
 }
 
 /** Restores the last component update and removes the consumed rollback point. */
-export async function revertComponent(cwd: string): Promise<CommandResult> {
+export async function revertComponent(cwd: string, json = false): Promise<CommandResult> {
   const directory = path.join(cwd, ROLLBACK_DIRECTORY);
   let previous: UiState;
   try {
     previous = JSON.parse(await readFile(path.join(directory, ROLLBACK_STATE), 'utf8')) as UiState;
   } catch {
-    return errorResult('No component update is available to revert.');
+    return errorResult('No component update is available to revert.', json);
   }
   const current = await readState(cwd);
-  if (!current) return errorResult('The project is not initialized.');
+  if (!current) return errorResult('The project is not initialized.', json);
   await withSpinner('Reverting the last component update...', async () => {
     for (const component of Object.values(current.components)) {
       for (const file of component.files ?? []) await removeSafeFile(cwd, file.path, 'component file');
@@ -48,5 +49,5 @@ export async function revertComponent(cwd: string): Promise<CommandResult> {
     await writeState(cwd, previous);
     await rm(directory, { recursive: true, force: true });
   }, () => 'Component update reverted');
-  return { output: frame('component revert', outcome('The last component update was reverted.'), 'Next: ui component list'), exitCode: 0 };
+  return present(json, { reverted: true }, frame('component revert', outcome('The last component update was reverted.'), 'Next: ui component list'));
 }

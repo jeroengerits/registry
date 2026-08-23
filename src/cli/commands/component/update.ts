@@ -6,11 +6,11 @@ import { errorResult } from '../shared.js';
 
 /** Updates one or all components, optionally pinning this operation to one version. */
 export async function updateComponent(cwd: string, name?: string, json = false, version?: string): Promise<CommandResult> {
-  if (version && !/^v?\d+\.\d+\.\d+$/.test(version)) return errorResult('The --version value must be a stable semver version such as 1.2.3.');
+  if (version && !/^v?\d+\.\d+\.\d+$/.test(version)) return errorResult('The --version value must be a stable semver version such as 1.2.3.', json);
   if (!name) {
     const state = await readState(cwd);
     const names = Object.entries(state?.components ?? {}).filter(([, component]) => component.repository).map(([componentName]) => componentName).sort();
-    if (!names.length) return errorResult('No updatable components are installed.');
+    if (!names.length) return errorResult('No updatable components are installed.', json);
     const references = names.map((componentName) => {
       const component = state?.components[componentName];
       return `${component?.repository}#${version ?? updateConstraint(component?.version ?? '0.0.0', component?.constraint)}`;
@@ -20,7 +20,7 @@ export async function updateComponent(cwd: string, name?: string, json = false, 
   // Read the stored repository and version constraint for the update request.
   const component = (await readState(cwd))?.components[name];
   // Refuse updates when the component cannot be resolved back to its source.
-  if (!component?.repository) return errorResult(`Component "${name}" is not installed or has no repository reference.`);
+  if (!component?.repository) return errorResult(`Component "${name}" is not installed or has no repository reference.`, json);
   // Preserve the existing major-version compatibility policy.
   const constraint = version ?? updateConstraint(component.version, component.constraint);
   // Reuse the transactional add pipeline with update-specific presentation.

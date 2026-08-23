@@ -6,7 +6,7 @@ export { listComponent } from './component/list.js';
 export { removeComponent } from './component/remove.js';
 export { revertComponent } from './component/revert.js';
 export { selfUpdate } from './self-update.js';
-export { toggleComponent } from './component/toggle.js';
+export { setComponentEnabled, toggleComponent } from './component/toggle.js';
 export { updateComponent } from './component/update.js';
 export { help } from './help.js';
 export { initProject } from './init.js';

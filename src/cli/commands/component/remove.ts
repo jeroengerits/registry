@@ -3,20 +3,21 @@ import { readState, writeState } from '../../../state.js';
 import { removeSafeFile } from '../../../filesystem.js';
 import { errorResult } from '../shared.js';
 import { confirmAction, frame, interactive, outcome, withSpinner } from '../../ui.js';
-import { present } from '../../presentation.js';
+import { failure, present } from '../../presentation.js';
 
 /** Removes a component's tracked files and persisted state. */
-export async function removeComponent(cwd: string, name?: string, json = false): Promise<CommandResult> {
+export async function removeComponent(cwd: string, name?: string, json = false, yes = false): Promise<CommandResult> {
   // Read state before resolving the requested component.
   const state = await readState(cwd);
   // One-shot commands require the component name explicitly.
-  if (!name) return errorResult('Usage: ui component remove <name> [--json]');
+  if (!name) return errorResult('Usage: ui component remove <name> [--yes] [--json]', json);
   // Resolve the record that owns the files about to be removed.
   const component = state?.components[name];
   // Refuse to mutate state when the component is absent.
-  if (!state || !component) return errorResult(`Component "${name}" is not installed.`);
+  if (!state || !component) return errorResult(`Component "${name}" is not installed.`, json);
+  if (!interactive() && !yes) return failure(json, 'Refusing to remove without confirmation. Re-run with --yes.');
   // Confirm destructive work only in interactive terminals.
-  if (interactive() && !(await confirmAction(`Remove ${name} and its ${component.files?.length ?? 0} tracked file(s)?`))) return errorResult('Operation cancelled.');
+  if (interactive() && !yes && !(await confirmAction(`Remove ${name} and its ${component.files?.length ?? 0} tracked file(s)?`))) return failure(json, 'Operation cancelled.');
 
   // Combine the primary path and tracked files without duplicate deletions.
   const files = new Set([component.path, ...(component.files ?? []).map((file) => file.path)].filter(Boolean));

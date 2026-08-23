@@ -7,7 +7,7 @@ import { registerCommands } from './commands/registry.js';
 
 /** Converts Commander unknown-command failures into the CLI's stable message. */
 function unknownCommand(): CommandResult {
-  return { output: `${colors.error('Unknown command.')} Run "ui help" for available commands.\n`, exitCode: 1 };
+  return { output: '', error: `${colors.error('Unknown command.')} Run "ui help" for available commands.`, exitCode: 1 };
 }
 
 /** Parses CLI arguments and dispatches the selected command. */
@@ -27,14 +27,15 @@ export async function run(args: string[], cwd = process.cwd()): Promise<number> 
     await program.parseAsync(commandArgs, { from: 'user' });
   } catch (error) {
     if (error instanceof CommanderError) {
-      result = error.code === 'commander.unknownCommand' || error.code === 'commander.excessArguments' ? unknownCommand() : { output: `${error.message}\n`, exitCode: error.exitCode || 1 };
+      result = error.code === 'commander.unknownCommand' || error.code === 'commander.excessArguments' ? unknownCommand() : { output: '', error: error.message, exitCode: error.exitCode || 1 };
     } else {
       process.stderr.write(`${errorMessage(error)}\n`);
       return 1;
     }
   }
   const output = result ?? unknownCommand();
-  process.stdout.write(output.output);
+  if (output.output) process.stdout.write(output.output);
+  if (output.error) process.stderr.write(`${output.error}\n`);
   return output.exitCode;
 }
 

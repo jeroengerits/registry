@@ -26,14 +26,14 @@ describe('component list', () => {
     const directory = await tempDirectory();
     await writeFile(path.join(directory, 'ui.json'), JSON.stringify({ components: { zeta: { version: '1.0.0', path: 'zeta', repository: 'https://github.com/example/zeta.git' }, alpha: { version: '2.0.0', path: 'alpha' } } }));
     const result = await capture(() => run(['component', 'list'], directory));
-    expect(result.stdout).toContain('UI Registry  /  component list');
+    expect(result.stdout).not.toContain('UI Registry  /  component list');
     expect(result.stdout).toContain('2 components');
     expect(result.stdout).toContain('2 enabled  ·  0 disabled');
     expect(result.stdout).toContain('alpha');
     expect(result.stdout).toContain('v2.0.0');
     expect(result.stdout).toContain('zeta');
     expect(result.stdout).toContain('v1.0.0');
-    expect(result.stdout).toContain('Next: ui component');
+    expect(result.stdout).not.toContain('Next: ui component');
   });
   it('supports JSON output', async () => {
     const directory = await tempDirectory();
@@ -47,17 +47,27 @@ describe('component list', () => {
     const result = await capture(() => run(['component', 'info', 'button'], directory));
     expect(result.code).toBe(0);
     expect(result.stdout).toContain('button  ○ disabled');
-    expect(result.stdout).toContain('UI Registry  /  component details  /  button');
+    expect(result.stdout).not.toContain('UI Registry  /  component details  /  button');
   });
 });
 
 describe('help', () => {
+  it('supports the short Unix-first command names', async () => {
+    const directory = await tempDirectory();
+    const initialized = await capture(() => run(['init'], directory));
+    expect(initialized.code).toBe(0);
+    const listed = await capture(() => run(['list'], directory));
+    expect(listed.code).toBe(0);
+    expect(listed.stdout).toContain('No installed components.');
+    expect((await capture(() => run(['show'], directory))).stderr).toBe('Usage: ui show <name> [--json]\n');
+  });
+
   it('shows a scannable root command reference', async () => {
     const result = await capture(() => run(['help']));
     expect(result.code).toBe(0);
-    expect(result.stdout).toContain('ui component add');
-    expect(result.stdout).toContain('update                Update UI Registry');
-    expect(result.stdout).toContain('component outdated');
+    expect(result.stdout).toContain('add           Install a component.');
+    expect(result.stdout).toContain('update        Update one or all components.');
+    expect(result.stdout).toContain('Legacy namespace: ui component <command>');
     expect(result.stdout).not.toContain('component.json must be in the repository root');
   });
   it('shows help with no arguments', async () => {
@@ -107,7 +117,15 @@ describe('help', () => {
   it('rejects unknown commands with a useful usage message', async () => {
     const result = await capture(() => run(['component', 'unknown']));
     expect(result.code).toBe(1);
-    expect(result.stdout).toBe('Unknown command. Run "ui help" for available commands.\n');
+    expect(result.stdout).toBe('');
+    expect(result.stderr).toBe('Unknown command. Run "ui help" for available commands.\n');
+  });
+
+  it('requires explicit confirmation for non-interactive removal', async () => {
+    const directory = await tempDirectory();
+    await writeFile(path.join(directory, 'ui.json'), JSON.stringify({ components: { button: { version: '1.0.0', path: 'components/button' } } }));
+    const result = await capture(() => run(['remove', 'button'], directory));
+    expect(result).toEqual({ code: 1, stdout: '', stderr: 'Refusing to remove without confirmation. Re-run with --yes.\n' });
   });
   it('reports missing command arguments', async () => {
     const info = await capture(() => run(['component', 'info']));
@@ -115,11 +133,13 @@ describe('help', () => {
     const remove = await capture(() => run(['component', 'remove']));
     const update = await capture(() => run(['component', 'update']));
     const toggle = await capture(() => run(['component', 'toggle']));
-    expect(info).toEqual({ code: 1, stdout: 'Usage: ui component info <name> [--json]\n', stderr: '' });
-    expect(add).toEqual({ code: 1, stdout: 'Usage: ui component add <repository-or-path> [--version <version>] [--dry-run] [--force] [--json]\n', stderr: '' });
-    expect(remove).toEqual({ code: 1, stdout: 'Usage: ui component remove <name> [--json]\n', stderr: '' });
-    expect(update).toEqual({ code: 1, stdout: 'No updatable components are installed.\n', stderr: '' });
-    expect(toggle).toEqual({ code: 1, stdout: 'Usage: ui component toggle <name> [--json]\n', stderr: '' });
+    expect(info).toEqual({ code: 1, stdout: '', stderr: 'Usage: ui show <name> [--json]\n' });
+    expect(add).toEqual({ code: 1, stdout: '', stderr: 'Usage: ui add <repository-or-path> [--version <version>] [--dry-run] [--force] [--json]\n' });
+    expect(remove).toEqual({ code: 1, stdout: '', stderr: 'Usage: ui component remove <name> [--yes] [--json]\n' });
+    expect(update.code).toBe(1);
+    expect(update.stdout).toBe('');
+    expect(update.stderr).toMatch(/No updatable components|already at the latest compatible version/);
+    expect(toggle).toEqual({ code: 1, stdout: '', stderr: 'Usage: ui component toggle <name> [--json]\n' });
   });
   it('rejects self-update outside an installed launcher', async () => {
     const installDirectory = process.env.UI_INSTALL_DIR;
@@ -128,7 +148,7 @@ describe('help', () => {
     delete process.env.UI_CACHE_DIR;
     try {
       const result = await capture(() => run(['self-update']));
-      expect(result).toEqual({ code: 1, stdout: 'Self-update is only available through an installed ui launcher.\n', stderr: '' });
+      expect(result).toEqual({ code: 1, stdout: '', stderr: 'Self-update is only available through an installed ui launcher.\n' });
     } finally {
       if (installDirectory === undefined) delete process.env.UI_INSTALL_DIR; else process.env.UI_INSTALL_DIR = installDirectory;
       if (cacheDirectory === undefined) delete process.env.UI_CACHE_DIR; else process.env.UI_CACHE_DIR = cacheDirectory;
@@ -258,13 +278,13 @@ describe('local Git installation', () => {
     expect(duplicate).toEqual({ code: 1, stdout: '', stderr: 'Component "button" is already installed. Use --force to overwrite it.\n' });
     const forced = await capture(() => run(['component', 'add', repository, '--force'], project));
     expect(forced.code).toBe(0);
-    const removed = await capture(() => run(['component', 'remove', 'button'], project));
+    const removed = await capture(() => run(['component', 'remove', 'button', '--yes'], project));
     expect(removed.code).toBe(0);
     expect(removed.stdout).toContain('Removed button.');
     expect(removed.stdout).toContain('files removed');
     await expect(access(path.join(project, 'components/button.tsx'))).rejects.toThrow();
-    const missing = await capture(() => run(['component', 'remove', 'button'], project));
-    expect(missing).toEqual({ code: 1, stdout: 'Component "button" is not installed.\n', stderr: '' });
+    const missing = await capture(() => run(['component', 'remove', 'button', '--yes'], project));
+    expect(missing).toEqual({ code: 1, stdout: '', stderr: 'Component "button" is not installed.\n' });
   });
 
   it('records file hashes and doctor detects changed and missing files', async () => {
