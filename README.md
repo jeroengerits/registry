@@ -2,7 +2,7 @@
 
 Install and manage reusable UI components from Git repositories or local directories.
 
-Latest release: [v0.0.17](https://github.com/jeroengerits/registry/releases/tag/v0.0.17)
+Latest release: [v0.0.18](https://github.com/jeroengerits/registry/releases/tag/v0.0.18)
 
 ## Install
 
@@ -101,6 +101,12 @@ Update output shows the current version, new version, status, and the available 
 ### Unreleased
 
 Future changes will be listed here before the next release.
+
+### v0.0.18
+
+- Added `ui add -` for newline-delimited component sources from stdin.
+- Kept unexpected `--json` failures machine-readable on stdout.
+- Made `--quiet` suppress progress spinners as well as result output.
 
 ### v0.0.17
 
