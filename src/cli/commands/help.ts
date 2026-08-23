@@ -6,7 +6,7 @@ import { commandDefinitions, focusedDefinition } from './registry.js';
 /** Returns concise root help or focused help for one command. */
 export function help(command?: string): CommandResult {
   if (command) return commandReference(command);
-  const rootCommands = commandDefinitions.filter((definition) => ['init', 'doctor', 'self-update', 'completion'].includes(definition.path));
+  const rootCommands = commandDefinitions.filter((definition) => ['init', 'doctor', 'self-update', 'completion', 'clear-cache'].includes(definition.path));
   const commands = [
     ['add', 'Install a component.'], ['list', 'List installed components.'], ['show', 'Show an installed component.'],
     ['remove', 'Remove an installed component.'], ['update', 'Update one or all components.'], ['outdated', 'Show available updates.'],

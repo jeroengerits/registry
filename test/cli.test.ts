@@ -56,7 +56,7 @@ describe('help', () => {
   it('prints the installed CLI version', async () => {
     const result = await capture(() => run(['--version']));
     expect(result.code).toBe(0);
-    expect(result.stdout.trim()).toBe('0.0.23');
+    expect(result.stdout.trim()).toBe('0.0.24');
     expect(result.stderr).toBe('');
   });
 
@@ -69,6 +69,17 @@ describe('help', () => {
     const invalid = await capture(() => run(['completion', 'powershell']));
     expect(invalid.code).toBe(2);
     expect(invalid.stderr).toContain('Usage: ui completion <bash|zsh|fish>');
+  });
+
+  it('clears persistent source cache only with explicit confirmation', async () => {
+    const directory = await tempDirectory();
+    await mkdir(path.join(directory, '.ui-sources', 'checkout'), { recursive: true });
+    const refused = await capture(() => run(['clear-cache'], directory));
+    expect(refused.code).toBe(2);
+    expect(refused.stderr).toContain('Re-run with --yes');
+    const cleared = await capture(() => run(['clear-cache', '--yes', '--json'], directory));
+    expect(JSON.parse(cleared.stdout)).toMatchObject({ cleared: true, entries: 1 });
+    await expect(access(path.join(directory, '.ui-sources'))).rejects.toThrow();
   });
 
   it('expands newline-delimited stdin component sources', async () => {

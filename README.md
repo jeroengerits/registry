@@ -2,7 +2,7 @@
 
 Install and manage reusable UI components from Git repositories or local directories.
 
-Latest release: [v0.0.23](https://github.com/jeroengerits/registry/releases/tag/v0.0.23)
+Latest release: [v0.0.24](https://github.com/jeroengerits/registry/releases/tag/v0.0.24)
 
 ## Install
 
@@ -42,6 +42,7 @@ ui undo                              Undo the last component update
  ui enable <name>                     Enable a component
 ui disable <name>                    Disable a component
 ui completion <shell>                Print Bash, Zsh, or Fish completions
+ui clear-cache                        Remove cached remote component sources
 ```
 
 Use `ui help <command>` for focused help. Add `--json` to commands that support machine-readable output.
@@ -93,6 +94,8 @@ Use `--dry-run` to preview changes and `--force` to replace an installed compone
 
 Remote component repositories are cloned into the project-local `.ui-sources/` cache and remain available after the command exits. The path is recorded as `sourcePath` in `ui.json`.
 
+Run `ui clear-cache --yes` to remove those project-local source checkouts. The command never removes `.ui-registry`, which contains the active CLI installation.
+
 Use `ui remove button --dry-run` to preview tracked files before removal. Use `ui undo --list` to check whether a rollback point is available without changing files.
 
 ### Updating Components
@@ -118,6 +121,11 @@ Update output shows the current version, new version, status, and the available 
 ### Unreleased
 
 Future changes will be listed here before the next release.
+
+### v0.0.24
+
+- Persist remote component source checkouts in `.ui-sources/`.
+- Add `ui clear-cache --yes` to remove project-local source checkouts safely.
 
 ### v0.0.23
 
