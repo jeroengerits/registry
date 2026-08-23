@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.0.37
+
+- Accept both `--color=never` and `--color never` forms for global color options.
+- Improve the README with focused CLI installation, usage, manifest, automation, and development guidance.
+
 ## v0.0.36
 
 - Harden persisted state paths and cached Git source paths.

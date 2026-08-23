@@ -1,8 +1,32 @@
 # UI Registry CLI
 
+[![CI](https://github.com/jeroengerits/registry/actions/workflows/ci.yml/badge.svg)](https://github.com/jeroengerits/registry/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/jeroengerits/registry)](https://github.com/jeroengerits/registry/releases)
+
 Install and manage reusable UI components from Git repositories or local directories. UI Registry copies the files declared by each component into your project and records the installed state in `ui.json`.
 
-Latest release: [v0.0.36](https://github.com/jeroengerits/registry/releases/tag/v0.0.36)
+## Features
+
+- Install components from GitHub shorthand, Git URLs, or local directories.
+- Pin installs and updates to stable component versions.
+- Preview changes with dry runs before writing files.
+- Update, enable, disable, remove, and roll back components.
+- Use JSON output and non-interactive flags in scripts and CI.
+- Keep remote sources in a project-local cache that can be cleared safely.
+- Inspect project state and component files with `ui doctor`.
+
+## Contents
+
+- [Requirements](#requirements)
+- [Install](#install)
+- [Quick start](#quick-start)
+- [Commands](#commands)
+- [Component sources](#component-sources)
+- [Updating and rollback](#updating-and-rollback)
+- [Component manifest](#component-manifest)
+- [Automation](#automation)
+- [Development](#development)
+- [Release history](#release-history)
 
 ## Requirements
 
@@ -12,61 +36,79 @@ Latest release: [v0.0.36](https://github.com/jeroengerits/registry/releases/tag/
 
 ## Install
 
+Run the installer from the project directory where you want the `ui` launcher:
+
 ```sh
 curl -fsSL https://raw.githubusercontent.com/jeroengerits/registry/main/install.sh | sh
 ```
 
-This downloads the latest release, installs its dependencies in `.ui-registry/`, and creates a `ui` launcher in the current directory. Add the directory containing `ui` to your `PATH` if you want to run it from anywhere.
+The installer downloads the latest release, installs its dependencies in `.ui-registry/`, and creates a `ui` launcher in the current directory. Add the launcher directory to your `PATH` to run `ui` from anywhere.
 
-The installer supports `UI_INSTALL_DIR`, `UI_CACHE_DIR`, `UI_REGISTRY_BRANCH`, and `UI_CHECK_ONLY=1` for custom launcher/cache locations, branch selection, and version checks without installation.
+The latest release is [v0.0.37](https://github.com/jeroengerits/registry/releases/tag/v0.0.37).
 
-## Quick Start
+Installer environment variables:
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `UI_INSTALL_DIR` | Current directory | Directory for the `ui` launcher |
+| `UI_CACHE_DIR` | `.ui-registry` | Directory for the CLI installation |
+| `UI_REGISTRY_BRANCH` | `main` | Branch downloaded by the installer |
+| `UI_CHECK_ONLY` | `0` | Set to `1` to check for updates without installing |
+
+Example:
 
 ```sh
-./ui init
-./ui add owner/button
-./ui list
+UI_INSTALL_DIR="$HOME/.local/bin" \
+UI_CACHE_DIR="$HOME/.cache/ui-registry" \
+curl -fsSL https://raw.githubusercontent.com/jeroengerits/registry/main/install.sh | sh
 ```
 
-`ui init` creates a project state file. A first successful `ui add` also creates `ui.json` when needed. Component changes update the state file and project files transactionally.
+## Quick start
 
-Use `ui help <command>` for command-specific usage and options.
+```sh
+ui init
+ui add owner/button
+ui list
+ui update button
+```
+
+`ui init` creates the project state file. A first successful `ui add` also creates `ui.json` when needed. Component changes update the state file and project files transactionally.
+
+Use `ui help <command>` for focused usage and options:
+
+```sh
+ui help add
+ui help update
+```
 
 ## Commands
 
-```text
-ui init                              Initialize a new UI project
-ui add <source>                      Install a component
-ui list                              List installed components
-ui show <name>                       Show an installed component
-ui status                            Show installed component status
-ui update [name]                     Update one or all components
-ui outdated                          Show available component updates
-ui versions <name>                   Show available versions
-ui remove <name>                     Remove a component and its files
-ui undo                              Undo or inspect the last component update
-ui enable <name>                     Enable a component
-ui disable <name>                    Disable a component
+| Command | Description |
+| --- | --- |
+| `ui init` | Initialize a new UI project |
+| `ui add <source>` | Install one or more components |
+| `ui list` | List installed components |
+| `ui show [name]` | Show component details |
+| `ui status` | Show installed component status |
+| `ui update [name]` | Update one or all components |
+| `ui outdated` | Show available component updates |
+| `ui versions <name>` | Show available stable versions |
+| `ui remove [name]` | Remove a component and its files |
+| `ui undo` | Undo the last component update |
+| `ui enable <name>` | Enable a component |
+| `ui disable <name>` | Disable a component |
+| `ui doctor` | Check project configuration |
+| `ui self-update` | Update the CLI |
+| `ui completion <shell>` | Print Bash, Zsh, or Fish completions |
+| `ui clear-cache` | Remove cached remote component sources |
+| `ui changelog [version]` | Show release changes |
+| `ui --version` | Print the CLI version |
 
-ui doctor                            Check project configuration
-ui self-update                       Update the CLI
-ui completion <bash|zsh|fish>        Print shell completion scripts
-ui clear-cache                       Remove cached remote component sources
-ui changelog [version]               Show release changes
-ui --version                         Print the CLI version
-```
+The legacy `ui component <command>` namespace remains available. The root commands are the recommended interface.
 
-The legacy `ui component <command>` namespace remains available. Add `--json` to commands that support machine-readable output.
+### Common options
 
-Install shell completion by evaluating the generated script:
-
-```sh
-eval "$(ui completion bash)"
-eval "$(ui completion zsh)"
-ui completion fish | source
-```
-
-Global options can be placed before or after the command:
+Global options can appear before or after a command:
 
 ```sh
 ui -C ./packages/app list
@@ -74,241 +116,74 @@ ui --project ./packages/app update --dry-run
 ui list --quiet
 ui remove button --yes --no-input
 ui list --color=never
-
 ```
 
-`-C`/`--project` selects a project directory. `--quiet` suppresses successful output, `--no-input` disables prompts, and `--color auto|always|never` controls terminal styling. Set `NO_COLOR=1` to disable colors explicitly.
+- `-C`/`--project <path>` selects a project directory.
+- `--quiet` suppresses successful output.
+- `--no-input` prevents prompts.
+- `--color auto|always|never` controls terminal styling.
+- `--json` prints machine-readable output for supported commands.
+- Set `NO_COLOR=1` to disable colors explicitly.
 
-Successful output is written to stdout. Progress, prompts, warnings, and errors are written to stderr. Piped and CI runs do not prompt or emit terminal styling. Use `--json` for automation where supported.
+Successful output is written to stdout. Progress, prompts, warnings, and errors are written to stderr. Piped and CI runs do not prompt or emit terminal styling.
 
-Human output follows one design language: mutations use verb-first lines such as `added button@1.2.3` and `updated button 1.0.0 -> 1.1.0`; read commands use compact tables with `Name`, `Version`, and `Status`; empty and healthy states are lowercase plain-language messages.
-
-Use `ui add -` to install newline-delimited component sources from stdin. Empty lines are ignored, so the command composes naturally with shell pipelines:
-
-```sh
-printf '%s\n' owner/button ./components/card | ui add -
-```
-
-### Component Sources
+## Component sources
 
 GitHub shorthand and URLs:
 
 ```sh
-./ui add owner/button
-./ui add https://github.com/owner/button.git
-./ui add owner/button --version 1.2.3
+ui add owner/button
+ui add https://github.com/owner/button.git
+ui add owner/button --version 1.2.3
 ```
 
 Local component directories:
 
 ```sh
-./ui add ./components/button
-./ui add /absolute/path/to/button
-./ui add file:///absolute/path/to/button
+ui add ./components/button
+ui add /absolute/path/to/button
+ui add file:///absolute/path/to/button
 ```
 
-Use `--dry-run` to preview changes and `--force` to replace an installed component. Component sources must contain a root `ui.json` manifest; see [Component Manifest](#component-manifest).
+Use `--dry-run` to preview changes and `--force` to replace an installed component. Use `ui add -` to read newline-delimited sources from stdin:
 
-Remote component repositories are cloned into the project-local `.ui-sources/` cache and remain available after the command exits. The path is recorded as `sourcePath` in `ui.json`.
+```sh
+printf '%s\n' owner/button ./components/card | ui add -
+```
 
-Run `ui clear-cache --yes` to remove those project-local source checkouts. The command never removes `.ui-registry`, which contains the active CLI installation.
+Remote repositories are cloned into the project-local `.ui-sources/` cache. The source path is recorded as `sourcePath` in `ui.json`. Remove cached source checkouts with:
 
-Use `ui remove button --dry-run` to preview tracked files before removal. Use `ui undo --list` to check whether a rollback point is available without changing files.
+```sh
+ui clear-cache --yes
+```
 
-### Updating Components
+The cache command does not remove `.ui-registry`, which contains the active CLI installation.
+
+## Updating and rollback
 
 ```sh
 # Update every installed component
-./ui update
+ui update
 
 # Update one component
-./ui update button
+ui update button
 
-# Update one component to a specific stable version
-./ui update button --version 1.2.3
+# Update one component to a stable version
+ui update button --version 1.2.3
 
-# Undo the last component update
-./ui undo
+# Preview updates without writing files
+ui update --dry-run
+
+# Inspect or undo the last update
+ui undo --list
+ui undo
 ```
 
-Update output shows the current version, new version, status, and the available undo command. Component updates preserve a one-step rollback of tracked files and `ui.json`.
+Updates preserve a one-step rollback of tracked files and `ui.json`. Use `ui remove button --dry-run` to preview tracked files before removal.
 
-For CI or scripts, combine non-interactive mode with JSON output where supported:
+## Component manifest
 
-```sh
-ui --no-input update --json
-ui --no-input remove button --yes --json
-```
-
-## Changelog
-
-### Unreleased
-
-Future changes will be listed here before the next release.
-
-### v0.0.36
-
-- Added project diagnostics with `ui doctor`.
-- Improved transactional component installation, removal, update, and rollback behavior.
-- Added automatic project-state initialization after the first successful install.
-
-### v0.0.33
-
-- Prompt for a stable component version when running `ui update` interactively.
-- Keep non-interactive updates on the latest compatible version path.
-
-### v0.0.32
-
-- Add `ui changelog [version]` for full or version-specific release notes.
-- Show the selected release changes after a successful CLI self-update.
-
-### v0.0.31
-
-- Ignore project-local rollback artifacts created by component updates.
-
-### v0.0.30
-
-- Improve framed command output with consistent titles, next-step guidance, and semantic status symbols.
-
-### v0.0.29
-
-- Rename the component manifest schema to `schemas/ui.schema.json`.
-- Align it with the example component `ui.json` and validate safe relative file paths.
-
-### v0.0.28
-
-- Align published JSON Schemas with the current `ui.json` manifest and project-state contracts.
-- Add schema alignment regression coverage.
-
-### v0.0.27
-
-- Make all-component updates report updated and unchanged components consistently.
-
-### v0.0.26
-
-- Harden manifest and persisted state schemas.
-- Validate rollback snapshots before restoring them.
-
-### v0.0.25
-
-- Use `ui.json` as the component manifest filename.
-
-### v0.0.24
-
-- Persist remote component source checkouts in `.ui-sources/`.
-- Add `ui clear-cache --yes` to remove project-local source checkouts safely.
-
-### v0.0.23
-
-- Refactored component and CLI self-update commands into a shared status, decision, progress, verification, and result flow.
-- Added non-mutating installer checks before self-update confirmation.
-- Standardized update availability, cancellation, success, and failure output.
-
-### v0.0.22
-
-- Unified human-readable output across all commands with one verb-first design language.
-- Standardized status labels, table columns, empty states, update plans, and mutation results.
-- Removed redundant symbols, command-specific success messages, and decorative follow-up text.
-
-### v0.0.21
-
-- Added `ui --version` and `ui -V` with version data read from the package metadata.
-- Documented global runtime options in root help.
-
-### v0.0.20
-
-- Added `ui completion <bash|zsh|fish>` for dependency-free shell completion scripts.
-- Documented completion installation examples in the README.
-
-### v0.0.19
-
-- Added `ui status` as a direct status command.
-- Added `ui undo --list` to inspect rollback availability without mutating files.
-- Added `ui remove <name> --dry-run` to preview tracked files before removal.
-
-### v0.0.18
-
-- Added `ui add -` for newline-delimited component sources from stdin.
-- Kept unexpected `--json` failures machine-readable on stdout.
-- Made `--quiet` suppress progress spinners as well as result output.
-
-### v0.0.17
-
-- Added Unix-first output behavior: successful results go to stdout, diagnostics go to stderr, and non-interactive runs never prompt.
-- Added short top-level component commands such as `ui add`, `ui list`, `ui update`, and `ui undo` while retaining `ui component ...` compatibility commands.
-- Added idempotent `ui enable` and `ui disable` commands.
-- Added explicit `--yes` confirmation for non-interactive component removal.
-- Added `-C`/`--project`, `--quiet`, `--no-input`, and explicit color policy options.
-- Added update dry runs, JSON-compatible self-update and rollback responses, and invalid-usage exit code `2`.
-
-### v0.0.16
-
-- Added targeted component updates with `ui component update <name>`.
-- Added stable `--version` selection for component updates.
-- Improved update planning, rollback reporting, and CI-safe color handling.
-
-### v0.0.15
-
-- Simplified the CLI README and documented local component sources.
-- Removed obsolete component commands and helpers.
-
-### v0.0.14
-
-- Added local component directory support, including relative, absolute, and `file://` paths.
-
-### v0.0.13
-
-- Hardened component update planning and transactional filesystem changes.
-
-### v0.0.11
-
-- Improved update flow UX and component status reporting.
-
-### v0.0.10
-
-- Improved compatible component update resolution.
-
-### v0.0.9
-
-- Centralized CLI helpers and improved command reliability.
-
-### v0.0.8
-
-- Added `ui init` project initialization.
-
-### v0.0.7
-
-- Simplified component commands and added colorized human output.
-
-### v0.1.0
-
-- Added top-level namespace selection and terminal tables.
-
-### v0.0.5
-
-- Added interactive namespace selection and improved component tables.
-
-### v0.0.4
-
-- Redesigned the component command dashboard and improved component status output.
-
-### v0.0.3
-
-- Added the first component command dashboard.
-
-### v0.0.2
-
-- Added release tooling and improved CLI command organization.
-
-### v0.0.1
-
-- Initial component lifecycle CLI with installation, listing, version selection, removal, and self-update support.
-
-Versions `v0.0.6` and `v0.0.12` do not have published releases in the repository history and are intentionally omitted.
-
-## Component Manifest
-
-Each component directory must contain a root `ui.json`:
+Each component repository or directory must contain a root `ui.json` manifest:
 
 ```json
 {
@@ -324,23 +199,43 @@ Each component directory must contain a root `ui.json`:
 
 - `schemaVersion` must be `1`.
 - `name` must be lowercase kebab-case.
-- `description`, file paths, dependency names and versions, and component references must not be blank.
 - `files` maps component files to safe project-relative targets.
 - `dependencies` contains package-manager dependencies.
 - `components` contains other component repositories and optional version constraints.
+- File paths must not be absolute and must not contain parent-directory segments such as `../`.
 
-The full JSON Schema is available at [`schemas/ui.schema.json`](schemas/ui.schema.json). Keep component file targets project-relative and never use absolute paths or parent-directory segments.
+See the complete [`schemas/ui.schema.json`](schemas/ui.schema.json) reference. Git component versions come from stable tags such as `v1.2.3`; local directories without Git tags use the version `local`.
 
-Git component versions come from stable tags such as `v1.2.3`. Local directories without Git tags use the version `local`.
+## Automation
 
-## Output
+Use non-interactive mode and JSON output in scripts or CI where supported:
 
-Interactive terminals use Clack prompts, Ora spinners, semantic Picocolors, and tables. Piped, CI, and `--json` output stays script-friendly and avoids interactive prompts.
+```sh
+ui --no-input update --json
+ui --no-input remove button --yes --json
+```
+
+Install shell completion by evaluating the generated script:
+
+```sh
+eval "$(ui completion bash)"
+eval "$(ui completion zsh)"
+ui completion fish | source
+```
 
 ## Development
 
+Clone the repository and install dependencies:
+
 ```sh
-npm install
+git clone https://github.com/jeroengerits/registry.git
+cd registry
+npm install --ignore-scripts
+```
+
+Run the individual checks or the complete verification suite:
+
+```sh
 npm test
 npm run typecheck
 npm run lint
@@ -348,6 +243,17 @@ npm run build
 npm run verify
 ```
 
-`npm run verify` runs linting, type checking, tests, and the production build.
+`npm run verify` runs linting, type checking, tests, and the production build. The GitHub Actions workflow runs the same checks on Node.js 22 for pushes and pull requests.
 
-Before every version release, add the user-facing changes to the matching version under `## Changelog`, update the version, and verify the release entry describes the shipped behavior. Changes after a release belong under `Unreleased` until the next version is cut.
+## Release history
+
+See [`CHANGELOG.md`](CHANGELOG.md) for the complete release history. Release notes are also available from the CLI:
+
+```sh
+ui changelog
+ui changelog v0.0.37
+```
+
+## License
+
+No license file is currently included in this repository. Add a `LICENSE` file before distributing the project under an open-source license.

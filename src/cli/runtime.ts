@@ -22,8 +22,9 @@ export function parseRuntimeOptions(args: string[], cwd: string): RuntimeOptions
       quiet = true;
     } else if (argument === '--no-input') {
       noInput = true;
-    } else if (argument.startsWith('--color=')) {
-      const value = argument.slice('--color='.length);
+    } else if (argument === '--color' || argument.startsWith('--color=')) {
+      const value = argument === '--color' ? args[++index] : argument.slice('--color='.length);
+      if (!value) throw new Error('--color requires auto, always, or never.');
       if (value !== 'auto' && value !== 'always' && value !== 'never') throw new Error('--color must be auto, always, or never.');
       color = value;
     } else {

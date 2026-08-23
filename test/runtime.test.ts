@@ -18,6 +18,16 @@ describe('CLI runtime', () => {
     });
   });
 
+  it('accepts the space-separated color option form', () => {
+    expect(parseRuntimeOptions(['--color', 'never', 'help'], '/tmp/project')).toEqual({
+      args: ['help'], cwd: '/tmp/project', quiet: false, noInput: false, color: 'never',
+    });
+  });
+
+  it('rejects a color option without a value', () => {
+    expect(() => parseRuntimeOptions(['--color'], '/tmp/project')).toThrow('--color requires auto, always, or never.');
+  });
+
   it('restores process environment after a failed command', async () => {
     await expect(withRuntimeEnvironment({ args: [], cwd: '/tmp', quiet: true, noInput: true, color: 'always' }, async () => {
       expect(process.env.UI_QUIET).toBe('1');
