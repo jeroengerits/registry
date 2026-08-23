@@ -74,6 +74,18 @@ export async function initializeState(cwd: string, state: UiState): Promise<bool
   }
 }
 
+/** Ensures a stateful command has a project state file without producing output. */
+export async function ensureState(cwd: string): Promise<UiState> {
+  const existing = await readState(cwd);
+  if (existing) return existing;
+  const version = await readRootVersion(cwd);
+  const initial = { ...(version ? { version } : {}), components: {} } satisfies UiState;
+  if (await initializeState(cwd, initial)) return initial;
+  const raced = await readState(cwd);
+  if (raced) return raced;
+  throw new Error('Unable to initialize project state.');
+}
+
 /** Reads the host application's package version for display and state metadata. */
 export async function readRootVersion(cwd: string): Promise<string | undefined> {
   try {

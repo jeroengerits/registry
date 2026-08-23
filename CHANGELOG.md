@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.0.34
+
+- Automatically initialize project state for stateful CLI commands.
+- Align the component manifest path schema with runtime validation.
+
 ## v0.0.33
 
 - Prompt for a stable component version when running `ui update` interactively.

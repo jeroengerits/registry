@@ -58,7 +58,7 @@ describe('help', () => {
   it('prints the installed CLI version', async () => {
     const result = await capture(() => run(['--version']));
     expect(result.code).toBe(0);
-    expect(result.stdout.trim()).toBe('0.0.33');
+    expect(result.stdout.trim()).toBe('0.0.34');
     expect(result.stderr).toBe('');
   });
 
@@ -106,6 +106,20 @@ describe('help', () => {
     const quiet = await capture(() => run(['--project', directory, '--quiet', 'list']));
     expect(quiet.code).toBe(0);
     expect(quiet.stdout).toBe('');
+  });
+
+  it('initializes state silently for stateful commands', async () => {
+    const directory = await tempDirectory();
+    const result = await capture(() => run(['list', '--json'], directory));
+    expect(result).toEqual({ code: 0, stdout: '[]\n', stderr: '' });
+    expect(JSON.parse(await readFile(path.join(directory, 'ui.json'), 'utf8'))).toEqual({ components: {} });
+  });
+
+  it('keeps doctor diagnostic and non-mutating for a new project', async () => {
+    const directory = await tempDirectory();
+    const result = await capture(() => run(['doctor', '--json'], directory));
+    expect(JSON.parse(result.stdout).checks).toEqual([{ check: 'Project initialized', status: 'missing' }]);
+    await expect(access(path.join(directory, 'ui.json'))).rejects.toThrow();
   });
 
   it('accepts explicit color policy options', async () => {
@@ -260,6 +274,7 @@ describe('validation', () => {
     expect(componentSchema.description).toContain('root ui.json');
     expect(componentSchema.required).toEqual(['schemaVersion', 'name', 'files', 'dependencies', 'components']);
     expect(componentSchema.properties.files.items.additionalProperties).toBe(false);
+    expect(componentSchema.$defs.relativePath.pattern).toContain('.*\\S.*');
     expect(stateSchema.properties.components.propertyNames.$ref).toBe('#/$defs/componentName');
     expect(stateSchema.$defs.installedFile.properties.sha256.pattern).toBe('^(?:[a-f0-9]{64})?$');
     expect(stateSchema.$defs.installedFile.properties.sourcePath).toBeUndefined();

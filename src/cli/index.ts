@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { Command, CommanderError } from 'commander';
 import type { CommandResult } from '../types.js';
 import { errorMessage } from '../shared.js';
+import { ensureState } from '../state.js';
 import { colors } from './ui.js';
 import { registerCommands } from './commands/registry.js';
 
@@ -44,6 +45,13 @@ function unknownCommand(): CommandResult {
   return { output: '', error: `${colors.error('Unknown command.')} Run "ui help" for available commands.`, exitCode: 2 };
 }
 
+/** Returns whether a recognized command needs project state before dispatch. */
+function requiresState(args: string[]): boolean {
+  const command = args.filter((argument) => !argument.startsWith('-'));
+  if (command[0] === 'component') return ['list', 'info', 'remove', 'revert', 'toggle', 'update', 'outdated', 'versions'].includes(command[1] ?? '');
+  return ['list', 'show', 'remove', 'status', 'update', 'outdated', 'versions', 'undo', 'enable', 'disable'].includes(command[0] ?? '');
+}
+
 /** Parses CLI arguments and dispatches the selected command. */
 export async function run(args: string[], cwd = process.cwd()): Promise<number> {
   let options: RuntimeOptions;
@@ -75,6 +83,7 @@ export async function run(args: string[], cwd = process.cwd()): Promise<number> 
   if (options.color === 'never') process.env.NO_COLOR = '1';
   if (options.color === 'always') { delete process.env.NO_COLOR; process.env.FORCE_COLOR = '1'; }
   try {
+    if (requiresState(commandArgs)) await ensureState(options.cwd);
     await program.parseAsync(commandArgs, { from: 'user' });
   } catch (error) {
     if (error instanceof CommanderError) {
