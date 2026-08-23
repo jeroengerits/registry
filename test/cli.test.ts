@@ -9,6 +9,7 @@ import { initializeState, validateState } from '../src/state.js';
 import { validateComponentManifest } from '../src/registry.js';
 import { availableVersions, checkoutGit, parseGitReference, satisfies, updateConstraint } from '../src/git.js';
 import { formatSelfUpdateDetails, parseSelfUpdateDetails } from '../src/cli/commands/self-update.js';
+import { changelog, parseChangelog } from '../src/cli/commands/changelog.js';
 import { errorMessage, isErrnoError, isRecord } from '../src/shared.js';
 import { copySafeFile, safeFilePath } from '../src/filesystem.js';
 import { expandSources } from '../src/cli/commands/registry.js';
@@ -57,7 +58,7 @@ describe('help', () => {
   it('prints the installed CLI version', async () => {
     const result = await capture(() => run(['--version']));
     expect(result.code).toBe(0);
-    expect(result.stdout.trim()).toBe('0.0.31');
+    expect(result.stdout.trim()).toBe('0.0.32');
     expect(result.stderr).toBe('');
   });
 
@@ -70,6 +71,16 @@ describe('help', () => {
     const invalid = await capture(() => run(['completion', 'powershell']));
     expect(invalid.code).toBe(2);
     expect(invalid.stderr).toContain('Usage: ui completion <bash|zsh|fish>');
+  });
+
+  it('shows the changelog and a selected release', async () => {
+    const parsed = parseChangelog('# Changelog\n\n## v1.2.0\n\n- Added a feature.\n');
+    expect(parsed).toEqual([{ version: '1.2.0', changes: ['Added a feature.'] }]);
+    const selected = await changelog('v0.0.31', true);
+    expect(selected.exitCode).toBe(0);
+    expect(selected.data).toMatchObject({ version: '0.0.31' });
+    const missing = await changelog('9.9.9', true);
+    expect(missing.exitCode).toBe(2);
   });
 
   it('clears persistent source cache only with explicit confirmation', async () => {

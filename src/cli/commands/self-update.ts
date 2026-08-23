@@ -8,6 +8,7 @@ import { errorResult } from './shared.js';
 import { confirmAction, interactive, withSpinner } from '../ui.js';
 import { renderUpdateIntent, renderUpdateReport, renderUpdateSuccess, type UpdateItem } from '../update-flow.js';
 import { cancelled, failure, present } from '../presentation.js';
+import { parseChangelog } from './changelog.js';
 
 /** Extracts a version only when the cached package JSON has the expected shape. */
 function versionFromPackage(value: unknown): string | undefined {
@@ -107,9 +108,12 @@ export async function selfUpdate(json = false): Promise<CommandResult> {
     const installedVersion = await readFile(path.join(cacheDirectory, 'package.json'), 'utf8').then((content) => versionFromPackage(JSON.parse(content))).catch(() => undefined);
     if (installedVersion !== versions.latest) throw new Error(`Verification found ${installedVersion ?? 'no installed version'} instead of ${versions.latest}.`);
 
+    const changes = await readFile(path.join(cacheDirectory, 'CHANGELOG.md'), 'utf8').then((content) => parseChangelog(content).find((entry) => entry.version === versions.latest)?.changes ?? []).catch(() => []);
+    const changesText = changes.length ? `\n\nChanges in v${versions.latest}:\n${changes.map((change) => `- ${change}`).join('\n')}` : '';
+
     // Return the canonical success block and machine-readable transition.
     void update;
-    return present(json, { updated: true, currentVersion: versions.current, latestVersion: versions.latest }, renderUpdateSuccess([change]));
+    return present(json, { updated: true, currentVersion: versions.current, latestVersion: versions.latest, changes }, `${renderUpdateSuccess([change]).trimEnd()}${changesText}\n`);
   } catch (error) {
     // Keep update failures concise and explain the installation safety guarantee.
     const reason = subprocessMessage(error);

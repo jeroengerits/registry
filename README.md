@@ -2,7 +2,7 @@
 
 Install and manage reusable UI components from Git repositories or local directories.
 
-Latest release: [v0.0.31](https://github.com/jeroengerits/registry/releases/tag/v0.0.31)
+Latest release: [v0.0.32](https://github.com/jeroengerits/registry/releases/tag/v0.0.32)
 
 ## Install
 
@@ -43,6 +43,7 @@ ui undo                              Undo the last component update
 ui disable <name>                    Disable a component
 ui completion <shell>                Print Bash, Zsh, or Fish completions
 ui clear-cache                        Remove cached remote component sources
+ui changelog [version]                Show all or version-specific release changes
 ```
 
 Use `ui help <command>` for focused help. Add `--json` to commands that support machine-readable output.
@@ -121,6 +122,11 @@ Update output shows the current version, new version, status, and the available 
 ### Unreleased
 
 Future changes will be listed here before the next release.
+
+### v0.0.32
+
+- Add `ui changelog [version]` for full or version-specific release notes.
+- Show the selected release changes after a successful CLI self-update.
 
 ### v0.0.31
 

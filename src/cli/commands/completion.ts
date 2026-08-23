@@ -1,7 +1,7 @@
 import type { CommandResult } from '../../types.js';
 import { errorResult } from './shared.js';
 
-const COMMANDS = 'add list show remove status update outdated versions undo enable disable init doctor self-update completion clear-cache help';
+const COMMANDS = 'add list show remove status update outdated versions undo enable disable init doctor self-update completion clear-cache changelog help';
 
 /** Returns a small, dependency-free completion script for a supported shell. */
 export function completion(shell?: string): CommandResult {

@@ -15,3 +15,4 @@ export { outdatedComponents } from './component/outdated.js';
 export { doctor } from './doctor.js';
 export { completion } from './completion.js';
 export { clearCache } from './clear-cache.js';
+export { changelog, parseChangelog } from './changelog.js';
