@@ -2,7 +2,7 @@
 
 Install and manage reusable UI components from Git repositories or local directories.
 
-Latest release: [v0.0.30](https://github.com/jeroengerits/registry/releases/tag/v0.0.30)
+Latest release: [v0.0.31](https://github.com/jeroengerits/registry/releases/tag/v0.0.31)
 
 ## Install
 
@@ -121,6 +121,10 @@ Update output shows the current version, new version, status, and the available 
 ### Unreleased
 
 Future changes will be listed here before the next release.
+
+### v0.0.31
+
+- Ignore project-local rollback artifacts created by component updates.
 
 ### v0.0.30
 

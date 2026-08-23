@@ -6,6 +6,7 @@ coverage/
 .ui-stage-*
 .ui-backup-*
 .ui-remove-backup-*
+.ui-rollback/
 .ui-registry/
 .ui-sources/
 /ui
