@@ -40,7 +40,7 @@ function runtimeOptions(args: string[], cwd: string): RuntimeOptions {
 
 /** Converts Commander unknown-command failures into the CLI's stable message. */
 function unknownCommand(): CommandResult {
-  return { output: '', error: `${colors.error('Unknown command.')} Run "ui help" for available commands.`, exitCode: 1 };
+  return { output: '', error: `${colors.error('Unknown command.')} Run "ui help" for available commands.`, exitCode: 2 };
 }
 
 /** Parses CLI arguments and dispatches the selected command. */
@@ -68,7 +68,7 @@ export async function run(args: string[], cwd = process.cwd()): Promise<number> 
     await program.parseAsync(commandArgs, { from: 'user' });
   } catch (error) {
     if (error instanceof CommanderError) {
-      result = error.code === 'commander.unknownCommand' || error.code === 'commander.excessArguments' ? unknownCommand() : { output: '', error: error.message, exitCode: error.exitCode || 1 };
+      result = error.code === 'commander.unknownCommand' || error.code === 'commander.excessArguments' ? unknownCommand() : { output: '', error: error.message, exitCode: 2 };
     } else {
       process.stderr.write(`${errorMessage(error)}\n`);
       if (options.noInput) {

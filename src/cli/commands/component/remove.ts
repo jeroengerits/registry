@@ -15,7 +15,7 @@ export async function removeComponent(cwd: string, name?: string, json = false, 
   const component = state?.components[name];
   // Refuse to mutate state when the component is absent.
   if (!state || !component) return errorResult(`Component "${name}" is not installed.`, json);
-  if (!interactive() && !yes) return failure(json, 'Refusing to remove without confirmation. Re-run with --yes.');
+  if (!interactive() && !yes) return failure(json, 'Refusing to remove without confirmation. Re-run with --yes.', 'confirmation_required', 2);
   // Confirm destructive work only in interactive terminals.
   if (interactive() && !yes && !(await confirmAction(`Remove ${name} and its ${component.files?.length ?? 0} tracked file(s)?`))) return failure(json, 'Operation cancelled.');
 

@@ -11,7 +11,7 @@ import { isErrnoError } from '../../shared.js';
 import { failure } from '../presentation.js';
 
 /** Creates the standard failed-command result without throwing. */
-export const errorResult = (message: string, json = false) => failure(json, message);
+export const errorResult = (message: string, json = false) => failure(json, message, message.startsWith('Usage:') ? 'invalid_usage' : 'command_failed', message.startsWith('Usage:') ? 2 : 1);
 /** Detects the package manager from the project's lockfile. */
 async function packageManager(cwd: string): Promise<'npm' | 'pnpm' | 'yarn' | 'bun'> {
   for (const [file, manager] of [['pnpm-lock.yaml', 'pnpm'], ['yarn.lock', 'yarn'], ['bun.lockb', 'bun'], ['package-lock.json', 'npm']] as const) {

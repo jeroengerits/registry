@@ -134,7 +134,7 @@ describe('help', () => {
   });
   it('rejects unknown commands with a useful usage message', async () => {
     const result = await capture(() => run(['component', 'unknown']));
-    expect(result.code).toBe(1);
+    expect(result.code).toBe(2);
     expect(result.stdout).toBe('');
     expect(result.stderr).toBe('Unknown command. Run "ui help" for available commands.\n');
   });
@@ -143,7 +143,7 @@ describe('help', () => {
     const directory = await tempDirectory();
     await writeFile(path.join(directory, 'ui.json'), JSON.stringify({ components: { button: { version: '1.0.0', path: 'components/button' } } }));
     const result = await capture(() => run(['remove', 'button'], directory));
-    expect(result).toEqual({ code: 1, stdout: '', stderr: 'Refusing to remove without confirmation. Re-run with --yes.\n' });
+    expect(result).toEqual({ code: 2, stdout: '', stderr: 'Refusing to remove without confirmation. Re-run with --yes.\n' });
   });
   it('reports missing command arguments', async () => {
     const info = await capture(() => run(['component', 'info']));
@@ -151,13 +151,13 @@ describe('help', () => {
     const remove = await capture(() => run(['component', 'remove']));
     const update = await capture(() => run(['component', 'update']));
     const toggle = await capture(() => run(['component', 'toggle']));
-    expect(info).toEqual({ code: 1, stdout: '', stderr: 'Usage: ui show <name> [--json]\n' });
-    expect(add).toEqual({ code: 1, stdout: '', stderr: 'Usage: ui add <repository-or-path> [--version <version>] [--dry-run] [--force] [--json]\n' });
-    expect(remove).toEqual({ code: 1, stdout: '', stderr: 'Usage: ui component remove <name> [--yes] [--json]\n' });
+    expect(info).toEqual({ code: 2, stdout: '', stderr: 'Usage: ui show <name> [--json]\n' });
+    expect(add).toEqual({ code: 2, stdout: '', stderr: 'Usage: ui add <repository-or-path> [--version <version>] [--dry-run] [--force] [--json]\n' });
+    expect(remove).toEqual({ code: 2, stdout: '', stderr: 'Usage: ui component remove <name> [--yes] [--json]\n' });
     expect(update.code).toBe(1);
     expect(update.stdout).toBe('');
     expect(update.stderr).toMatch(/No updatable components|already at the latest compatible version/);
-    expect(toggle).toEqual({ code: 1, stdout: '', stderr: 'Usage: ui component toggle <name> [--json]\n' });
+    expect(toggle).toEqual({ code: 2, stdout: '', stderr: 'Usage: ui component toggle <name> [--json]\n' });
   });
   it('rejects self-update outside an installed launcher', async () => {
     const installDirectory = process.env.UI_INSTALL_DIR;

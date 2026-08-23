@@ -43,7 +43,7 @@ function commandReference(command: string): CommandResult {
   if (command === 'component') return componentHelp();
   const aliases: Record<string, string> = { add: 'component add', list: 'component list', show: 'component info', remove: 'component remove', update: 'component update', outdated: 'component outdated', versions: 'component versions', undo: 'component revert' };
   const definition = focusedDefinition(aliases[command] ?? command);
-  if (!definition) return { output: '', error: colors.error(`Unknown help topic: ${command}`), exitCode: 1 };
+  if (!definition) return { output: '', error: colors.error(`Unknown help topic: ${command}`), exitCode: 2 };
   const usage = definition.usage ? ` ${definition.usage}` : '';
   const options = definition.options?.length ? `\n\nOptions:\n${definition.options.map((option) => `  ${option.flags.padEnd(22)}${option.description}`).join('\n')}` : '';
   const argument = definition.path === 'component add' ? '\n\nArguments:\n  repository-or-path  GitHub URL, owner/repository, or local component directory' : '';

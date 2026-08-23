@@ -6,9 +6,9 @@ export function present(json: boolean, data: unknown, human: string, exitCode = 
 }
 
 /** Creates a machine-readable failure while keeping human diagnostics off stdout. */
-export function failure(json: boolean, message: string, code = 'command_failed'): CommandResult {
+export function failure(json: boolean, message: string, code = 'command_failed', exitCode = 1): CommandResult {
   const data = { ok: false, error: { code, message } };
   return json
-    ? { output: `${JSON.stringify(data, null, 2)}\n`, exitCode: 1, data }
-    : { output: '', error: message, exitCode: 1, data };
+    ? { output: `${JSON.stringify(data, null, 2)}\n`, exitCode, data }
+    : { output: '', error: message, exitCode, data };
 }
