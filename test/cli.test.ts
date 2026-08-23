@@ -56,7 +56,7 @@ describe('help', () => {
   it('prints the installed CLI version', async () => {
     const result = await capture(() => run(['--version']));
     expect(result.code).toBe(0);
-    expect(result.stdout.trim()).toBe('0.0.24');
+    expect(result.stdout.trim()).toBe('0.0.25');
     expect(result.stderr).toBe('');
   });
 
@@ -120,7 +120,7 @@ describe('help', () => {
     expect(result.stdout).toContain('add           Install a component.');
     expect(result.stdout).toContain('update        Update one or all components.');
     expect(result.stdout).toContain('Legacy namespace: ui component <command>');
-    expect(result.stdout).not.toContain('component.json must be in the repository root');
+    expect(result.stdout).not.toContain('ui.json must be in the repository root');
   });
   it('shows help with no arguments', async () => {
     const result = await capture(() => run([]));
@@ -180,11 +180,12 @@ describe('help', () => {
     expect(result).toEqual({ code: 2, stdout: '', stderr: 'Refusing to remove without confirmation. Re-run with --yes.\n' });
   });
   it('reports missing command arguments', async () => {
-    const info = await capture(() => run(['component', 'info']));
-    const add = await capture(() => run(['component', 'add']));
-    const remove = await capture(() => run(['component', 'remove']));
-    const update = await capture(() => run(['component', 'update']));
-    const toggle = await capture(() => run(['component', 'toggle']));
+    const directory = await tempDirectory();
+    const info = await capture(() => run(['component', 'info'], directory));
+    const add = await capture(() => run(['component', 'add'], directory));
+    const remove = await capture(() => run(['component', 'remove'], directory));
+    const update = await capture(() => run(['component', 'update'], directory));
+    const toggle = await capture(() => run(['component', 'toggle'], directory));
     expect(info).toEqual({ code: 2, stdout: '', stderr: 'Usage: ui show <name> [--json]\n' });
     expect(add).toEqual({ code: 2, stdout: '', stderr: 'Usage: ui add <repository-or-path> [--version <version>] [--dry-run] [--force] [--json]\n' });
     expect(remove).toEqual({ code: 2, stdout: '', stderr: 'Usage: ui remove <name> [--dry-run] [--yes] [--json]\n' });
@@ -270,7 +271,7 @@ describe('local Git installation', () => {
     const component = path.join(project, 'local-component');
     await mkdir(path.join(component, 'src'), { recursive: true });
     await writeFile(path.join(component, 'src', 'badge.ts'), 'export const Badge = 1;\n');
-    await writeFile(path.join(component, 'component.json'), JSON.stringify({ schemaVersion: 1, name: 'local-badge', files: [{ source: 'src/badge.ts', target: 'components/badge.ts' }], dependencies: {}, components: [] }));
+    await writeFile(path.join(component, 'ui.json'), JSON.stringify({ schemaVersion: 1, name: 'local-badge', files: [{ source: 'src/badge.ts', target: 'components/badge.ts' }], dependencies: {}, components: [] }));
     const result = await capture(() => run(['component', 'add', './local-component'], project));
     expect(result.code).toBe(0);
     expect(result.stdout).toContain('added local-badge@local');
@@ -302,7 +303,7 @@ describe('local Git installation', () => {
 
   it('persists remote checkouts in the project source cache', async () => {
     const repository = await tempDirectory();
-    await writeFile(path.join(repository, 'component.json'), '{}');
+    await writeFile(path.join(repository, 'ui.json'), '{}');
     await exec('git', ['init', '-q', repository]);
     await exec('git', ['-C', repository, 'config', 'user.email', 'test@example.invalid']);
     await exec('git', ['-C', repository, 'config', 'user.name', 'Test']);
@@ -320,7 +321,7 @@ describe('local Git installation', () => {
     const repository = await tempDirectory();
     await mkdir(path.join(repository, 'src'), { recursive: true });
     await writeFile(path.join(repository, 'src', 'button.tsx'), 'export const Button = 1;\n');
-    await writeFile(path.join(repository, 'component.json'), JSON.stringify({ schemaVersion: 1, name: 'button', description: 'button', files: [{ source: 'src/button.tsx', target: 'components/button.tsx' }], dependencies: {}, components: [] }));
+    await writeFile(path.join(repository, 'ui.json'), JSON.stringify({ schemaVersion: 1, name: 'button', description: 'button', files: [{ source: 'src/button.tsx', target: 'components/button.tsx' }], dependencies: {}, components: [] }));
     await exec('git', ['init', '-q', repository]);
     await exec('git', ['-C', repository, 'config', 'user.email', 'test@example.invalid']);
     await exec('git', ['-C', repository, 'config', 'user.name', 'Test']);
@@ -364,7 +365,7 @@ describe('local Git installation', () => {
     const repository = await tempDirectory();
     await mkdir(path.join(repository, 'src'), { recursive: true });
     await writeFile(path.join(repository, 'src/button.tsx'), 'export const Button = 1;\n');
-    await writeFile(path.join(repository, 'component.json'), JSON.stringify({ schemaVersion: 1, name: 'button', files: [{ source: 'src/button.tsx', target: 'components/button.tsx' }], dependencies: {}, components: [] }));
+    await writeFile(path.join(repository, 'ui.json'), JSON.stringify({ schemaVersion: 1, name: 'button', files: [{ source: 'src/button.tsx', target: 'components/button.tsx' }], dependencies: {}, components: [] }));
     await exec('git', ['init', '-q', repository]);
     await exec('git', ['-C', repository, 'config', 'user.email', 'test@example.invalid']);
     await exec('git', ['-C', repository, 'config', 'user.name', 'Test']);
@@ -399,7 +400,7 @@ describe('local Git installation', () => {
   it('rejects traversal paths before touching the filesystem', async () => {
     await expect(safeFilePath(await tempDirectory(), '../outside', 'target', false)).rejects.toThrow(/safe relative path|stay within/);
   });
-  it('rejects repositories without a root component.json', async () => {
+  it('rejects repositories without a root ui.json', async () => {
     const repository = await tempDirectory();
     await writeFile(path.join(repository, 'README.md'), 'not a component\n');
     await exec('git', ['init', '-q', repository]);
@@ -411,14 +412,14 @@ describe('local Git installation', () => {
     const project = await tempDirectory();
     const result = await capture(() => run(['component', 'add', repository], project));
     expect(result.code).toBe(1);
-    expect(result).toEqual({ code: 1, stdout: '', stderr: 'Provided source is not a component: missing component.json.\n' });
+    expect(result).toEqual({ code: 1, stdout: '', stderr: 'Provided source is not a component: missing ui.json.\n' });
     await expect(access(path.join(project, 'ui.json'))).rejects.toThrow();
   });
   it('stores the root app version and updates within the component major version', async () => {
     const repository = await tempDirectory();
     await mkdir(path.join(repository, 'src'), { recursive: true });
     await writeFile(path.join(repository, 'src', 'button.tsx'), 'export const Button = 1;\n');
-    await writeFile(path.join(repository, 'component.json'), JSON.stringify({ schemaVersion: 1, name: 'button', files: [{ source: 'src/button.tsx', target: 'components/button.tsx' }], dependencies: {}, components: [] }));
+    await writeFile(path.join(repository, 'ui.json'), JSON.stringify({ schemaVersion: 1, name: 'button', files: [{ source: 'src/button.tsx', target: 'components/button.tsx' }], dependencies: {}, components: [] }));
     await exec('git', ['init', '-q', repository]);
     await exec('git', ['-C', repository, 'config', 'user.email', 'test@example.invalid']);
     await exec('git', ['-C', repository, 'config', 'user.name', 'Test']);
@@ -456,7 +457,7 @@ describe('local Git installation', () => {
     const repository = await tempDirectory();
     await mkdir(path.join(repository, 'src'), { recursive: true });
     await writeFile(path.join(repository, 'src/old.ts'), 'old\n');
-    await writeFile(path.join(repository, 'component.json'), JSON.stringify({ schemaVersion: 1, name: 'button', files: [{ source: 'src/old.ts', target: 'components/old.ts' }], dependencies: {}, components: [] }));
+    await writeFile(path.join(repository, 'ui.json'), JSON.stringify({ schemaVersion: 1, name: 'button', files: [{ source: 'src/old.ts', target: 'components/old.ts' }], dependencies: {}, components: [] }));
     await exec('git', ['init', '-q', repository]);
     await exec('git', ['-C', repository, 'config', 'user.email', 'test@example.invalid']);
     await exec('git', ['-C', repository, 'config', 'user.name', 'Test']);
@@ -468,7 +469,7 @@ describe('local Git installation', () => {
 
     await rm(path.join(repository, 'src/old.ts'));
     await writeFile(path.join(repository, 'src/new.ts'), 'new\n');
-    await writeFile(path.join(repository, 'component.json'), JSON.stringify({ schemaVersion: 1, name: 'button', files: [{ source: 'src/new.ts', target: 'components/new.ts' }], dependencies: { 'not a valid package': '1.0.0' }, components: [] }));
+    await writeFile(path.join(repository, 'ui.json'), JSON.stringify({ schemaVersion: 1, name: 'button', files: [{ source: 'src/new.ts', target: 'components/new.ts' }], dependencies: { 'not a valid package': '1.0.0' }, components: [] }));
     await exec('git', ['-C', repository, 'add', '.']);
     await exec('git', ['-C', repository, 'commit', '-qm', 'breaking update']);
     await exec('git', ['-C', repository, 'tag', '1.1.0']);
@@ -482,7 +483,7 @@ describe('local Git installation', () => {
   });
   it('filters outdated versions by the persisted constraint', async () => {
     const repository = await tempDirectory();
-    await writeFile(path.join(repository, 'component.json'), JSON.stringify({ schemaVersion: 1, name: 'button', files: [], dependencies: {}, components: [] }));
+    await writeFile(path.join(repository, 'ui.json'), JSON.stringify({ schemaVersion: 1, name: 'button', files: [], dependencies: {}, components: [] }));
     await exec('git', ['init', '-q', repository]);
     await exec('git', ['-C', repository, 'config', 'user.email', 'test@example.invalid']);
     await exec('git', ['-C', repository, 'config', 'user.name', 'Test']);
@@ -495,9 +496,9 @@ describe('local Git installation', () => {
     const outdated = await capture(() => run(['component', 'outdated', '--json'], project));
     expect(JSON.parse(outdated.stdout)).toEqual([{ name: 'button', current: 'v1.0.0', latest: 'v1.1.0' }]);
   });
-  it('rejects invalid component.json before writing files', async () => {
+  it('rejects invalid ui.json before writing files', async () => {
     const repository = await tempDirectory();
-    await writeFile(path.join(repository, 'component.json'), JSON.stringify({ schemaVersion: 1, name: 'Invalid Name' }));
+    await writeFile(path.join(repository, 'ui.json'), JSON.stringify({ schemaVersion: 1, name: 'Invalid Name' }));
     await exec('git', ['init', '-q', repository]);
     await exec('git', ['-C', repository, 'config', 'user.email', 'test@example.invalid']);
     await exec('git', ['-C', repository, 'config', 'user.name', 'Test']);
@@ -506,7 +507,7 @@ describe('local Git installation', () => {
     await exec('git', ['-C', repository, 'tag', '1.0.0']);
     const project = await tempDirectory();
     const result = await capture(() => run(['component', 'add', repository], project));
-    expect(result).toEqual({ code: 1, stdout: '', stderr: 'component.json requires schemaVersion 1, a lowercase kebab-case name, files, dependencies, and components.\n' });
+    expect(result).toEqual({ code: 1, stdout: '', stderr: 'ui.json requires schemaVersion 1, a lowercase kebab-case name, files, dependencies, and components.\n' });
     const jsonResult = await capture(() => run(['component', 'add', repository, '--json'], project));
     expect(JSON.parse(jsonResult.stdout)).toMatchObject({ ok: false, error: { code: 'command_failed' } });
     expect(jsonResult.stderr).toBe('');
@@ -518,7 +519,7 @@ describe('manifest generation and recursive dependencies', () => {
   async function gitRepository(name: string, manifest: object, files: Record<string, string>, version = '1.0.0') {
     const repository = await tempDirectory();
     for (const [file, content] of Object.entries(files)) { await mkdir(path.dirname(path.join(repository, file)), { recursive: true }); await writeFile(path.join(repository, file), content); }
-    await writeFile(path.join(repository, 'component.json'), JSON.stringify(manifest));
+    await writeFile(path.join(repository, 'ui.json'), JSON.stringify(manifest));
     await exec('git', ['init', '-q', repository]); await exec('git', ['-C', repository, 'config', 'user.email', 'test@example.invalid']); await exec('git', ['-C', repository, 'config', 'user.name', 'Test']); await exec('git', ['-C', repository, 'add', '.']); await exec('git', ['-C', repository, 'commit', '-qm', name]); await exec('git', ['-C', repository, 'tag', version]);
     return repository;
   }
@@ -530,7 +531,7 @@ describe('manifest generation and recursive dependencies', () => {
   });
   it('detects recursive dependency cycles before writing files', async () => {
     const a = await tempDirectory(); const b = await tempDirectory();
-    const make = async (directory: string, name: string, dependency: string) => { await mkdir(path.join(directory, 'src')); await writeFile(path.join(directory, 'src', `${name}.ts`), name); await writeFile(path.join(directory, 'component.json'), JSON.stringify({ schemaVersion: 1, name, files: [{ source: `src/${name}.ts`, target: `components/${name}.ts` }], dependencies: {}, components: [{ repository: dependency }] })); await exec('git', ['init', '-q', directory]); await exec('git', ['-C', directory, 'config', 'user.email', 'test@example.invalid']); await exec('git', ['-C', directory, 'config', 'user.name', 'Test']); await exec('git', ['-C', directory, 'add', '.']); await exec('git', ['-C', directory, 'commit', '-qm', name]); await exec('git', ['-C', directory, 'tag', '1.0.0']); };
+    const make = async (directory: string, name: string, dependency: string) => { await mkdir(path.join(directory, 'src')); await writeFile(path.join(directory, 'src', `${name}.ts`), name); await writeFile(path.join(directory, 'ui.json'), JSON.stringify({ schemaVersion: 1, name, files: [{ source: `src/${name}.ts`, target: `components/${name}.ts` }], dependencies: {}, components: [{ repository: dependency }] })); await exec('git', ['init', '-q', directory]); await exec('git', ['-C', directory, 'config', 'user.email', 'test@example.invalid']); await exec('git', ['-C', directory, 'config', 'user.name', 'Test']); await exec('git', ['-C', directory, 'add', '.']); await exec('git', ['-C', directory, 'commit', '-qm', name]); await exec('git', ['-C', directory, 'tag', '1.0.0']); };
     await make(a, 'a', b); await make(b, 'b', a); const project = await tempDirectory(); const result = await capture(() => run(['component', 'add', a], project)); expect(result.code).toBe(1); await expect(access(path.join(project, 'components/a.ts'))).rejects.toThrow();
   });
 });

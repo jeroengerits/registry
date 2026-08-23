@@ -2,7 +2,7 @@
 
 Install and manage reusable UI components from Git repositories or local directories.
 
-Latest release: [v0.0.24](https://github.com/jeroengerits/registry/releases/tag/v0.0.24)
+Latest release: [v0.0.25](https://github.com/jeroengerits/registry/releases/tag/v0.0.25)
 
 ## Install
 
@@ -122,6 +122,10 @@ Update output shows the current version, new version, status, and the available 
 
 Future changes will be listed here before the next release.
 
+### v0.0.25
+
+- Use `ui.json` as the component manifest filename.
+
 ### v0.0.24
 
 - Persist remote component source checkouts in `.ui-sources/`.
@@ -237,7 +241,7 @@ Versions `v0.0.6` and `v0.0.12` do not have published releases in the repository
 
 ## Component Manifest
 
-Each component directory must contain a root `component.json`:
+Each component directory must contain a root `ui.json`:
 
 ```json
 {

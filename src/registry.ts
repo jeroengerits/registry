@@ -19,19 +19,19 @@ const manifestSchema = z.object({
 /** Validates a manifest and normalizes every source and target path. */
 export function validateComponentManifest(value: unknown): ComponentManifest {
   const parsed = manifestSchema.safeParse(value);
-  if (!parsed.success) throw new Error('component.json requires schemaVersion 1, a lowercase kebab-case name, files, dependencies, and components.');
+  if (!parsed.success) throw new Error('ui.json requires schemaVersion 1, a lowercase kebab-case name, files, dependencies, and components.');
   // Normalize paths once at the trust boundary so installers can use validated values.
   const files = parsed.data.files.map((file, index) => ({ source: safeRelativePath(file.source, `files[${index}].source`), target: safeRelativePath(file.target, `files[${index}].target`) }));
-  if (new Set(files.map((file) => file.target)).size !== files.length) throw new Error('component.json contains duplicate target paths.');
+  if (new Set(files.map((file) => file.target)).size !== files.length) throw new Error('ui.json contains duplicate target paths.');
   return { ...parsed.data, files };
 }
 
-/** Reads and validates the root `component.json` from a checkout. */
+/** Reads and validates the root `ui.json` from a checkout. */
 export async function readComponentManifest(directory: string): Promise<ComponentManifest> {
-  try { return validateComponentManifest(JSON.parse(await readFile(path.join(directory, 'component.json'), 'utf8'))); }
+  try { return validateComponentManifest(JSON.parse(await readFile(path.join(directory, 'ui.json'), 'utf8'))); }
   catch (error) {
-    if (isErrnoError(error) && error.code === 'ENOENT') throw new Error('Provided source is not a component: missing component.json.');
-    if (error instanceof SyntaxError) throw new Error('component.json contains invalid JSON.');
+    if (isErrnoError(error) && error.code === 'ENOENT') throw new Error('Provided source is not a component: missing ui.json.');
+    if (error instanceof SyntaxError) throw new Error('ui.json contains invalid JSON.');
     throw error;
   }
 }
